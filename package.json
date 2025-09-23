@@ -1,0 +1,56 @@
+{
+  "name": "afterschool-clicker",
+  "version": "1.0.0",
+  "description": "AfterSchool Clicker - A heroine-themed incremental clicker game",
+  "main": "src/main.js",
+  "author": "MIZ437 <ashimizu437@gmail.com>",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "dev": "electron src/main.js",
+    "start": "electron src/main.js",
+    "build": "electron-builder",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --publish=never",
+    "clean": "rimraf dist build",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4",
+    "rimraf": "^5.0.5"
+  },
+  "build": {
+    "appId": "com.miz437.afterschool-clicker",
+    "productName": "AfterSchool Clicker",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "!assets/data/*.csv"
+    ],
+    "asarUnpack": [],
+    "compression": "maximum",
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

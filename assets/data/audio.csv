@@ -1,0 +1,11 @@
+id,filename,category,loop,volume,description
+title_bgm,title_theme.mp3,bgm,true,0.7,タイトル画面BGM
+game_bgm_1,stage1_theme.mp3,bgm,true,0.6,ステージ1BGM
+game_bgm_2,stage2_theme.mp3,bgm,true,0.6,ステージ2BGM
+game_bgm_3,stage3_theme.mp3,bgm,true,0.6,ステージ3BGM
+game_bgm_4,stage4_theme.mp3,bgm,true,0.6,ステージ4BGM
+click_se,click.wav,se,false,0.8,クリック効果音
+button_se,button.wav,se,false,0.7,ボタンクリック効果音
+gacha_se,gacha.wav,se,false,0.9,ガチャ効果音
+stage_clear_se,stage_clear.wav,se,false,1.0,ステージクリア効果音
+purchase_se,purchase.wav,se,false,0.8,購入効果音

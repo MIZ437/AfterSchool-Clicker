@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is "AfterSchool Clicker" - a CookieClicker-style incremental game written in Japanese with anime/heroine themes. The core gameplay involves clicking on heroine images to earn points, purchasing upgrades, unlocking new stages, and collecting images through a gacha system.
+This is "AfterSchool Clicker" - a CookieClicker-style incremental game built with Electron, written in Japanese with anime/heroine themes. The core gameplay involves clicking on heroine images to earn points, purchasing upgrades, unlocking new stages, and collecting images through a gacha system.
+
+**Platform**: Electron desktop application with file protection for distribution
 
 ## Game Architecture
 
@@ -35,14 +37,40 @@ Assets are managed via CSV files for easy modification:
 - Audio (BGM, sound effects)
 - Text (UI labels, dialogue)
 
-## Development Status
+## Development Environment
 
-This is a new project with only a planning document (plan.md) currently present. No code has been implemented yet.
+### Electron Setup
+- **Framework**: Electron for cross-platform desktop application
+- **Main Process**: Node.js backend for file system access and app lifecycle
+- **Renderer Process**: HTML/CSS/JavaScript for the game UI
+- **Build Tools**: electron-builder for packaging and distribution
 
-## Notes
+### File Protection
+- **Source Protection**: Use ASAR archive to package application files
+- **Asset Protection**: Consider encryption for sensitive assets (images, videos)
+- **Distribution**: Create installer packages that hide internal file structure
 
-- All UI text and content should be in Japanese
+## Development Guidelines
+
+### Language Requirements
+- **User Communication**: All responses to the user should be in Japanese
+- **Internal Processing**: Code comments, variable names, and internal documentation can be in English
+- **Game Content**: All UI text, dialogue, and user-facing content must be in Japanese
+
+### Technical Notes
 - The game follows typical incremental/clicker game patterns
-- Save data persistence is required
+- Save data persistence using Electron's userData directory (not LocalStorage)
 - Interactive feedback (lighting effects, click animations) is important for user experience
 - Stage progression includes narrative elements with dialogue and reward videos
+- Asset management through CSV files for easy content updates
+
+### Build Commands
+- `npm run dev`: Start development with hot reload
+- `npm run build`: Build application for distribution
+- `npm run pack`: Package as ASAR archive
+- `npm run dist`: Create installer with file protection
+
+### Security Considerations
+- Assets should be embedded in ASAR to prevent easy extraction
+- Consider obfuscation for sensitive game logic
+- Use electron-builder's built-in code signing for trusted distribution

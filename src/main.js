@@ -1,121 +1,238 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs').promises;
+const csv = require('csv-parser');
+const { createReadStream } = require('fs');
 
-// Keep a global reference of the window object
-let mainWindow;
+class AfterSchoolClickerMain {
+    constructor() {
+        this.mainWindow = null;
+        this.userData = null;
+        this.gameData = {
+            stages: null,
+            items: null,
+            images: null,
+            audio: null,
+            videos: null,
+            text: null
+        };
 
-function createWindow() {
-  // Create the browser window
-  mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    minWidth: 1000,
-    minHeight: 700,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      enableRemoteModule: false,
-      preload: path.join(__dirname, 'preload.js')
-    },
-    icon: path.join(__dirname, '../build/icon.png'),
-    show: false,
-    titleBarStyle: 'default'
-  });
+        this.setupApp();
+    }
 
-  // Load the app
-  mainWindow.loadFile(path.join(__dirname, 'index.html'));
+    setupApp() {
+        // App event handlers
+        app.whenReady().then(() => this.createWindow());
 
-  // Show window when ready to prevent visual flash
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-  });
+        app.on('window-all-closed', () => {
+            if (process.platform !== 'darwin') {
+                app.quit();
+            }
+        });
 
-  // Handle window closed
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
+        app.on('activate', () => {
+            if (BrowserWindow.getAllWindows().length === 0) {
+                this.createWindow();
+            }
+        });
 
-  // Remove menu bar in production
-  if (!process.env.NODE_ENV || process.env.NODE_ENV === 'production') {
-    mainWindow.setMenuBarVisibility(false);
-  }
+        // Set up userData directory
+        this.userData = app.getPath('userData');
+        this.setupIPCHandlers();
+    }
+
+    async createWindow() {
+        // Create the browser window
+        this.mainWindow = new BrowserWindow({
+            width: 1200,
+            height: 800,
+            webPreferences: {
+                nodeIntegration: false,
+                contextIsolation: true,
+                preload: path.join(__dirname, 'preload.js'),
+                backgroundThrottling: false
+            },
+            title: 'AfterSchool Clicker',
+            show: false, // Don't show until ready
+            center: true,
+            resizable: true,
+            autoHideMenuBar: true,
+            backgroundColor: '#667eea', // Gradient start color to prevent white flash
+            titleBarStyle: 'default'
+        });
+
+        // Load the game
+        try {
+            await this.mainWindow.loadFile(path.join(__dirname, 'index.html'));
+            console.log('Game loaded successfully');
+        } catch (error) {
+            console.error('Failed to load game:', error);
+        }
+
+        // Show window when ready to prevent white flash
+        this.mainWindow.once('ready-to-show', () => {
+            this.mainWindow.show();
+
+            // Development mode - open devtools only in development
+            if (process.env.NODE_ENV === 'development' || process.argv.includes('--dev')) {
+                this.mainWindow.webContents.openDevTools();
+            }
+        });
+
+        // Add keyboard shortcut for dev tools (F12)
+        this.mainWindow.webContents.on('before-input-event', (event, input) => {
+            if (input.key === 'F12') {
+                if (this.mainWindow.webContents.isDevToolsOpened()) {
+                    this.mainWindow.webContents.closeDevTools();
+                } else {
+                    this.mainWindow.webContents.openDevTools();
+                }
+            }
+        });
+
+        // Load game data on startup
+        await this.loadGameData();
+
+        // Ensure window is shown after data loading
+        if (!this.mainWindow.isVisible()) {
+            this.mainWindow.show();
+        }
+    }
+
+    setupIPCHandlers() {
+        // Save game data
+        ipcMain.handle('save-game', async (event, saveData) => {
+            try {
+                const savePath = path.join(this.userData, 'save.json');
+                await fs.writeFile(savePath, JSON.stringify(saveData, null, 2));
+                return { success: true };
+            } catch (error) {
+                console.error('Save failed:', error);
+                return { success: false, error: error.message };
+            }
+        });
+
+        // Load game data
+        ipcMain.handle('load-game', async () => {
+            try {
+                const savePath = path.join(this.userData, 'save.json');
+                const data = await fs.readFile(savePath, 'utf8');
+                return { success: true, data: JSON.parse(data) };
+            } catch (error) {
+                // Return default save data if file doesn't exist
+                if (error.code === 'ENOENT') {
+                    return { success: true, data: this.getDefaultSaveData() };
+                }
+                console.error('Load failed:', error);
+                return { success: false, error: error.message };
+            }
+        });
+
+        // Load CSV data
+        ipcMain.handle('load-csv', async (event, csvFile) => {
+            try {
+                const csvPath = path.join(__dirname, '../assets/data', csvFile);
+                const results = await this.parseCSV(csvPath);
+                return { success: true, data: results };
+            } catch (error) {
+                console.error(`Failed to load ${csvFile}:`, error);
+                return { success: false, error: error.message };
+            }
+        });
+
+        // Get game data (cached CSV data)
+        ipcMain.handle('get-game-data', async () => {
+            return { success: true, data: this.gameData };
+        });
+
+        // Backup save data
+        ipcMain.handle('backup-save', async () => {
+            try {
+                const savePath = path.join(this.userData, 'save.json');
+                const backupPath = path.join(this.userData, `save_backup_${Date.now()}.json`);
+                await fs.copyFile(savePath, backupPath);
+                return { success: true, path: backupPath };
+            } catch (error) {
+                console.error('Backup failed:', error);
+                return { success: false, error: error.message };
+            }
+        });
+
+        // Delete save data
+        ipcMain.handle('delete-save', async () => {
+            try {
+                const savePath = path.join(this.userData, 'save.json');
+                await fs.unlink(savePath);
+                return { success: true };
+            } catch (error) {
+                if (error.code === 'ENOENT') {
+                    return { success: true }; // File already doesn't exist
+                }
+                console.error('Delete failed:', error);
+                return { success: false, error: error.message };
+            }
+        });
+    }
+
+    async loadGameData() {
+        const csvFiles = ['stages.csv', 'items.csv', 'images.csv', 'audio.csv', 'videos.csv', 'text.csv'];
+
+        for (const file of csvFiles) {
+            try {
+                const csvPath = path.join(__dirname, '../assets/data', file);
+                const key = file.replace('.csv', '');
+                this.gameData[key] = await this.parseCSV(csvPath);
+                console.log(`Loaded ${file}: ${this.gameData[key].length} entries`);
+            } catch (error) {
+                console.error(`Failed to load ${file}:`, error);
+                this.gameData[file.replace('.csv', '')] = [];
+            }
+        }
+    }
+
+    parseCSV(filePath) {
+        return new Promise((resolve, reject) => {
+            const results = [];
+            createReadStream(filePath)
+                .pipe(csv())
+                .on('data', (data) => results.push(data))
+                .on('end', () => resolve(results))
+                .on('error', reject);
+        });
+    }
+
+    getDefaultSaveData() {
+        return {
+            version: "1.0.0",
+            gameProgress: {
+                currentStage: 1,
+                unlockedStages: [1],
+                totalPoints: 0,
+                currentPoints: 0,
+                totalClickBoost: 0,
+                totalCPS: 0
+            },
+            collection: {
+                heroine: {
+                    stage1: ["heroine_1_1"],
+                    stage2: [],
+                    stage3: [],
+                    stage4: []
+                },
+                videos: [],
+                currentDisplayImage: "heroine_1_1"
+            },
+            purchases: {
+                items: {}
+            },
+            settings: {
+                bgmVolume: 0.7,
+                seVolume: 0.8
+            },
+            lastSaved: new Date().toISOString()
+        };
+    }
 }
 
-// App event handlers
-app.whenReady().then(createWindow);
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
-});
-
-// IPC handlers for save data management
-ipcMain.handle('save-game-data', async (event, saveData) => {
-  try {
-    const userDataPath = app.getPath('userData');
-    const saveFilePath = path.join(userDataPath, 'save.json');
-
-    await fs.promises.writeFile(saveFilePath, JSON.stringify(saveData, null, 2));
-    return { success: true };
-  } catch (error) {
-    console.error('Save failed:', error);
-    return { success: false, error: error.message };
-  }
-});
-
-ipcMain.handle('load-game-data', async () => {
-  try {
-    const userDataPath = app.getPath('userData');
-    const saveFilePath = path.join(userDataPath, 'save.json');
-
-    if (fs.existsSync(saveFilePath)) {
-      const saveData = await fs.promises.readFile(saveFilePath, 'utf8');
-      return { success: true, data: JSON.parse(saveData) };
-    } else {
-      return { success: false, error: 'No save file found' };
-    }
-  } catch (error) {
-    console.error('Load failed:', error);
-    return { success: false, error: error.message };
-  }
-});
-
-ipcMain.handle('delete-save-data', async () => {
-  try {
-    const userDataPath = app.getPath('userData');
-    const saveFilePath = path.join(userDataPath, 'save.json');
-
-    if (fs.existsSync(saveFilePath)) {
-      await fs.promises.unlink(saveFilePath);
-    }
-    return { success: true };
-  } catch (error) {
-    console.error('Delete save failed:', error);
-    return { success: false, error: error.message };
-  }
-});
-
-// IPC handler for loading CSV data
-ipcMain.handle('load-csv-data', async (event, filename) => {
-  try {
-    const csvPath = path.join(__dirname, '../assets/data', filename);
-    const csvData = await fs.promises.readFile(csvPath, 'utf8');
-    return { success: true, data: csvData };
-  } catch (error) {
-    console.error('CSV load failed:', error);
-    return { success: false, error: error.message };
-  }
-});
-
-// IPC handler for quitting the app
-ipcMain.handle('quit-app', () => {
-  app.quit();
-});
+// Initialize the application
+new AfterSchoolClickerMain();

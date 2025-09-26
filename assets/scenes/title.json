@@ -1,0 +1,69 @@
+{
+  "scene": "title",
+  "name": "タイトル画面",
+  "assets": {
+    "images": [
+      {
+        "id": "title_logo",
+        "file": "ui/title_logo.png",
+        "position": { "x": "center", "y": 100 },
+        "description": "ゲームタイトルロゴ"
+      },
+      {
+        "id": "title_background",
+        "file": "ui/title_bg.jpg",
+        "position": { "x": 0, "y": 0 },
+        "description": "タイトル背景画像"
+      },
+      {
+        "id": "main_character",
+        "file": "heroines/title_heroine.png",
+        "position": { "x": "center", "y": 200 },
+        "description": "メインキャラクター立ち絵"
+      }
+    ],
+    "audio": [
+      {
+        "id": "title_bgm",
+        "file": "bgm/title_theme.mp3",
+        "loop": true,
+        "volume": 0.7,
+        "description": "タイトル画面BGM"
+      },
+      {
+        "id": "button_click",
+        "file": "se/button_click.wav",
+        "loop": false,
+        "volume": 0.8,
+        "description": "ボタンクリック音"
+      }
+    ],
+    "ui_elements": [
+      {
+        "id": "start_button",
+        "type": "button",
+        "text": "ゲーム開始",
+        "position": { "x": "center", "y": 400 },
+        "action": "start_game"
+      },
+      {
+        "id": "settings_button",
+        "type": "button",
+        "text": "設定",
+        "position": { "x": "center", "y": 450 },
+        "action": "open_settings"
+      },
+      {
+        "id": "quit_button",
+        "type": "button",
+        "text": "ゲーム終了",
+        "position": { "x": "center", "y": 500 },
+        "action": "quit_game"
+      }
+    ]
+  },
+  "transitions": {
+    "to_tutorial": "fade_out",
+    "to_game": "fade_out"
+  }
+}

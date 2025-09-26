@@ -1,0 +1,215 @@
+{
+  "scene": "album",
+  "name": "アルバム画面",
+  "assets": {
+    "images": [
+      {
+        "id": "album_background",
+        "file": "ui/album_bg.jpg",
+        "position": { "x": 0, "y": 0 },
+        "description": "アルバム背景画像"
+      },
+      {
+        "id": "album_frame",
+        "file": "ui/album_frame.png",
+        "position": { "x": 50, "y": 100 },
+        "description": "アルバム表示フレーム"
+      },
+      {
+        "id": "thumbnail_frame",
+        "file": "ui/thumbnail_frame.png",
+        "description": "サムネイル用フレーム（動的使用）"
+      },
+      {
+        "id": "locked_placeholder",
+        "file": "ui/locked_image.png",
+        "description": "未獲得画像プレースホルダー"
+      },
+      {
+        "id": "video_icon",
+        "file": "ui/video_icon.png",
+        "description": "動画コンテンツアイコン"
+      }
+    ],
+    "audio": [
+      {
+        "id": "album_bgm",
+        "file": "bgm/album_theme.mp3",
+        "loop": true,
+        "volume": 0.5,
+        "description": "アルバム画面BGM"
+      },
+      {
+        "id": "page_turn_sound",
+        "file": "se/page_turn.wav",
+        "loop": false,
+        "volume": 0.6,
+        "description": "ページめくり音"
+      },
+      {
+        "id": "image_select_sound",
+        "file": "se/image_select.wav",
+        "loop": false,
+        "volume": 0.7,
+        "description": "画像選択音"
+      },
+      {
+        "id": "video_start_sound",
+        "file": "se/video_start.wav",
+        "loop": false,
+        "volume": 0.8,
+        "description": "動画再生開始音"
+      }
+    ],
+    "ui_elements": [
+      {
+        "id": "album_title",
+        "type": "text",
+        "text": "キャラクターアルバム",
+        "position": { "x": "center", "y": 30 },
+        "style": "album_title"
+      },
+      {
+        "id": "stage_tab_1",
+        "type": "button",
+        "text": "ステージ1",
+        "position": { "x": 100, "y": 70 },
+        "action": "show_stage_1"
+      },
+      {
+        "id": "stage_tab_2",
+        "type": "button",
+        "text": "ステージ2",
+        "position": { "x": 200, "y": 70 },
+        "action": "show_stage_2"
+      },
+      {
+        "id": "stage_tab_3",
+        "type": "button",
+        "text": "ステージ3",
+        "position": { "x": 300, "y": 70 },
+        "action": "show_stage_3"
+      },
+      {
+        "id": "stage_tab_4",
+        "type": "button",
+        "text": "ステージ4",
+        "position": { "x": 400, "y": 70 },
+        "action": "show_stage_4"
+      },
+      {
+        "id": "videos_tab",
+        "type": "button",
+        "text": "動画",
+        "position": { "x": 500, "y": 70 },
+        "action": "show_videos"
+      },
+      {
+        "id": "collection_counter",
+        "type": "text",
+        "position": { "x": 600, "y": 30 },
+        "style": "collection_info",
+        "description": "収集状況表示（例: 25/160)"
+      },
+      {
+        "id": "back_button",
+        "type": "button",
+        "text": "戻る",
+        "position": { "x": 50, "y": 550 },
+        "action": "back_to_game"
+      },
+      {
+        "id": "fullscreen_button",
+        "type": "button",
+        "text": "拡大表示",
+        "position": { "x": 600, "y": 550 },
+        "action": "toggle_fullscreen"
+      }
+    ],
+    "dynamic_content": {
+      "thumbnail_grid": {
+        "position": { "x": 100, "y": 120 },
+        "size": { "width": 600, "height": 400 },
+        "grid_size": { "cols": 8, "rows": 5 },
+        "thumbnail_size": { "width": 70, "height": 70 },
+        "spacing": { "x": 5, "y": 5 },
+        "description": "サムネイル画像グリッド（動的生成）"
+      },
+      "selected_image_view": {
+        "position": { "x": 200, "y": 150 },
+        "size": { "width": 400, "height": 300 },
+        "description": "選択した画像の拡大表示エリア"
+      },
+      "video_playlist": {
+        "position": { "x": 150, "y": 150 },
+        "size": { "width": 500, "height": 350 },
+        "description": "動画一覧表示エリア"
+      }
+    }
+  },
+  "stage_collections": {
+    "stage_1": {
+      "max_images": 10,
+      "image_path": "heroines/stage1/",
+      "description": "ステージ1キャラクター画像"
+    },
+    "stage_2": {
+      "max_images": 30,
+      "image_path": "heroines/stage2/",
+      "description": "ステージ2キャラクター画像"
+    },
+    "stage_3": {
+      "max_images": 50,
+      "image_path": "heroines/stage3/",
+      "description": "ステージ3キャラクター画像"
+    },
+    "stage_4": {
+      "max_images": 70,
+      "image_path": "heroines/stage4/",
+      "description": "ステージ4キャラクター画像"
+    }
+  },
+  "video_collection": {
+    "reward_videos": [
+      {
+        "id": "stage2_unlock",
+        "file": "videos/stage2_reward.mp4",
+        "thumbnail": "videos/thumbs/stage2_thumb.jpg",
+        "title": "ステージ2解放記念"
+      },
+      {
+        "id": "stage3_unlock",
+        "file": "videos/stage3_reward.mp4",
+        "thumbnail": "videos/thumbs/stage3_thumb.jpg",
+        "title": "ステージ3解放記念"
+      },
+      {
+        "id": "stage4_unlock",
+        "file": "videos/stage4_reward.mp4",
+        "thumbnail": "videos/thumbs/stage4_thumb.jpg",
+        "title": "ステージ4解放記念"
+      },
+      {
+        "id": "complete_ending",
+        "file": "videos/ending_reward.mp4",
+        "thumbnail": "videos/thumbs/ending_thumb.jpg",
+        "title": "コンプリート記念エンディング"
+      }
+    ]
+  },
+  "interactions": {
+    "image_click": {
+      "action": "expand_image",
+      "animation": "zoom_in"
+    },
+    "video_click": {
+      "action": "play_video",
+      "controls": true,
+      "fullscreen_available": true
+    }
+  },
+  "transitions": {
+    "to_game": "slide_down",
+    "tab_switch": "fade"
+  }
+}

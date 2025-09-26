@@ -1,0 +1,244 @@
+{
+  "scene": "game",
+  "name": "メインゲーム画面",
+  "assets": {
+    "images": [
+      {
+        "id": "game_background",
+        "file": "ui/game_bg.jpg",
+        "position": { "x": 0, "y": 0 },
+        "description": "ゲーム画面背景"
+      },
+      {
+        "id": "header_panel",
+        "file": "ui/header_panel.png",
+        "position": { "x": 0, "y": 0 },
+        "description": "ヘッダー部分のパネル"
+      },
+      {
+        "id": "side_panel",
+        "file": "ui/side_panel.png",
+        "position": { "x": 600, "y": 100 },
+        "description": "サイドパネル背景"
+      },
+      {
+        "id": "footer_panel",
+        "file": "ui/footer_panel.png",
+        "position": { "x": 0, "y": 550 },
+        "description": "フッター部分のパネル"
+      }
+    ],
+    "audio": [
+      {
+        "id": "game_bgm_stage1",
+        "file": "bgm/stage1_theme.mp3",
+        "loop": true,
+        "volume": 0.6,
+        "description": "ステージ1 BGM"
+      },
+      {
+        "id": "game_bgm_stage2",
+        "file": "bgm/stage2_theme.mp3",
+        "loop": true,
+        "volume": 0.6,
+        "description": "ステージ2 BGM"
+      },
+      {
+        "id": "game_bgm_stage3",
+        "file": "bgm/stage3_theme.mp3",
+        "loop": true,
+        "volume": 0.6,
+        "description": "ステージ3 BGM"
+      },
+      {
+        "id": "game_bgm_stage4",
+        "file": "bgm/stage4_theme.mp3",
+        "loop": true,
+        "volume": 0.6,
+        "description": "ステージ4 BGM"
+      },
+      {
+        "id": "click_sound",
+        "file": "se/click.wav",
+        "loop": false,
+        "volume": 0.8,
+        "description": "クリック効果音"
+      },
+      {
+        "id": "purchase_sound",
+        "file": "se/purchase.wav",
+        "loop": false,
+        "volume": 0.7,
+        "description": "購入効果音"
+      },
+      {
+        "id": "gacha_sound",
+        "file": "se/gacha_draw.wav",
+        "loop": false,
+        "volume": 0.8,
+        "description": "ガチャ演出音"
+      },
+      {
+        "id": "stage_unlock_sound",
+        "file": "se/stage_unlock.wav",
+        "loop": false,
+        "volume": 0.9,
+        "description": "ステージ解放音"
+      }
+    ],
+    "effects": [
+      {
+        "id": "heart_effect",
+        "file": "ui/effects/heart.png",
+        "animation": "float_up_fade",
+        "duration": 1000,
+        "description": "クリック時のハートエフェクト"
+      },
+      {
+        "id": "glow_effect",
+        "file": "ui/effects/glow.png",
+        "animation": "pulse",
+        "duration": 200,
+        "description": "クリック時の発光エフェクト"
+      },
+      {
+        "id": "points_text",
+        "type": "text",
+        "animation": "float_up_fade",
+        "duration": 1500,
+        "description": "獲得ポイント表示テキスト"
+      }
+    ],
+    "ui_elements": [
+      {
+        "id": "points_display",
+        "type": "text",
+        "position": { "x": 20, "y": 20 },
+        "style": "points_counter",
+        "description": "現在ポイント表示"
+      },
+      {
+        "id": "pps_display",
+        "type": "text",
+        "position": { "x": 200, "y": 20 },
+        "style": "pps_counter",
+        "description": "PPS表示"
+      },
+      {
+        "id": "stage_display",
+        "type": "text",
+        "position": { "x": 400, "y": 20 },
+        "style": "stage_info",
+        "description": "現在ステージ表示"
+      },
+      {
+        "id": "stage_tab_1",
+        "type": "button",
+        "text": "ステージ1",
+        "position": { "x": 50, "y": 60 },
+        "action": "switch_stage_1"
+      },
+      {
+        "id": "stage_tab_2",
+        "type": "button",
+        "text": "ステージ2",
+        "position": { "x": 150, "y": 60 },
+        "action": "switch_stage_2"
+      },
+      {
+        "id": "stage_tab_3",
+        "type": "button",
+        "text": "ステージ3",
+        "position": { "x": 250, "y": 60 },
+        "action": "switch_stage_3"
+      },
+      {
+        "id": "stage_tab_4",
+        "type": "button",
+        "text": "ステージ4",
+        "position": { "x": 350, "y": 60 },
+        "action": "switch_stage_4"
+      },
+      {
+        "id": "shop_tab",
+        "type": "button",
+        "text": "ショップ",
+        "position": { "x": 620, "y": 120 },
+        "action": "switch_to_shop"
+      },
+      {
+        "id": "gacha_tab",
+        "type": "button",
+        "text": "ガチャ",
+        "position": { "x": 720, "y": 120 },
+        "action": "switch_to_gacha"
+      },
+      {
+        "id": "album_button",
+        "type": "button",
+        "text": "アルバム",
+        "position": { "x": 50, "y": 570 },
+        "action": "open_album"
+      },
+      {
+        "id": "settings_button",
+        "type": "button",
+        "text": "設定",
+        "position": { "x": 200, "y": 570 },
+        "action": "open_settings"
+      },
+      {
+        "id": "quit_button",
+        "type": "button",
+        "text": "終了",
+        "position": { "x": 350, "y": 570 },
+        "action": "quit_game"
+      }
+    ],
+    "dynamic_content": {
+      "heroine_image": {
+        "position": { "x": 100, "y": 150 },
+        "size": { "width": 400, "height": 300 },
+        "clickable": true,
+        "description": "現在表示中のヒロイン画像（ステージ別で変動）"
+      },
+      "shop_items": {
+        "position": { "x": 620, "y": 160 },
+        "size": { "width": 180, "height": 350 },
+        "scrollable": true,
+        "description": "ショップアイテム一覧（動的生成）"
+      },
+      "gacha_panel": {
+        "position": { "x": 620, "y": 160 },
+        "size": { "width": 180, "height": 350 },
+        "description": "ガチャ操作パネル"
+      }
+    ]
+  },
+  "stage_specific": {
+    "stage_1": {
+      "background": "ui/stage1_bg.jpg",
+      "heroine_pool": "heroines/stage1/",
+      "bgm": "game_bgm_stage1"
+    },
+    "stage_2": {
+      "background": "ui/stage2_bg.jpg",
+      "heroine_pool": "heroines/stage2/",
+      "bgm": "game_bgm_stage2"
+    },
+    "stage_3": {
+      "background": "ui/stage3_bg.jpg",
+      "heroine_pool": "heroines/stage3/",
+      "bgm": "game_bgm_stage3"
+    },
+    "stage_4": {
+      "background": "ui/stage4_bg.jpg",
+      "heroine_pool": "heroines/stage4/",
+      "bgm": "game_bgm_stage4"
+    }
+  },
+  "transitions": {
+    "to_album": "slide_up",
+    "stage_switch": "fade_cross"
+  }
+}

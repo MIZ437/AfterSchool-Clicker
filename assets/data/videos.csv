@@ -1,0 +1,5 @@
+id,filename,thumbnail,title,unlock_condition,duration,description
+stage2_unlock,videos/stage2_reward.mp4,videos/thumbs/stage2_thumb.jpg,ステージ2解放記念,stage_2_unlock,30,ステージ2解放時の報酬動画
+stage3_unlock,videos/stage3_reward.mp4,videos/thumbs/stage3_thumb.jpg,ステージ3解放記念,stage_3_unlock,45,ステージ3解放時の報酬動画
+stage4_unlock,videos/stage4_reward.mp4,videos/thumbs/stage4_thumb.jpg,ステージ4解放記念,stage_4_unlock,60,ステージ4解放時の報酬動画
+complete_ending,videos/ending_reward.mp4,videos/thumbs/ending_thumb.jpg,コンプリート記念エンディング,all_images_collected,90,全画像収集時のエンディング動画

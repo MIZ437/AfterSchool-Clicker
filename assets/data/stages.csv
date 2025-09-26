@@ -1,5 +1,5 @@
-id,name,unlock_cost,gacha_cost,heroine_count,description,bgm_id,video_id
-1,教室,0,100,8,放課後の教室で出会うヒロインたち,game_bgm_1,stage_1_video
-2,図書館,1000,200,8,静かな図書館の美しいヒロインたち,game_bgm_2,stage_2_video
-3,屋上,5000,300,8,青空の下で輝くヒロインたち,game_bgm_3,stage_3_video
-4,体育館,15000,400,8,スポーティなヒロインたちとの出会い,game_bgm_4,stage_4_video
+id,name,unlock_cost,gacha_cost,description,heroine_count
+STAGE_1,ステージ1,0,100,最初のステージ（解放済み）,10
+STAGE_2,ステージ2,2000,200,中級ステージへの入り口,30
+STAGE_3,ステージ3,15000,300,上級ステージの挑戦,50
+STAGE_4,ステージ4,100000,500,最終ステージの到達,70

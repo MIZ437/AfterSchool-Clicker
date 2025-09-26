@@ -1,0 +1,167 @@
+{
+  "scene": "settings",
+  "name": "設定画面",
+  "assets": {
+    "images": [
+      {
+        "id": "settings_background",
+        "file": "ui/settings_bg.jpg",
+        "position": { "x": 0, "y": 0 },
+        "description": "設定画面背景"
+      },
+      {
+        "id": "settings_panel",
+        "file": "ui/settings_panel.png",
+        "position": { "x": 200, "y": 100 },
+        "description": "設定パネル背景"
+      },
+      {
+        "id": "slider_track",
+        "file": "ui/slider_track.png",
+        "description": "スライダー背景（動的使用）"
+      },
+      {
+        "id": "slider_thumb",
+        "file": "ui/slider_thumb.png",
+        "description": "スライダーつまみ（動的使用）"
+      }
+    ],
+    "audio": [
+      {
+        "id": "settings_bgm",
+        "file": "bgm/settings_theme.mp3",
+        "loop": true,
+        "volume": 0.4,
+        "description": "設定画面BGM"
+      },
+      {
+        "id": "slider_sound",
+        "file": "se/slider_move.wav",
+        "loop": false,
+        "volume": 0.5,
+        "description": "スライダー操作音"
+      },
+      {
+        "id": "confirm_sound",
+        "file": "se/confirm.wav",
+        "loop": false,
+        "volume": 0.7,
+        "description": "決定音"
+      },
+      {
+        "id": "warning_sound",
+        "file": "se/warning.wav",
+        "loop": false,
+        "volume": 0.8,
+        "description": "警告音（データ削除時）"
+      }
+    ],
+    "ui_elements": [
+      {
+        "id": "settings_title",
+        "type": "text",
+        "text": "設定",
+        "position": { "x": "center", "y": 50 },
+        "style": "settings_title"
+      },
+      {
+        "id": "bgm_label",
+        "type": "text",
+        "text": "BGM音量",
+        "position": { "x": 250, "y": 150 },
+        "style": "setting_label"
+      },
+      {
+        "id": "bgm_slider",
+        "type": "slider",
+        "position": { "x": 350, "y": 150 },
+        "size": { "width": 200, "height": 20 },
+        "min_value": 0,
+        "max_value": 100,
+        "default_value": 70,
+        "action": "change_bgm_volume"
+      },
+      {
+        "id": "se_label",
+        "type": "text",
+        "text": "SE音量",
+        "position": { "x": 250, "y": 200 },
+        "style": "setting_label"
+      },
+      {
+        "id": "se_slider",
+        "type": "slider",
+        "position": { "x": 350, "y": 200 },
+        "size": { "width": 200, "height": 20 },
+        "min_value": 0,
+        "max_value": 100,
+        "default_value": 80,
+        "action": "change_se_volume"
+      },
+      {
+        "id": "save_data_label",
+        "type": "text",
+        "text": "セーブデータ",
+        "position": { "x": 250, "y": 300 },
+        "style": "setting_label"
+      },
+      {
+        "id": "delete_save_button",
+        "type": "button",
+        "text": "データを削除",
+        "position": { "x": 400, "y": 300 },
+        "style": "danger_button",
+        "action": "delete_save_data"
+      },
+      {
+        "id": "backup_save_button",
+        "type": "button",
+        "text": "データをバックアップ",
+        "position": { "x": 400, "y": 340 },
+        "action": "backup_save_data"
+      },
+      {
+        "id": "restore_save_button",
+        "type": "button",
+        "text": "データを復元",
+        "position": { "x": 400, "y": 380 },
+        "action": "restore_save_data"
+      },
+      {
+        "id": "ok_button",
+        "type": "button",
+        "text": "OK",
+        "position": { "x": 300, "y": 450 },
+        "action": "save_settings"
+      },
+      {
+        "id": "cancel_button",
+        "type": "button",
+        "text": "キャンセル",
+        "position": { "x": 400, "y": 450 },
+        "action": "cancel_settings"
+      }
+    ]
+  },
+  "confirmation_dialog": {
+    "delete_save": {
+      "title": "データ削除の確認",
+      "message": "セーブデータを削除します。この操作は元に戻せません。\n本当に削除しますか？",
+      "buttons": [
+        {
+          "text": "削除する",
+          "action": "confirm_delete",
+          "style": "danger"
+        },
+        {
+          "text": "キャンセル",
+          "action": "cancel_delete",
+          "style": "normal"
+        }
+      ]
+    }
+  },
+  "transitions": {
+    "to_previous": "fade_out"
+  }
+}

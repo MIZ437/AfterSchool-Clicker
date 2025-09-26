@@ -1,0 +1,86 @@
+{
+  "scene": "tutorial",
+  "name": "説明画面",
+  "assets": {
+    "images": [
+      {
+        "id": "tutorial_background",
+        "file": "ui/tutorial_bg.jpg",
+        "position": { "x": 0, "y": 0 },
+        "description": "チュートリアル背景"
+      },
+      {
+        "id": "tutorial_character",
+        "file": "heroines/tutorial_guide.png",
+        "position": { "x": 100, "y": 200 },
+        "description": "案内キャラクター"
+      },
+      {
+        "id": "click_demo",
+        "file": "ui/click_demo.gif",
+        "position": { "x": 400, "y": 250 },
+        "description": "クリック操作デモ"
+      }
+    ],
+    "audio": [
+      {
+        "id": "tutorial_bgm",
+        "file": "bgm/tutorial_theme.mp3",
+        "loop": true,
+        "volume": 0.6,
+        "description": "チュートリアルBGM"
+      }
+    ],
+    "text_elements": [
+      {
+        "id": "tutorial_title",
+        "text": "ゲームの遊び方",
+        "position": { "x": "center", "y": 50 },
+        "style": "title"
+      },
+      {
+        "id": "tutorial_step1",
+        "text": "1. 美少女をクリックしてポイントを獲得しよう！",
+        "position": { "x": 50, "y": 150 },
+        "style": "instruction"
+      },
+      {
+        "id": "tutorial_step2",
+        "text": "2. ポイントでアイテムを購入して効率アップ！",
+        "position": { "x": 50, "y": 200 },
+        "style": "instruction"
+      },
+      {
+        "id": "tutorial_step3",
+        "text": "3. ガチャで新しいキャラクターを集めよう！",
+        "position": { "x": 50, "y": 250 },
+        "style": "instruction"
+      },
+      {
+        "id": "tutorial_step4",
+        "text": "4. ステージを解放してコレクションを充実させよう！",
+        "position": { "x": 50, "y": 300 },
+        "style": "instruction"
+      }
+    ],
+    "ui_elements": [
+      {
+        "id": "start_game_button",
+        "type": "button",
+        "text": "ゲーム開始",
+        "position": { "x": "center", "y": 450 },
+        "action": "start_main_game"
+      },
+      {
+        "id": "skip_button",
+        "type": "button",
+        "text": "スキップ",
+        "position": { "x": 600, "y": 50 },
+        "action": "skip_tutorial"
+      }
+    ]
+  },
+  "transitions": {
+    "to_game": "slide_left"
+  }
+}

@@ -1,9 +1,9 @@
 id,name,cost,effect,value,desc
 ITM_CLICK_1,CLICK_1,50,click,1,クリックごとに+1ポイント
-ITM_CLICK_2,CLICK_2,500,click,5,クリックごとに+5ポイント
-ITM_CLICK_3,CLICK_3,5000,click,20,クリックごとに+20ポイント
-ITM_CLICK_4,CLICK_4,50000,click,75,クリックごとに+75ポイント
-ITM_CLICK_5,CLICK_5,500000,click,300,クリックごとに+300ポイント
+ITM_CLICK_2,CLICK_2,2000,click,5,クリックごとに+5ポイント
+ITM_CLICK_3,CLICK_3,25000,click,20,クリックごとに+20ポイント
+ITM_CLICK_4,CLICK_4,300000,click,75,クリックごとに+75ポイント
+ITM_CLICK_5,CLICK_5,3000000,click,300,クリックごとに+300ポイント
 ITM_CPS_1,CPS_1,500,cps,1,毎秒+1ポイント
 ITM_CPS_2,CPS_2,5000,cps,5,毎秒+5ポイント
 ITM_CPS_3,CPS_3,50000,cps,20,毎秒+20ポイント

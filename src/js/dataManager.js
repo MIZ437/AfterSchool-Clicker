@@ -81,9 +81,15 @@ class DataManager {
             ],
             items: [
                 { id: 'ITM_CLICK_1', name: 'CLICK_1', cost: '50', effect: 'click', value: '1', desc: 'クリックごとに+1ポイント' },
-                { id: 'ITM_CLICK_2', name: 'CLICK_2', cost: '500', effect: 'click', value: '5', desc: 'クリックごとに+5ポイント' },
-                { id: 'ITM_CPS_1', name: 'CPS_1', cost: '60', effect: 'cps', value: '1', desc: '毎秒+1ポイント' },
-                { id: 'ITM_CPS_2', name: 'CPS_2', cost: '900', effect: 'cps', value: '5', desc: '毎秒+5ポイント' }
+                { id: 'ITM_CLICK_2', name: 'CLICK_2', cost: '2000', effect: 'click', value: '5', desc: 'クリックごとに+5ポイント' },
+                { id: 'ITM_CLICK_3', name: 'CLICK_3', cost: '25000', effect: 'click', value: '20', desc: 'クリックごとに+20ポイント' },
+                { id: 'ITM_CLICK_4', name: 'CLICK_4', cost: '300000', effect: 'click', value: '75', desc: 'クリックごとに+75ポイント' },
+                { id: 'ITM_CLICK_5', name: 'CLICK_5', cost: '3000000', effect: 'click', value: '300', desc: 'クリックごとに+300ポイント' },
+                { id: 'ITM_CPS_1', name: 'CPS_1', cost: '500', effect: 'cps', value: '1', desc: '毎秒+1ポイント' },
+                { id: 'ITM_CPS_2', name: 'CPS_2', cost: '5000', effect: 'cps', value: '5', desc: '毎秒+5ポイント' },
+                { id: 'ITM_CPS_3', name: 'CPS_3', cost: '50000', effect: 'cps', value: '20', desc: '毎秒+20ポイント' },
+                { id: 'ITM_CPS_4', name: 'CPS_4', cost: '500000', effect: 'cps', value: '75', desc: '毎秒+75ポイント' },
+                { id: 'ITM_CPS_5', name: 'CPS_5', cost: '5000000', effect: 'cps', value: '300', desc: '毎秒+300ポイント' }
             ],
             images: [],
             audio: [],

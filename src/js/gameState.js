@@ -28,7 +28,8 @@ class GameState {
                 bgmVolume: 0.7,
                 seVolume: 0.8,
                 autoSaveEnabled: true,
-                autoSaveInterval: 60 // seconds
+                autoSaveInterval: 60, // seconds
+                debugMode: false
             },
             lastSaved: new Date().toISOString()
         };
@@ -36,6 +37,7 @@ class GameState {
         this.listeners = new Map();
         this.lastAutoSave = Date.now();
         this.autoSaveInterval = 60000; // 1 minute (default)
+        this.debugMode = false;
     }
 
     // Get current state or specific property
@@ -92,6 +94,11 @@ class GameState {
 
     // Spend points (returns true if successful)
     spendPoints(amount) {
+        // In debug mode, infinite points
+        if (this.debugMode) {
+            return true;
+        }
+
         const currentPoints = this.get('gameProgress.currentPoints');
 
         if (currentPoints >= amount) {
@@ -186,6 +193,11 @@ class GameState {
 
     // Check if item is affordable
     canAfford(cost) {
+        // In debug mode, everything is affordable
+        if (this.debugMode) {
+            return true;
+        }
+
         return this.get('gameProgress.currentPoints') >= cost;
     }
 
@@ -297,6 +309,9 @@ class GameState {
             // Merge saved state with default state to handle new properties
             this.state = this.mergeState(this.state, savedState);
 
+            // Load debug mode setting
+            this.debugMode = this.get('settings.debugMode') || false;
+
             // Notify all listeners that state has been loaded
             this.notifyListeners('*', this.state, null);
 
@@ -359,7 +374,8 @@ class GameState {
                 bgmVolume: 0.7,
                 seVolume: 0.8,
                 autoSaveEnabled: true,
-                autoSaveInterval: 60 // seconds
+                autoSaveInterval: 60, // seconds
+                debugMode: false
             },
             lastSaved: new Date().toISOString()
         };
@@ -384,6 +400,17 @@ class GameState {
     initializeAutoSaveInterval() {
         const intervalSeconds = this.getAutoSaveInterval();
         this.autoSaveInterval = intervalSeconds * 1000;
+    }
+
+    // Set debug mode
+    setDebugMode(enabled) {
+        this.debugMode = enabled;
+        console.log(`Debug mode ${enabled ? 'enabled' : 'disabled'}. Infinite points: ${enabled}`);
+    }
+
+    // Check if debug mode is enabled
+    isDebugMode() {
+        return this.debugMode;
     }
 }
 

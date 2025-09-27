@@ -27,6 +27,8 @@ class SaveManager {
         const autosaveToggle = document.getElementById('autosave-toggle');
         const autosaveStatus = document.getElementById('autosave-status');
         const autosaveInterval = document.getElementById('autosave-interval');
+        const debugToggle = document.getElementById('debug-toggle');
+        const debugStatus = document.getElementById('debug-status');
 
         if (autosaveToggle && autosaveStatus) {
             // Load saved setting
@@ -76,6 +78,36 @@ class SaveManager {
 
                 const intervalText = this.getIntervalText(intervalSeconds);
                 this.showSaveStatus(`自動保存間隔を${intervalText}に設定しました`, 'success');
+            });
+        }
+
+        if (debugToggle && debugStatus) {
+            // Load saved debug setting
+            const settings = window.gameState ? window.gameState.get('settings') : {};
+            const isDebugEnabled = settings.debugMode === true;
+
+            debugToggle.checked = isDebugEnabled;
+            debugStatus.textContent = isDebugEnabled ? 'ON' : 'OFF';
+
+            // Apply debug mode immediately if enabled
+            if (window.gameState && isDebugEnabled) {
+                window.gameState.setDebugMode(true);
+                console.log('Debug mode restored from settings:', isDebugEnabled);
+            }
+
+            // Handle debug toggle changes
+            debugToggle.addEventListener('change', (e) => {
+                const enabled = e.target.checked;
+                debugStatus.textContent = enabled ? 'ON' : 'OFF';
+
+                // Save setting
+                if (window.gameState) {
+                    window.gameState.set('settings.debugMode', enabled);
+                    window.gameState.setDebugMode(enabled);
+                }
+
+                console.log('Debug mode toggled:', enabled);
+                this.showSaveStatus(enabled ? 'デバッグモードが有効になりました' : 'デバッグモードが無効になりました', 'success');
             });
         }
     }

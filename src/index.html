@@ -109,6 +109,7 @@
                         <p>クリックしてポイント獲得！</p>
                     </div>
                 </div>
+
                 <!-- Click effects container -->
                 <div id="click-effects" class="click-effects"></div>
             </div>
@@ -125,17 +126,30 @@
                     <div class="panel-header">
                         <h3>ショップ</h3>
                     </div>
-                    <div class="item-list">
-                        <div class="item-category">
-                            <h4>クリック強化</h4>
-                            <div id="click-items" class="items-container">
-                                <!-- Click items will be dynamically loaded here -->
+
+                    <!-- Shop Sub-Tabs -->
+                    <div class="shop-tabs">
+                        <button class="shop-tab active" data-shop-tab="click">クリックポイントUP</button>
+                        <button class="shop-tab" data-shop-tab="auto">自動ポイントUP</button>
+                    </div>
+
+                    <!-- Shop Tab Contents -->
+                    <div class="shop-content">
+                        <!-- Click Items Tab -->
+                        <div id="shop-click-tab" class="shop-tab-content active">
+                            <div class="shop-items-simple">
+                                <div id="click-items-simple">
+                                    <!-- Click items will be dynamically loaded from CSV -->
+                                </div>
                             </div>
                         </div>
-                        <div class="item-category">
-                            <h4>自動獲得</h4>
-                            <div id="cps-items" class="items-container">
-                                <!-- CPS items will be dynamically loaded here -->
+
+                        <!-- Auto Points Items Tab -->
+                        <div id="shop-auto-tab" class="shop-tab-content">
+                            <div class="shop-items-simple">
+                                <div id="cps-items-simple">
+                                    <!-- CPS items will be dynamically loaded from CSV -->
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -160,6 +174,18 @@
                 </div>
             </aside>
         </main>
+
+        <!-- Current Stats Display -->
+        <div class="current-stats">
+            <div class="stat-row">
+                <span class="stat-label">クリック:</span>
+                <span id="current-click-value" class="stat-value">+1ポイント</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">自動獲得:</span>
+                <span id="current-auto-value" class="stat-value">毎秒0ポイント</span>
+            </div>
+        </div>
 
         <!-- Footer -->
         <footer class="game-footer">
@@ -226,6 +252,21 @@
                 </div>
 
                 <div class="settings-section">
+                    <h3>デバッグ</h3>
+                    <div class="setting-row">
+                        <span class="setting-label">デバッグモード:</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="debug-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span id="debug-status" class="setting-status">OFF</span>
+                    </div>
+                    <div class="debug-info">
+                        <small>※ デバッグモード有効時は無限ポイントになります</small>
+                    </div>
+                </div>
+
+                <div class="settings-section">
                     <h3>セーブデータ</h3>
                     <div class="setting-row">
                         <span class="setting-label">自動保存:</span>
@@ -282,5 +323,308 @@
     <script src="js/audioManager.js"></script>
     <script src="js/effectSystem.js"></script>
     <script src="js/main.js"></script>
+
+    <!-- Simple Shop Functions -->
+    <script>
+        function buyItem(itemId, cost, effect, value) {
+            console.log('購入試行:', { itemId, cost, effect, value });
+
+            if (!window.gameState) {
+                console.error('GameState not found!');
+                return;
+            }
+
+            // デバッグモード確認
+            const isDebugMode = window.gameState.isDebugMode();
+            console.log('Debug mode:', isDebugMode);
+
+            // ポイント確認（デバッグモードでない場合のみ）
+            if (!isDebugMode) {
+                const currentPoints = window.gameState.get('gameProgress.currentPoints');
+                console.log('現在のポイント:', currentPoints);
+
+                if (currentPoints < cost) {
+                    // ポイント不足時は何もしない
+                    return;
+                }
+            }
+
+            // 購入処理
+            const success = window.gameState.spendPoints(cost);
+            if (success) {
+                window.gameState.purchaseItem(itemId, effect, value);
+
+                // 表示更新
+                updatePointsDisplay();
+                updateClickValueDisplay();
+                updatePPSDisplay();
+                updateCurrentStats();
+            }
+        }
+
+        function updatePointsDisplay() {
+            const pointsElement = document.getElementById('current-points');
+            if (pointsElement && window.gameState) {
+                const points = window.gameState.get('gameProgress.currentPoints');
+                pointsElement.textContent = Math.floor(points).toLocaleString();
+
+                // 購入ボタンの状態を更新
+                updateButtonStates();
+            }
+        }
+
+        function updateButtonStates() {
+            if (!window.gameState) return;
+
+            const isDebugMode = window.gameState.isDebugMode();
+            const currentPoints = window.gameState.get('gameProgress.currentPoints');
+            const buyButtons = document.querySelectorAll('.buy-btn');
+
+            buyButtons.forEach(button => {
+                const cost = parseInt(button.dataset.cost);
+
+                // すべてのクラスをリセット
+                button.classList.remove('disabled', 'debug-enabled');
+
+                if (isDebugMode) {
+                    // デバッグモードの場合
+                    button.classList.add('debug-enabled');
+                    button.textContent = 'DEBUG';
+                } else {
+                    // 常にコストを表示
+                    const formattedCost = formatCost(cost);
+                    button.textContent = formattedCost;
+
+                    // ポイント不足の場合はdisabledクラスを追加
+                    if (cost && currentPoints < cost) {
+                        button.classList.add('disabled');
+                    }
+                }
+            });
+        }
+
+        function formatCost(cost) {
+            if (cost >= 1000000) {
+                return (cost / 1000000).toFixed(1) + 'Mpt';
+            } else if (cost >= 1000) {
+                return (cost / 1000).toFixed(1) + 'Kpt';
+            }
+            return cost.toLocaleString() + 'pt';
+        }
+
+        function updateClickValueDisplay() {
+            // 現在のクリック値とCPS値を更新
+            updateCurrentStats();
+        }
+
+        function updateCurrentStats() {
+            if (!window.gameState) return;
+
+            const clickValue = window.gameState.getClickValue();
+            const cpsValue = window.gameState.getPointsPerSecond();
+
+            const clickElement = document.getElementById('current-click-value');
+            const autoElement = document.getElementById('current-auto-value');
+
+            if (clickElement) {
+                clickElement.textContent = `+${clickValue}ポイント`;
+            }
+
+            if (autoElement) {
+                autoElement.textContent = `毎秒${cpsValue}ポイント`;
+            }
+        }
+
+        function updatePPSDisplay() {
+            const ppsElement = document.getElementById('points-per-second');
+            if (ppsElement && window.gameState) {
+                const pps = window.gameState.getPointsPerSecond();
+                ppsElement.textContent = Math.floor(pps).toLocaleString();
+            }
+        }
+
+        // タブ切り替え機能
+        function setupShopTabs() {
+            const shopTabs = document.querySelectorAll('.shop-tab');
+            const shopTabContents = document.querySelectorAll('.shop-tab-content');
+
+            shopTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetTab = tab.dataset.shopTab;
+
+                    // Remove active class from all tabs and content
+                    shopTabs.forEach(t => t.classList.remove('active'));
+                    shopTabContents.forEach(content => content.classList.remove('active'));
+
+                    // Add active class to clicked tab
+                    tab.classList.add('active');
+
+                    // Show corresponding content
+                    const targetContent = document.getElementById(`shop-${targetTab}-tab`);
+                    if (targetContent) {
+                        targetContent.classList.add('active');
+                    }
+
+                    console.log('Shop tab switched to:', targetTab);
+                });
+            });
+        }
+
+        // CSVからアイテムを動的に読み込み
+        async function loadItemsFromCSV() {
+            console.log('Starting loadItemsFromCSV...');
+            console.log('DataManager available:', !!window.dataManager);
+
+            if (!window.dataManager) {
+                console.error('DataManager not available, loading fallback items');
+                loadFallbackItems();
+                return;
+            }
+
+            // データマネージャーからアイテムを取得
+            const clickItems = window.dataManager.getClickItems();
+            const cpsItems = window.dataManager.getCPSItems();
+
+            console.log('Loading items from CSV:', {
+                clickItems: clickItems,
+                cpsItems: cpsItems,
+                clickCount: clickItems ? clickItems.length : 0,
+                cpsCount: cpsItems ? cpsItems.length : 0
+            });
+
+            // アイテムが取得できない場合はフォールバック
+            if (!clickItems || !cpsItems || clickItems.length === 0 || cpsItems.length === 0) {
+                console.warn('CSV items not loaded, using fallback');
+                loadFallbackItems();
+                return;
+            }
+
+            // クリックアイテムを表示
+            const clickContainer = document.getElementById('click-items-simple');
+            if (clickContainer) {
+                clickContainer.innerHTML = '';
+                clickItems.forEach(item => {
+                    const itemElement = createItemElement(item);
+                    clickContainer.appendChild(itemElement);
+                });
+                console.log('Click items rendered:', clickItems.length);
+            }
+
+            // CPSアイテムを表示
+            const cpsContainer = document.getElementById('cps-items-simple');
+            if (cpsContainer) {
+                cpsContainer.innerHTML = '';
+                cpsItems.forEach(item => {
+                    const itemElement = createItemElement(item);
+                    cpsContainer.appendChild(itemElement);
+                });
+                console.log('CPS items rendered:', cpsItems.length);
+            }
+
+            // ボタン状態を更新
+            updateButtonStates();
+        }
+
+        // フォールバック用の静的アイテム読み込み
+        function loadFallbackItems() {
+            console.log('Loading fallback items...');
+
+            // 更新されたコストでフォールバックアイテムを定義
+            const fallbackClickItems = [
+                { id: 'ITM_CLICK_1', name: 'CLICK_1', cost: 50, effect: 'click', value: 1 },
+                { id: 'ITM_CLICK_2', name: 'CLICK_2', cost: 500, effect: 'click', value: 5 },
+                { id: 'ITM_CLICK_3', name: 'CLICK_3', cost: 5000, effect: 'click', value: 20 },
+                { id: 'ITM_CLICK_4', name: 'CLICK_4', cost: 50000, effect: 'click', value: 75 },
+                { id: 'ITM_CLICK_5', name: 'CLICK_5', cost: 500000, effect: 'click', value: 300 }
+            ];
+
+            const fallbackCpsItems = [
+                { id: 'ITM_CPS_1', name: 'CPS_1', cost: 500, effect: 'cps', value: 1 },
+                { id: 'ITM_CPS_2', name: 'CPS_2', cost: 5000, effect: 'cps', value: 5 },
+                { id: 'ITM_CPS_3', name: 'CPS_3', cost: 50000, effect: 'cps', value: 20 },
+                { id: 'ITM_CPS_4', name: 'CPS_4', cost: 500000, effect: 'cps', value: 75 },
+                { id: 'ITM_CPS_5', name: 'CPS_5', cost: 5000000, effect: 'cps', value: 300 }
+            ];
+
+            // クリックアイテムを表示
+            const clickContainer = document.getElementById('click-items-simple');
+            if (clickContainer) {
+                clickContainer.innerHTML = '';
+                fallbackClickItems.forEach(item => {
+                    const itemElement = createItemElement(item);
+                    clickContainer.appendChild(itemElement);
+                });
+            }
+
+            // CPSアイテムを表示
+            const cpsContainer = document.getElementById('cps-items-simple');
+            if (cpsContainer) {
+                cpsContainer.innerHTML = '';
+                fallbackCpsItems.forEach(item => {
+                    const itemElement = createItemElement(item);
+                    cpsContainer.appendChild(itemElement);
+                });
+            }
+
+            // ボタン状態を更新
+            updateButtonStates();
+        }
+
+        function createItemElement(item) {
+            const shopItem = document.createElement('div');
+            shopItem.className = 'shop-item';
+
+            const effectText = item.effect === 'click'
+                ? `1クリック：+${item.value}ポイント`
+                : `毎秒：+${item.value}ポイント`;
+
+            shopItem.innerHTML = `
+                <div class="item-name">${item.name}</div>
+                <div class="item-desc">${effectText}</div>
+                <button class="buy-btn" data-cost="${item.cost}" onclick="buyItem('${item.id}', ${item.cost}, '${item.effect}', ${item.value})">${formatCost(parseInt(item.cost))}</button>
+            `;
+
+            return shopItem;
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Shop functions loaded');
+
+            // ショップタブ機能を設定
+            setupShopTabs();
+
+            // CSVからアイテムを読み込み（少し遅らせる）
+            setTimeout(async () => {
+                console.log('Attempting to load items...');
+                await loadItemsFromCSV();
+                updateButtonStates();
+                updateCurrentStats();
+            }, 2000);
+
+            // さらにretryメカニズムを追加
+            let retryCount = 0;
+            const retryLoadItems = () => {
+                if (retryCount < 5) {
+                    setTimeout(async () => {
+                        console.log(`Retry loading items (${retryCount + 1}/5)...`);
+                        const clickContainer = document.getElementById('click-items-simple');
+                        if (clickContainer && clickContainer.children.length === 0) {
+                            await loadItemsFromCSV();
+                        }
+                        retryCount++;
+                    }, 1000 + (retryCount * 1000));
+                }
+            };
+            retryLoadItems();
+
+            // ポイント表示の定期更新
+            setInterval(() => {
+                updatePointsDisplay();
+                updatePPSDisplay();
+                updateCurrentStats();
+            }, 1000);
+        });
+    </script>
 </body>
 </html>

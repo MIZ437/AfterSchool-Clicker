@@ -1,6 +1,9 @@
 // AfterSchool Clicker - Shop System
+console.log('=== ShopSystem.js loading ===');
+
 class ShopSystem {
     constructor() {
+        console.log('ShopSystem: Constructor called');
         this.clickItemsContainer = null;
         this.cpsItemsContainer = null;
         this.items = {
@@ -21,15 +24,28 @@ class ShopSystem {
     }
 
     async initializeElements() {
+        console.log('ShopSystem: Initializing elements...');
+
         this.clickItemsContainer = document.getElementById('click-items');
         this.cpsItemsContainer = document.getElementById('cps-items');
 
+        console.log('ShopSystem: Containers found:', {
+            clickItems: !!this.clickItemsContainer,
+            cpsItems: !!this.cpsItemsContainer
+        });
+
+        // Setup shop sub-tabs
+        this.setupShopTabs();
+
         // Wait for data manager to load
         if (window.dataManager) {
+            console.log('ShopSystem: DataManager found, loading data...');
             await window.dataManager.loadAll();
             this.loadItems();
             this.renderShop();
             this.setupEventListeners();
+        } else {
+            console.error('ShopSystem: DataManager not found!');
         }
     }
 
@@ -42,34 +58,60 @@ class ShopSystem {
     }
 
     renderShop() {
+        console.log('ShopSystem: Rendering shop...');
         this.renderClickItems();
         this.renderCPSItems();
     }
 
     renderClickItems() {
-        if (!this.clickItemsContainer) return;
+        console.log('ShopSystem: Rendering click items...', {
+            container: !!this.clickItemsContainer,
+            itemCount: this.items.click ? this.items.click.length : 0,
+            items: this.items.click
+        });
+
+        if (!this.clickItemsContainer) {
+            console.error('ShopSystem: Click items container not found!');
+            return;
+        }
 
         this.clickItemsContainer.innerHTML = '';
 
-        this.items.click.forEach(item => {
+        this.items.click.forEach((item, index) => {
+            console.log(`ShopSystem: Creating click item ${index}:`, item);
             const itemElement = this.createItemElement(item);
             this.clickItemsContainer.appendChild(itemElement);
         });
+
+        console.log('ShopSystem: Click items rendered, container children:', this.clickItemsContainer.children.length);
     }
 
     renderCPSItems() {
-        if (!this.cpsItemsContainer) return;
+        console.log('ShopSystem: Rendering CPS items...', {
+            container: !!this.cpsItemsContainer,
+            itemCount: this.items.cps ? this.items.cps.length : 0,
+            items: this.items.cps
+        });
+
+        if (!this.cpsItemsContainer) {
+            console.error('ShopSystem: CPS items container not found!');
+            return;
+        }
 
         this.cpsItemsContainer.innerHTML = '';
 
-        this.items.cps.forEach(item => {
+        this.items.cps.forEach((item, index) => {
+            console.log(`ShopSystem: Creating CPS item ${index}:`, item);
             const itemElement = this.createItemElement(item);
             this.cpsItemsContainer.appendChild(itemElement);
         });
+
+        console.log('ShopSystem: CPS items rendered, container children:', this.cpsItemsContainer.children.length);
     }
 
     createItemElement(item) {
         const cost = parseInt(item.cost);
+        const value = parseInt(item.value);
         const owned = window.gameState.get(`purchases.items.${item.id}`) || 0;
         const canAfford = window.gameState.canAfford(cost);
 
@@ -77,13 +119,29 @@ class ShopSystem {
         itemDiv.className = `shop-item ${canAfford ? '' : 'disabled'}`;
         itemDiv.dataset.itemId = item.id;
 
+        // Create effect description
+        const effectText = item.effect === 'click'
+            ? `クリック +${value}ポイント`
+            : `毎秒 +${value}ポイント`;
+
         itemDiv.innerHTML = `
             <div class="item-header">
-                <div class="item-name">${item.name}</div>
-                <div class="item-cost">${this.formatNumber(cost)}</div>
+                <div class="item-info">
+                    <div class="item-name">${item.name}</div>
+                    <div class="item-effect">${effectText}</div>
+                </div>
+                <div class="item-cost">
+                    <span class="cost-amount">${this.formatNumber(cost)}</span>
+                    <span class="cost-unit">ポイント</span>
+                </div>
             </div>
             <div class="item-description">${item.desc}</div>
-            ${owned > 0 ? `<div class="item-owned">所持数: ${owned}</div>` : ''}
+            ${owned > 0 ? `<div class="item-owned">所持数: ${owned}個</div>` : ''}
+            <div class="item-action">
+                <button class="purchase-btn ${canAfford ? '' : 'disabled'}">
+                    ${canAfford ? '購入' : 'ポイント不足'}
+                </button>
+            </div>
         `;
 
         // Add click handler
@@ -150,16 +208,30 @@ class ShopSystem {
         // Update affordability
         itemElement.className = `shop-item ${canAfford ? '' : 'disabled'}`;
 
+        // Update purchase button
+        const purchaseBtn = itemElement.querySelector('.purchase-btn');
+        if (purchaseBtn) {
+            purchaseBtn.className = `purchase-btn ${canAfford ? '' : 'disabled'}`;
+            purchaseBtn.textContent = canAfford ? '購入' : 'ポイント不足';
+        }
+
         // Update owned count
         const ownedElement = itemElement.querySelector('.item-owned');
         if (owned > 0) {
             if (ownedElement) {
-                ownedElement.textContent = `所持数: ${owned}`;
+                ownedElement.textContent = `所持数: ${owned}個`;
             } else {
                 const ownedDiv = document.createElement('div');
                 ownedDiv.className = 'item-owned';
-                ownedDiv.textContent = `所持数: ${owned}`;
-                itemElement.appendChild(ownedDiv);
+                ownedDiv.textContent = `所持数: ${owned}個`;
+
+                // Insert before the action div
+                const actionDiv = itemElement.querySelector('.item-action');
+                if (actionDiv) {
+                    itemElement.insertBefore(ownedDiv, actionDiv);
+                } else {
+                    itemElement.appendChild(ownedDiv);
+                }
             }
         }
     }
@@ -254,6 +326,30 @@ class ShopSystem {
         return Math.floor(num).toLocaleString();
     }
 
+    setupShopTabs() {
+        const shopTabs = document.querySelectorAll('.shop-tab');
+        const shopTabContents = document.querySelectorAll('.shop-tab-content');
+
+        shopTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.dataset.shopTab;
+
+                // Remove active class from all tabs and content
+                shopTabs.forEach(t => t.classList.remove('active'));
+                shopTabContents.forEach(content => content.classList.remove('active'));
+
+                // Add active class to clicked tab
+                tab.classList.add('active');
+
+                // Show corresponding content
+                const targetContent = document.getElementById(`shop-${targetTab}-tab`);
+                if (targetContent) {
+                    targetContent.classList.add('active');
+                }
+            });
+        });
+    }
+
     setupEventListeners() {
         // Listen for game state changes to update affordability
         window.gameState.addListener('gameProgress.currentPoints', () => {
@@ -310,5 +406,8 @@ class ShopSystem {
 
 // Initialize shop system when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('ShopSystem: DOMContentLoaded fired, creating ShopSystem');
     window.shopSystem = new ShopSystem();
 });
+
+console.log('ShopSystem: Script loaded, DOM state:', document.readyState);

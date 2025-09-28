@@ -412,7 +412,10 @@ class SceneManager {
             this.updateStageUI();
             this.updateHeroineDisplay();
 
-            // Step 4: Force settings UI refresh (debug mode fix)
+            // Step 4: Reset scroll positions for all scrollable elements
+            this.resetAllScrollPositions();
+
+            // Step 5: Force settings UI refresh (debug mode fix)
             setTimeout(() => {
                 this.forceRefreshSettingsUI();
             }, 500);
@@ -450,6 +453,46 @@ class SceneManager {
         if (window.audioManager && window.audioManager.loadSettings) {
             console.log('SceneManager: Refreshing audio manager...');
             window.audioManager.loadSettings();
+        }
+    }
+
+    resetAllScrollPositions() {
+        console.log('SceneManager: Resetting all scroll positions...');
+
+        try {
+            // Reset scroll position for game screen
+            const gameScreen = document.getElementById('game-screen');
+            if (gameScreen) {
+                gameScreen.scrollTop = 0;
+            }
+
+            // Reset scroll position for shop panel and sub-panels
+            const shopPanel = document.getElementById('shop-panel');
+            if (shopPanel) {
+                shopPanel.scrollTop = 0;
+            }
+
+            // Reset scroll position for gacha panel
+            const gachaPanel = document.getElementById('gacha-panel');
+            if (gachaPanel) {
+                gachaPanel.scrollTop = 0;
+            }
+
+            // Reset scroll position for all tab contents
+            const tabContents = document.querySelectorAll('.shop-tab-content, .panel-content');
+            tabContents.forEach(content => {
+                content.scrollTop = 0;
+            });
+
+            // Reset scroll position for item containers
+            const itemContainers = document.querySelectorAll('#click-items, #cps-items');
+            itemContainers.forEach(container => {
+                container.scrollTop = 0;
+            });
+
+            console.log('SceneManager: All scroll positions reset to top');
+        } catch (error) {
+            console.error('SceneManager: Error resetting scroll positions:', error);
         }
     }
 

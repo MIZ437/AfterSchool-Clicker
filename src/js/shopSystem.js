@@ -597,6 +597,41 @@ class ShopSystem {
         }
     }
 
+    resetScrollPositions() {
+        console.log('ShopSystem: Resetting scroll positions to top');
+
+        try {
+            // Reset scroll position for click items container
+            if (this.clickItemsContainer) {
+                this.clickItemsContainer.scrollTop = 0;
+                console.log('ShopSystem: Click items scroll reset');
+            }
+
+            // Reset scroll position for CPS items container
+            if (this.cpsItemsContainer) {
+                this.cpsItemsContainer.scrollTop = 0;
+                console.log('ShopSystem: CPS items scroll reset');
+            }
+
+            // Reset scroll position for shop tab content areas
+            const shopTabContents = document.querySelectorAll('.shop-tab-content');
+            shopTabContents.forEach(content => {
+                content.scrollTop = 0;
+            });
+
+            // Reset scroll position for main shop panel
+            const shopPanel = document.getElementById('shop-panel');
+            if (shopPanel) {
+                shopPanel.scrollTop = 0;
+                console.log('ShopSystem: Shop panel scroll reset');
+            }
+
+            console.log('ShopSystem: All scroll positions reset to top');
+        } catch (error) {
+            console.error('ShopSystem: Error resetting scroll positions:', error);
+        }
+    }
+
     // Get shop statistics
     getShopStats() {
         const totalSpent = this.calculateTotalSpent();
@@ -714,6 +749,9 @@ class ShopSystem {
             this.setupShopTabs();
             this.renderShop();
             this.setupEventListeners();
+
+            // Reset scroll positions
+            this.resetScrollPositions();
 
             // Force multiple updates
             setTimeout(() => {

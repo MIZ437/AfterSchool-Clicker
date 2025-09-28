@@ -472,7 +472,7 @@ class AfterSchoolClicker {
 
             // Show title screen via scene manager
             if (window.sceneManager) {
-                window.sceneManager.switchToScene('title');
+                window.sceneManager.showScene('title');
                 console.log('Main: Switched to title scene');
             } else {
                 console.error('Main: SceneManager not available for scene switch');

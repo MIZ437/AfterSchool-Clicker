@@ -378,7 +378,7 @@ class SceneManager {
 
         try {
             // Step 1: Switch to game scene and update all UI
-            this.switchToScene('game');
+            this.showScene('game');
             this.switchToStageImmediate(1);
             this.switchToPanel('gacha');
 

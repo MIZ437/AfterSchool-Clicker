@@ -1,12 +1,14 @@
 // AfterSchool Clicker - Audio Manager
 class AudioManager {
     constructor() {
+        console.log('AudioManager constructor called');
         this.bgmVolume = 0.7;
         this.seVolume = 0.8;
         this.currentBGM = null;
         this.audioContext = null;
         this.sounds = new Map();
         this.isInitialized = false;
+        console.log('AudioManager constructor completed, calling setupAudio');
         this.setupAudio();
     }
 
@@ -35,17 +37,20 @@ class AudioManager {
     async loadSound(id, filename) {
         try {
             const audio = new Audio();
-            audio.src = `../assets/audio/${filename}`;
+            const fullPath = `../assets/${filename}`;
+            audio.src = fullPath;
             audio.preload = 'auto';
+            console.log(`Loading sound ${id} from path: ${fullPath}`);
 
             return new Promise((resolve, reject) => {
                 audio.addEventListener('canplaythrough', () => {
+                    console.log(`Audio ${id} loaded successfully, adding to sounds map`);
                     this.sounds.set(id, audio);
                     resolve(audio);
                 });
 
                 audio.addEventListener('error', (e) => {
-                    console.warn(`Failed to load audio: ${filename}`, e);
+                    console.warn(`Failed to load audio: ${filename} (${fullPath})`, e);
                     resolve(null); // Don't reject, just resolve with null
                 });
 
@@ -58,17 +63,29 @@ class AudioManager {
     }
 
     async preloadAudio() {
-        if (!window.dataManager) return;
+        console.log('PreloadAudio called');
+        if (!window.dataManager) {
+            console.error('DataManager not available for audio preloading');
+            return;
+        }
 
         try {
             const audioData = window.dataManager.getAudio();
+            console.log('Audio data loaded:', audioData.length, 'items');
+            console.log('Available audio IDs:', audioData.map(a => a.id));
 
             const loadPromises = audioData.map(async (audio) => {
-                await this.loadSound(audio.id, audio.filename);
+                console.log(`Loading audio: ${audio.id} -> ${audio.filename}`);
+                const result = await this.loadSound(audio.id, audio.filename);
+                console.log(`Load result for ${audio.id}:`, result ? 'SUCCESS' : 'FAILED');
+                return result;
             });
 
-            await Promise.all(loadPromises);
+            const results = await Promise.all(loadPromises);
             console.log('Audio preloading completed');
+            console.log('Loaded sounds:', Array.from(this.sounds.keys()));
+            console.log('Total sounds in Map:', this.sounds.size);
+            console.log('Load results:', results.filter(r => r !== null).length, 'successful,', results.filter(r => r === null).length, 'failed');
         } catch (error) {
             console.error('Audio preloading failed:', error);
         }
@@ -111,25 +128,90 @@ class AudioManager {
     }
 
     playSE(id) {
-        if (!this.isInitialized) return;
+        // Force load sounds if not loaded
+        if (this.sounds.size === 0) {
+            this.loadSoundsSync();
+        }
+
+        // Initialize audio context on first user interaction
+        if (!this.isInitialized) {
+            this.initializeAudioContext();
+        }
 
         const audio = this.sounds.get(id);
         if (audio) {
-            // Clone audio for multiple simultaneous plays
-            const audioClone = audio.cloneNode();
-            audioClone.volume = this.seVolume;
-            audioClone.currentTime = 0;
+            try {
+                // Clone audio for multiple simultaneous plays
+                const audioClone = audio.cloneNode();
+                audioClone.volume = this.seVolume;
+                audioClone.currentTime = 0;
 
-            const playPromise = audioClone.play();
-            if (playPromise) {
-                playPromise.catch(error => {
-                    console.warn('SE play failed:', error);
-                });
+                const playPromise = audioClone.play();
+                if (playPromise) {
+                    playPromise.catch(error => {
+                        console.warn('SE play failed:', error);
+                        // Fallback to beep if file play fails
+                        this.playBeep();
+                    });
+                }
+            } catch (error) {
+                console.warn('Audio clone failed:', error);
+                this.playBeep();
             }
         } else {
+            console.warn(`SE not found: ${id}, playing beep instead`);
             // Create a simple beep if sound not found
             this.playBeep();
         }
+    }
+
+    playClickBeep() {
+        if (!this.audioContext) {
+            this.initializeAudioContext();
+        }
+
+        if (!this.audioContext) return;
+
+        try {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+
+            // Higher pitched, shorter sound for clicks
+            oscillator.frequency.setValueAtTime(1200, this.audioContext.currentTime);
+            gainNode.gain.setValueAtTime(this.seVolume * 0.1, this.audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.05);
+
+            oscillator.start(this.audioContext.currentTime);
+            oscillator.stop(this.audioContext.currentTime + 0.05);
+        } catch (error) {
+            console.warn('Click beep generation failed:', error);
+        }
+    }
+
+    loadSoundsSync() {
+        // Load essential sounds immediately
+        const essentialSounds = [
+            { id: 'click_sound', path: '../assets/se/click.mp3' },
+            { id: 'purchase_sound', path: '../assets/se/purchase.mp3' },
+            { id: 'stage_unlock_sound', path: '../assets/se/fanfare.mp3' },
+            { id: 'button_click', path: '../assets/se/button_click.wav' }
+        ];
+
+        essentialSounds.forEach(sound => {
+            if (!this.sounds.has(sound.id)) {
+                try {
+                    const audio = new Audio();
+                    audio.src = sound.path;
+                    audio.preload = 'auto';
+                    this.sounds.set(sound.id, audio);
+                } catch (error) {
+                    console.warn(`Failed to load ${sound.id}:`, error);
+                }
+            }
+        });
     }
 
     playBeep() {
@@ -227,15 +309,14 @@ class AudioManager {
 
     // Audio event handlers for UI
     setupUIAudioHandlers() {
-        // Add hover sounds to buttons
+        // Add click sounds to all buttons
         const buttons = document.querySelectorAll('button');
         buttons.forEach(button => {
-            button.addEventListener('mouseenter', () => {
-                // this.playSE('button_hover');
-            });
-
             button.addEventListener('click', () => {
-                this.playSE('button_click');
+                // Skip audio for purchase buttons (they have their own audio)
+                if (!button.id.includes('purchase') && !button.classList.contains('purchase-btn')) {
+                    this.playSE('click_sound');
+                }
             });
         });
 
@@ -278,9 +359,25 @@ class AudioManager {
     }
 }
 
-// Initialize audio manager
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize audio manager immediately
+console.log('AudioManager script loaded, initializing immediately');
+try {
     window.audioManager = new AudioManager();
+    console.log('AudioManager created and attached to window');
+    console.log('AudioManager verification:', !!window.audioManager);
+} catch (error) {
+    console.error('Failed to create AudioManager:', error);
+}
+
+// Also initialize on DOMContentLoaded as backup
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('AudioManager DOMContentLoaded event fired');
+    if (!window.audioManager) {
+        console.log('AudioManager not found, creating new one');
+        window.audioManager = new AudioManager();
+    } else {
+        console.log('AudioManager already exists');
+    }
 
     // Load settings and setup UI handlers
     setTimeout(() => {

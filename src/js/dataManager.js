@@ -111,7 +111,25 @@ class DataManager {
     // Get stage by ID
     getStage(stageId) {
         const stages = this.getStages();
-        return stages.find(stage => stage.id === stageId || stage.id === `STAGE_${stageId}`);
+        console.log(`getStage(${stageId}) - Available stages:`, stages);
+
+        // Try multiple ID formats
+        let stage = stages.find(s => s.id === stageId || s.id === `STAGE_${stageId}`);
+
+        if (!stage) {
+            console.log(`Stage ${stageId} not found in data, using fallback`);
+            // Fallback data
+            const fallbackStages = {
+                1: { id: 'STAGE_1', unlock_cost: '0', name: 'ステージ1' },
+                2: { id: 'STAGE_2', unlock_cost: '2000', name: 'ステージ2' },
+                3: { id: 'STAGE_3', unlock_cost: '15000', name: 'ステージ3' },
+                4: { id: 'STAGE_4', unlock_cost: '100000', name: 'ステージ4' }
+            };
+            stage = fallbackStages[stageId];
+        }
+
+        console.log(`getStage(${stageId}) result:`, stage);
+        return stage;
     }
 
     // Get items data

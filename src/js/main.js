@@ -4,6 +4,13 @@ class AfterSchoolClicker {
         this.isInitialized = false;
         this.gameLoopInterval = null;
         this.autosaveInterval = null;
+
+        // EMA calculation for real-time PPS
+        this.lastPoints = 0;
+        this.lastUpdateTime = Date.now();
+        this.realTimePPS = 0;
+        this.emaAlpha = 0.1; // Smoothing factor (0.1 = more smoothing)
+
         this.setupGame();
     }
 
@@ -36,8 +43,27 @@ class AfterSchoolClicker {
             this.isInitialized = true;
             console.log('Game initialization complete!');
 
+            // Hide loading screen and show title screen
+            this.completeInitialization();
+
+            // Force shop system update after everything is initialized
+            setTimeout(() => {
+                if (window.shopSystem) {
+                    console.log('Main: Force updating shop system after full initialization');
+                    window.shopSystem.updateAllItemsAffordability();
+                }
+            }, 1000);
+
         } catch (error) {
             console.error('Game initialization failed:', error);
+
+            // Even if initialization fails, try to show title screen
+            try {
+                this.completeInitialization();
+            } catch (fallbackError) {
+                console.error('Fallback initialization also failed:', fallbackError);
+            }
+
             this.showErrorMessage('ゲームの初期化に失敗しました。ページをリロードしてください。');
         }
     }
@@ -56,7 +82,19 @@ class AfterSchoolClicker {
         }
 
         if (!this.areManagersReady()) {
-            throw new Error('Managers failed to initialize within timeout');
+            console.warn('Some managers failed to initialize within timeout, continuing anyway...');
+            console.log('Manager availability:', {
+                gameState: !!window.gameState,
+                dataManager: !!window.dataManager,
+                saveManager: !!window.saveManager,
+                sceneManager: !!window.sceneManager,
+                clickSystem: !!window.clickSystem,
+                shopSystem: !!window.shopSystem,
+                gachaSystem: !!window.gachaSystem,
+                albumManager: !!window.albumManager,
+                audioManager: !!window.audioManager,
+                effectSystem: !!window.effectSystem
+            });
         }
 
         // Initialize data first
@@ -70,9 +108,13 @@ class AfterSchoolClicker {
         }
 
         // Initialize audio
+        console.log('Checking audioManager:', !!window.audioManager);
         if (window.audioManager) {
+            console.log('AudioManager found, calling preloadAudio');
             await window.audioManager.preloadAudio();
             window.audioManager.loadSettings();
+        } else {
+            console.error('AudioManager not found!');
         }
 
         // Setup cross-manager connections
@@ -139,7 +181,7 @@ class AfterSchoolClicker {
 
         // Update shop affordability
         if (window.shopSystem) {
-            window.shopSystem.updateAffordability();
+            window.shopSystem.updateAllItemsAffordability();
         }
 
         // Update gacha button state
@@ -165,8 +207,23 @@ class AfterSchoolClicker {
     updateCPSDisplay() {
         const cpsElement = document.getElementById('points-per-second');
         if (cpsElement && window.gameState) {
-            const cps = window.gameState.get('gameProgress.totalCPS');
-            cpsElement.textContent = this.formatNumber(cps);
+            // Calculate real-time PPS using EMA
+            const currentPoints = window.gameState.get('gameProgress.currentPoints');
+            const currentTime = Date.now();
+            const deltaTime = (currentTime - this.lastUpdateTime) / 1000; // seconds
+            const deltaPoints = currentPoints - this.lastPoints;
+
+            if (deltaTime > 0 && this.lastPoints > 0) {
+                const instantPPS = deltaPoints / deltaTime;
+                // Apply EMA smoothing
+                this.realTimePPS = this.emaAlpha * instantPPS + (1 - this.emaAlpha) * this.realTimePPS;
+            }
+
+            this.lastPoints = currentPoints;
+            this.lastUpdateTime = currentTime;
+
+            // Display real-time PPS
+            cpsElement.textContent = this.formatNumber(Math.max(0, this.realTimePPS));
         }
     }
 
@@ -188,19 +245,26 @@ class AfterSchoolClicker {
         let newUnlocks = false;
 
         stages.forEach(stage => {
-            const stageId = parseInt(stage.id);
+            // Convert stage ID to number (STAGE_1 -> 1, STAGE_2 -> 2, etc.)
+            const stageId = stage.id === 'STAGE_1' ? 1 :
+                           stage.id === 'STAGE_2' ? 2 :
+                           stage.id === 'STAGE_3' ? 3 :
+                           stage.id === 'STAGE_4' ? 4 : parseInt(stage.id);
             const unlockCost = parseInt(stage.unlock_cost);
+
+            // Skip stage 1 as it's always unlocked by default
+            if (stageId === 1) return;
 
             if (!unlockedStages.includes(stageId) && currentPoints >= unlockCost) {
                 unlockedStages.push(stageId);
                 newUnlocks = true;
 
-                // Show unlock notification
+                // Show unlock notification and play sound
                 this.showStageUnlockNotification(stage);
 
                 // Play unlock sound
                 if (window.audioManager) {
-                    window.audioManager.playSE('stage_unlock');
+                    window.audioManager.playSE('stage_unlock_sound');
                 }
 
                 // Screen effect
@@ -212,6 +276,13 @@ class AfterSchoolClicker {
 
         if (newUnlocks) {
             window.gameState.set('gameProgress.unlockedStages', unlockedStages);
+
+            // Update stage UI after unlocking with slight delay to ensure state consistency
+            setTimeout(() => {
+                if (window.sceneManager) {
+                    window.sceneManager.updateStageUI();
+                }
+            }, 100);
         }
     }
 
@@ -381,16 +452,51 @@ class AfterSchoolClicker {
 
     // Utility methods
     formatNumber(num) {
-        if (num >= 1000000) {
-            return (num / 1000000).toFixed(1) + 'M';
-        } else if (num >= 1000) {
-            return (num / 1000).toFixed(1) + 'K';
-        }
         return Math.floor(num).toLocaleString();
     }
 
     delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    completeInitialization() {
+        console.log('Main: Completing initialization and transitioning to title screen...');
+
+        try {
+            // Hide loading screen
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen) {
+                loadingScreen.style.display = 'none';
+                console.log('Main: Loading screen hidden');
+            }
+
+            // Show title screen via scene manager
+            if (window.sceneManager) {
+                window.sceneManager.switchToScene('title');
+                console.log('Main: Switched to title scene');
+            } else {
+                console.error('Main: SceneManager not available for scene switch');
+                // Fallback: manually show title screen
+                const titleScreen = document.getElementById('title-screen');
+                if (titleScreen) {
+                    titleScreen.style.display = 'block';
+                    console.log('Main: Fallback - title screen shown manually');
+                }
+            }
+
+            console.log('Main: Initialization completion successful');
+        } catch (error) {
+            console.error('Main: Error during initialization completion:', error);
+
+            // Emergency fallback
+            const loadingScreen = document.getElementById('loading-screen');
+            const titleScreen = document.getElementById('title-screen');
+
+            if (loadingScreen) loadingScreen.style.display = 'none';
+            if (titleScreen) titleScreen.style.display = 'block';
+
+            console.log('Main: Emergency fallback completed');
+        }
     }
 
     showErrorMessage(message) {
@@ -508,6 +614,30 @@ if (typeof window !== 'undefined') {
         status: () => window.afterSchoolClicker ? window.afterSchoolClicker.getGameStatus() : 'Game not initialized',
         performance: () => window.afterSchoolClicker ? window.afterSchoolClicker.getPerformanceMetrics() : 'Game not initialized',
         addPoints: (amount) => window.gameState ? window.gameState.addPoints(amount) : 'GameState not available',
+        enableDebug: () => {
+            if (window.gameState) {
+                window.gameState.setDebugMode(true);
+                window.gameState.set('settings.debugMode', true);
+                console.log('Debug mode enabled via console');
+                return 'Debug mode enabled - infinite points activated';
+            }
+            return 'GameState not available';
+        },
+        disableDebug: () => {
+            if (window.gameState) {
+                window.gameState.setDebugMode(false);
+                window.gameState.set('settings.debugMode', false);
+                console.log('Debug mode disabled via console');
+                return 'Debug mode disabled';
+            }
+            return 'GameState not available';
+        },
+        checkDebugStatus: () => {
+            if (window.gameState) {
+                return `Debug mode: ${window.gameState.isDebugMode()}, Can afford 999999: ${window.gameState.canAfford(999999)}`;
+            }
+            return 'GameState not available';
+        },
         unlockStage: (stageId) => {
             if (window.gameState) {
                 const stages = window.gameState.get('gameProgress.unlockedStages');

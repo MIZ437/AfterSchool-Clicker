@@ -88,8 +88,7 @@ class GameState {
         this.set('gameProgress.currentPoints', currentPoints);
         this.set('gameProgress.totalPoints', totalPoints);
 
-        // Check for stage unlocks
-        this.checkStageUnlocks();
+        // Note: Stage unlocks are now manual only, not automatic
     }
 
     // Spend points (returns true if successful)
@@ -152,6 +151,11 @@ class GameState {
             if (!videos.includes(rewardVideoId)) {
                 videos.push(rewardVideoId);
                 this.set('collection.videos', videos);
+            }
+
+            // Show stage unlock notification
+            if (window.showStageUnlockNotification) {
+                window.showStageUnlockNotification(stageId);
             }
 
             return true;
@@ -381,7 +385,24 @@ class GameState {
         };
 
         this.state = defaultState;
+        this.debugMode = false; // Reset runtime debug mode
+
+        // Notify all listeners about the complete reset
         this.notifyListeners('*', this.state, null);
+
+        // Specifically notify about critical state changes
+        setTimeout(() => {
+            this.notifyListeners('gameProgress.currentPoints', this.state.gameProgress.currentPoints, 0);
+            this.notifyListeners('purchases.items.*', this.state.purchases.items, null);
+            this.notifyListeners('settings.debugMode', false, true);
+            console.log('GameState: Reset notifications sent');
+        }, 50);
+
+        // Additional notification after longer delay to ensure all systems receive it
+        setTimeout(() => {
+            this.notifyListeners('gameProgress.currentPoints', this.state.gameProgress.currentPoints, 0);
+            console.log('GameState: Secondary reset notifications sent');
+        }, 200);
     }
 
     // Set auto-save interval
@@ -405,6 +426,7 @@ class GameState {
     // Set debug mode
     setDebugMode(enabled) {
         this.debugMode = enabled;
+        this.set('settings.debugMode', enabled);
         console.log(`Debug mode ${enabled ? 'enabled' : 'disabled'}. Infinite points: ${enabled}`);
     }
 

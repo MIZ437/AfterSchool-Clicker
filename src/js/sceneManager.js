@@ -53,16 +53,9 @@ class SceneManager {
 
         // Tutorial screen buttons
         const startMainGameBtn = document.getElementById('start-main-game-btn');
-        const skipTutorialBtn = document.getElementById('skip-tutorial-btn');
 
         if (startMainGameBtn) {
             startMainGameBtn.addEventListener('click', () => {
-                this.firstRun = false;
-                this.showScene('game');
-            });
-        }
-        if (skipTutorialBtn) {
-            skipTutorialBtn.addEventListener('click', () => {
                 this.firstRun = false;
                 this.showScene('game');
             });
@@ -86,12 +79,16 @@ class SceneManager {
         // Settings screen buttons
         const settingsOkBtn = document.getElementById('settings-ok-btn');
         const settingsCancelBtn = document.getElementById('settings-cancel-btn');
+        const deleteSaveBtn = document.getElementById('delete-save-btn');
 
         if (settingsOkBtn) {
             settingsOkBtn.addEventListener('click', () => this.returnToPreviousScene());
         }
         if (settingsCancelBtn) {
             settingsCancelBtn.addEventListener('click', () => this.returnToPreviousScene());
+        }
+        if (deleteSaveBtn) {
+            deleteSaveBtn.addEventListener('click', () => this.handleDeleteSave());
         }
 
         // Stage tabs
@@ -126,10 +123,9 @@ class SceneManager {
                 await window.saveManager.loadGame();
             }
 
-            // Hide loading screen and show title
-            setTimeout(() => {
-                this.showScene('title');
-            }, 2000);
+            // Add minimal delay for smooth transition, then show title
+            await this.delay(200);
+            this.showScene('title');
 
         } catch (error) {
             console.error('Failed to start game:', error);
@@ -155,21 +151,21 @@ class SceneManager {
         const currentSceneElement = this.scenes.get(this.currentScene);
         const newSceneElement = this.scenes.get(sceneName);
 
-        // Hide current scene
-        if (currentSceneElement) {
-            currentSceneElement.classList.remove('active');
-        }
-
-        // Show new scene
+        // Instant transition to prevent flickering
         if (newSceneElement) {
-            setTimeout(() => {
-                newSceneElement.classList.add('active');
-                this.currentScene = sceneName;
-                this.isTransitioning = false;
+            // Hide current scene immediately
+            if (currentSceneElement && currentSceneElement !== newSceneElement) {
+                currentSceneElement.classList.remove('active');
+            }
 
-                // Scene-specific initialization
-                this.onSceneEnter(sceneName);
-            }, 300);
+            // Show new scene immediately
+            newSceneElement.classList.add('active');
+
+            this.currentScene = sceneName;
+            this.isTransitioning = false;
+
+            // Scene-specific initialization
+            this.onSceneEnter(sceneName);
         } else {
             this.isTransitioning = false;
         }
@@ -251,12 +247,27 @@ class SceneManager {
     }
 
     switchToStage(stageId) {
+        // Get the most current unlocked stages
         const unlockedStages = window.gameState.get('gameProgress.unlockedStages');
 
+        // Double-check with a small delay for race conditions
         if (!unlockedStages.includes(stageId)) {
-            this.showMessage('このステージはまだ解放されていません');
+            setTimeout(() => {
+                const updatedUnlockedStages = window.gameState.get('gameProgress.unlockedStages');
+                if (!updatedUnlockedStages.includes(stageId)) {
+                    this.showMessage('このステージはまだ解放されていません');
+                } else {
+                    // Retry the switch after state update
+                    this.switchToStageImmediate(stageId);
+                }
+            }, 50);
             return;
         }
+
+        this.switchToStageImmediate(stageId);
+    }
+
+    switchToStageImmediate(stageId) {
 
         window.gameState.set('gameProgress.currentStage', stageId);
         this.updateStageUI();
@@ -326,6 +337,133 @@ class SceneManager {
         }
     }
 
+    async handleDeleteSave() {
+        // Show confirmation dialog
+        const confirmed = confirm('本当にセーブデータを削除しますか？\nこの操作は取り消せません。');
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            console.log('SceneManager: Starting save deletion process...');
+
+            if (window.saveManager) {
+                const result = await window.saveManager.deleteSave();
+
+                if (result.success) {
+                    console.log('SceneManager: Save deletion successful, starting system refresh...');
+
+                    // Show progress message
+                    alert('セーブデータを削除しました。\nシステムをリセット中...');
+
+                    // Force complete system refresh without reload
+                    await this.completeSystemRefresh();
+
+                    alert('システムリセットが完了しました。');
+                } else {
+                    throw new Error(result.message || 'セーブデータの削除に失敗しました');
+                }
+            } else {
+                throw new Error('セーブマネージャーが見つかりません');
+            }
+        } catch (error) {
+            console.error('SceneManager: Delete save error:', error);
+            alert('セーブデータの削除に失敗しました: ' + error.message);
+        }
+    }
+
+    async completeSystemRefresh() {
+        console.log('SceneManager: Starting complete system refresh...');
+
+        try {
+            // Step 1: Switch to game scene and update all UI
+            this.switchToScene('game');
+            this.switchToStageImmediate(1);
+            this.switchToPanel('gacha');
+
+            // Step 2: Force refresh all managers
+            await this.refreshAllManagers();
+
+            // Step 3: Update all UI elements
+            this.updateGameUI();
+            this.updateStageUI();
+            this.updateHeroineDisplay();
+
+            // Step 4: Force settings UI refresh (debug mode fix)
+            setTimeout(() => {
+                this.forceRefreshSettingsUI();
+            }, 500);
+
+            console.log('SceneManager: Complete system refresh finished');
+        } catch (error) {
+            console.error('SceneManager: System refresh failed:', error);
+            throw error;
+        }
+    }
+
+    async refreshAllManagers() {
+        console.log('SceneManager: Refreshing all managers...');
+
+        // Refresh shop system
+        if (window.shopSystem && window.shopSystem.completeReinitialize) {
+            console.log('SceneManager: Reinitializing shop system...');
+            await window.shopSystem.completeReinitialize();
+        }
+
+        // Refresh gacha system
+        if (window.gachaSystem) {
+            console.log('SceneManager: Refreshing gacha system...');
+            window.gachaSystem.setStage(1);
+            window.gachaSystem.updateGachaDisplay();
+        }
+
+        // Refresh album manager
+        if (window.albumManager && window.albumManager.renderAlbum) {
+            console.log('SceneManager: Refreshing album manager...');
+            window.albumManager.renderAlbum();
+        }
+
+        // Refresh audio manager settings
+        if (window.audioManager && window.audioManager.loadSettings) {
+            console.log('SceneManager: Refreshing audio manager...');
+            window.audioManager.loadSettings();
+        }
+    }
+
+    forceRefreshSettingsUI() {
+        console.log('SceneManager: Force refreshing settings UI...');
+
+        try {
+            // Refresh debug mode UI specifically
+            const debugToggle = document.getElementById('debug-toggle');
+            const debugStatus = document.getElementById('debug-status');
+
+            if (debugToggle && debugStatus && window.gameState) {
+                const actualDebugState = window.gameState.isDebugMode();
+                const settingsDebugState = window.gameState.get('settings.debugMode');
+
+                console.log('SceneManager: Debug mode states:', {
+                    actualState: actualDebugState,
+                    settingsState: settingsDebugState
+                });
+
+                // Sync UI with actual state
+                debugToggle.checked = actualDebugState;
+                debugStatus.textContent = actualDebugState ? 'ON' : 'OFF';
+
+                console.log('SceneManager: Debug UI synchronized');
+            }
+
+            // Refresh other settings UI
+            this.initializeSettingsScene();
+
+            console.log('SceneManager: Settings UI refresh completed');
+        } catch (error) {
+            console.error('SceneManager: Settings UI refresh failed:', error);
+        }
+    }
+
     quitGame() {
         if (window.electronAPI) {
             window.close();
@@ -354,12 +492,11 @@ class SceneManager {
     }
 
     formatNumber(num) {
-        if (num >= 1000000) {
-            return (num / 1000000).toFixed(1) + 'M';
-        } else if (num >= 1000) {
-            return (num / 1000).toFixed(1) + 'K';
-        }
         return Math.floor(num).toLocaleString();
+    }
+
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     getCurrentScene() {

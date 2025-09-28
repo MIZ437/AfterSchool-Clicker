@@ -76,9 +76,24 @@
 }
 
 .stage-tab.locked {
-    background: #b2bec3;
-    cursor: not-allowed;
-    opacity: 0.6;
+    background: #b2bec3 !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+    pointer-events: none !important;
+}
+
+.stage-tab.unlockable {
+    background: linear-gradient(135deg, #00b894 0%, #00a085 100%) !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    box-shadow: 0 0 10px rgba(0, 184, 148, 0.5) !important;
+    animation: pulse-unlock 2s infinite;
+}
+
+@keyframes pulse-unlock {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
 }
 
 /* Main Content */
@@ -244,12 +259,66 @@
 }
 
 /* Shop Sub-Tabs */
+.shop-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
 .shop-tabs {
     display: flex;
-    background: rgba(255, 192, 203, 0.1);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
     border-radius: 8px;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
     overflow: hidden;
+    flex-shrink: 0;
+}
+
+/* Purchase Multiplier */
+.purchase-multiplier {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(255, 240, 245, 0.9);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+}
+
+.multiplier-label {
+    font-weight: bold;
+    color: #2d3436;
+    font-size: 0.9rem;
+}
+
+.multiplier-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.multiplier-btn {
+    padding: 0.4rem 0.8rem;
+    border: 2px solid #ddd;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.8rem;
+    color: #636e72;
+    transition: all 0.2s ease;
+}
+
+.multiplier-btn:hover {
+    border-color: #fd79a8;
+    background: rgba(253, 121, 168, 0.1);
+}
+
+.multiplier-btn.active {
+    background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
+    color: white;
+    border-color: #e84393;
 }
 
 .shop-tab {
@@ -274,12 +343,15 @@
     color: #e84393;
 }
 
-.shop-content {
+.shop-items-container {
     flex: 1;
+    overflow-y: auto;
+    max-height: calc(100vh - 300px);
 }
 
 .shop-tab-content {
     display: none;
+    padding: 0;
 }
 
 .shop-tab-content.active {
@@ -1001,4 +1073,24 @@ input:checked + .toggle-slider:before {
         width: 100px;
         height: 100px;
     }
+}
+
+/* Stage Button Container */
+.stage-button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.stage-cost {
+    font-size: 0.7rem;
+    color: #e84393;
+    font-weight: bold;
+    text-align: center;
+    min-height: 1rem;
+}
+
+.stage-cost.unlocked {
+    color: #00b894;
 }

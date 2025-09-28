@@ -60,7 +60,6 @@
             </div>
             <div class="tutorial-buttons">
                 <button id="start-main-game-btn" class="tutorial-button">ゲーム開始</button>
-                <button id="skip-tutorial-btn" class="tutorial-button secondary">スキップ</button>
             </div>
         </div>
     </div>
@@ -90,12 +89,32 @@
             <span id="save-status-text">保存中...</span>
         </div>
 
+        <!-- Stage Unlock Notification -->
+        <div id="stage-unlock-notification" class="stage-unlock-notification">
+            <div class="notification-content">
+                <div class="notification-icon">🎉</div>
+                <div class="notification-text"></div>
+            </div>
+        </div>
+
         <!-- Stage Navigation -->
         <nav class="stage-nav">
-            <button class="stage-tab active" data-stage="1">ステージ1</button>
-            <button class="stage-tab locked" data-stage="2">ステージ2</button>
-            <button class="stage-tab locked" data-stage="3">ステージ3</button>
-            <button class="stage-tab locked" data-stage="4">ステージ4</button>
+            <div class="stage-button-container">
+                <button class="stage-tab active" data-stage="1">ステージ1</button>
+                <span class="stage-cost" id="stage-cost-1">解放済み</span>
+            </div>
+            <div class="stage-button-container">
+                <button class="stage-tab locked" data-stage="2">ステージ2</button>
+                <span class="stage-cost" id="stage-cost-2">2,000pt</span>
+            </div>
+            <div class="stage-button-container">
+                <button class="stage-tab locked" data-stage="3">ステージ3</button>
+                <span class="stage-cost" id="stage-cost-3">15,000pt</span>
+            </div>
+            <div class="stage-button-container">
+                <button class="stage-tab locked" data-stage="4">ステージ4</button>
+                <span class="stage-cost" id="stage-cost-4">100,000pt</span>
+            </div>
         </nav>
 
         <!-- Main Content -->
@@ -127,28 +146,41 @@
                         <h3>ショップ</h3>
                     </div>
 
-                    <!-- Shop Sub-Tabs -->
-                    <div class="shop-tabs">
-                        <button class="shop-tab active" data-shop-tab="click">クリックポイントUP</button>
-                        <button class="shop-tab" data-shop-tab="auto">自動ポイントUP</button>
-                    </div>
+                    <div class="shop-container">
+                        <!-- Shop Sub-Tabs (Fixed) -->
+                        <div class="shop-tabs">
+                            <button class="shop-tab active" data-shop-tab="click">クリックポイントUP</button>
+                            <button class="shop-tab" data-shop-tab="auto">自動ポイントUP</button>
+                        </div>
 
-                    <!-- Shop Tab Contents -->
-                    <div class="shop-content">
-                        <!-- Click Items Tab -->
-                        <div id="shop-click-tab" class="shop-tab-content active">
-                            <div class="shop-items-simple">
-                                <div id="click-items-simple">
-                                    <!-- Click items will be dynamically loaded from CSV -->
-                                </div>
+                        <!-- Purchase Multiplier Selection -->
+                        <div class="purchase-multiplier">
+                            <span class="multiplier-label">購入倍率:</span>
+                            <div class="multiplier-buttons">
+                                <button class="multiplier-btn active" data-multiplier="1">×1</button>
+                                <button class="multiplier-btn" data-multiplier="5">×5</button>
+                                <button class="multiplier-btn" data-multiplier="10">×10</button>
+                                <button class="multiplier-btn" data-multiplier="100">×100</button>
                             </div>
                         </div>
 
-                        <!-- Auto Points Items Tab -->
-                        <div id="shop-auto-tab" class="shop-tab-content">
-                            <div class="shop-items-simple">
-                                <div id="cps-items-simple">
-                                    <!-- CPS items will be dynamically loaded from CSV -->
+                        <!-- Shop Items Container (Scrollable) -->
+                        <div class="shop-items-container">
+                            <!-- Click Items Tab -->
+                            <div id="shop-click-tab" class="shop-tab-content active">
+                                <div class="shop-items-simple">
+                                    <div id="click-items-simple">
+                                        <!-- Click items will be dynamically loaded from CSV -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Auto Points Items Tab -->
+                            <div id="shop-auto-tab" class="shop-tab-content">
+                                <div class="shop-items-simple">
+                                    <div id="cps-items-simple">
+                                        <!-- CPS items will be dynamically loaded from CSV -->
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -326,8 +358,8 @@
 
     <!-- Simple Shop Functions -->
     <script>
-        function buyItem(itemId, cost, effect, value) {
-            console.log('購入試行:', { itemId, cost, effect, value });
+        function buyItem(itemId, cost, effect, value, quantity = 1) {
+            console.log('購入試行:', { itemId, cost, effect, value, quantity });
 
             if (!window.gameState) {
                 console.error('GameState not found!');
@@ -338,21 +370,32 @@
             const isDebugMode = window.gameState.isDebugMode();
             console.log('Debug mode:', isDebugMode);
 
+            const totalCost = cost * quantity;
+            const totalValue = value * quantity;
+
             // ポイント確認（デバッグモードでない場合のみ）
             if (!isDebugMode) {
                 const currentPoints = window.gameState.get('gameProgress.currentPoints');
-                console.log('現在のポイント:', currentPoints);
+                console.log('現在のポイント:', currentPoints, '必要:', totalCost);
 
-                if (currentPoints < cost) {
+                if (currentPoints < totalCost) {
                     // ポイント不足時は何もしない
                     return;
                 }
             }
 
-            // 購入処理
-            const success = window.gameState.spendPoints(cost);
+            // 購入処理（数量分）
+            const success = window.gameState.spendPoints(totalCost);
             if (success) {
-                window.gameState.purchaseItem(itemId, effect, value);
+                // 数量分の効果を適用
+                for (let i = 0; i < quantity; i++) {
+                    window.gameState.purchaseItem(itemId, effect, value);
+                }
+
+                // チャリーン効果音を再生
+                if (window.audioManager) {
+                    window.audioManager.playSE('purchase_sound');
+                }
 
                 // 表示更新
                 updatePointsDisplay();
@@ -381,7 +424,9 @@
             const buyButtons = document.querySelectorAll('.buy-btn');
 
             buyButtons.forEach(button => {
-                const cost = parseInt(button.dataset.cost);
+                const baseCost = parseInt(button.dataset.cost);
+                const multiplier = window.currentMultiplier || 1;
+                const totalCost = baseCost * multiplier;
 
                 // すべてのクラスをリセット
                 button.classList.remove('disabled', 'debug-enabled');
@@ -392,11 +437,11 @@
                     button.textContent = 'DEBUG';
                 } else {
                     // 常にコストを表示
-                    const formattedCost = formatCost(cost);
+                    const formattedCost = formatCost(totalCost);
                     button.textContent = formattedCost;
 
                     // ポイント不足の場合はdisabledクラスを追加
-                    if (cost && currentPoints < cost) {
+                    if (totalCost && currentPoints < totalCost) {
                         button.classList.add('disabled');
                     }
                 }
@@ -404,12 +449,236 @@
         }
 
         function formatCost(cost) {
-            if (cost >= 1000000) {
-                return (cost / 1000000).toFixed(1) + 'Mpt';
-            } else if (cost >= 1000) {
-                return (cost / 1000).toFixed(1) + 'Kpt';
-            }
             return cost.toLocaleString() + 'pt';
+        }
+
+        // ステージ解放通知システム
+        function showStageUnlockNotification(stageNumber) {
+            const notification = document.getElementById('stage-unlock-notification');
+            const textElement = notification.querySelector('.notification-text');
+
+            textElement.textContent = `ステージ${stageNumber}を解放しました！`;
+
+            // ファンファーレ音を再生
+            if (window.audioManager) {
+                window.audioManager.playSE('stage_unlock_sound');
+            }
+
+            // 通知を表示
+            notification.classList.add('show');
+
+            // 3秒後に非表示
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // グローバルに公開
+        window.showStageUnlockNotification = showStageUnlockNotification;
+
+        // ステージボタンのクリック処理
+        function setupStageButtons() {
+            const stageButtons = document.querySelectorAll('.stage-tab');
+            stageButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const stageId = parseInt(btn.dataset.stage);
+
+
+                    // 解放済みかどうかをチェック
+                    const unlockedStages = window.gameState.get('gameProgress.unlockedStages');
+                    const currentPoints = window.gameState.get('gameProgress.currentPoints');
+
+
+                    if (unlockedStages.includes(stageId)) {
+                        // 既に解放済みの場合は切り替えのみ
+                        switchToStageLocal(stageId);
+                    } else {
+                        // 解放されていない場合、ポイントをチェックしてから解放処理
+                        let stageData = window.dataManager.getStage(stageId);
+
+                        if (stageData) {
+                            const cost = parseInt(stageData.unlock_cost);
+
+                            if (currentPoints >= cost) {
+                                // ポイント足りるので解放処理実行
+                                tryUnlockStage(stageId);
+                            } else {
+                                // ポイント不足
+                                if (window.sceneManager) {
+                                    window.sceneManager.showMessage(`ステージ${stageId}の解放には${cost.toLocaleString()}ポイントが必要です`);
+                                }
+                            }
+                        } else {
+                        }
+                    }
+                });
+            });
+        }
+
+        function switchToStageLocal(stageId) {
+
+            // ステージ切り替えロジック（index.html内の独自実装）
+            const stageButtons = document.querySelectorAll('.stage-tab');
+            stageButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (parseInt(btn.dataset.stage) === stageId) {
+                    btn.classList.add('active');
+                }
+            });
+
+            if (window.gameState) {
+                window.gameState.set('gameProgress.currentStage', stageId);
+            }
+
+            // sceneManagerのswitchToStageではなく、直接的にステージを切り替える
+        }
+
+        // Legacy function for compatibility
+        function switchToStage(stageId) {
+            switchToStageLocal(stageId);
+        }
+
+        function tryUnlockStage(stageId) {
+            if (!window.gameState || !window.dataManager) return;
+
+            const currentPoints = window.gameState.get('gameProgress.currentPoints');
+            const unlockedStages = window.gameState.get('gameProgress.unlockedStages');
+
+            // CSVからステージデータを取得
+            const stageData = window.dataManager.getStage(stageId);
+            if (!stageData) return;
+
+            const requirement = parseInt(stageData.unlock_cost);
+            if (!requirement) return;
+
+            if (currentPoints >= requirement && !unlockedStages.includes(stageId)) {
+                // ポイントを消費してステージ解放
+                const success = window.gameState.spendPoints(requirement);
+                if (success) {
+                    window.gameState.unlockStage(stageId);
+                    updateStageButtons();
+                    switchToStageLocal(stageId);
+
+                    // ステージ解放通知
+                    if (window.showStageUnlockNotification) {
+                        window.showStageUnlockNotification(stageId);
+                    }
+
+                    // チャリーン効果音とファンファーレを再生
+                    if (window.audioManager) {
+                        window.audioManager.playSE('purchase_sound');
+                        // 少し遅らせてファンファーレを再生
+                        setTimeout(() => {
+                            window.audioManager.playSE('stage_unlock_sound');
+                        }, 200);
+                    }
+
+                } else {
+                }
+            } else if (unlockedStages.includes(stageId)) {
+            } else {
+            }
+        }
+
+        function updateStageButtons() {
+            if (!window.gameState || !window.dataManager) {
+                return;
+            }
+
+            const unlockedStages = window.gameState.get('gameProgress.unlockedStages');
+            const currentPoints = window.gameState.get('gameProgress.currentPoints');
+            const stageButtons = document.querySelectorAll('.stage-tab');
+
+
+            stageButtons.forEach(btn => {
+                const stageId = parseInt(btn.dataset.stage);
+                const costElement = document.getElementById(`stage-cost-${stageId}`);
+
+
+                if (unlockedStages.includes(stageId)) {
+
+                    // Force unlocked state with active styling
+                    btn.className = 'stage-tab active';
+                    btn.disabled = false;
+
+                    // Force active styles
+                    btn.removeAttribute('style');
+                    btn.style.cssText = `
+                        background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%) !important;
+                        cursor: pointer !important;
+                        opacity: 1 !important;
+                        pointer-events: auto !important;
+                    `;
+
+                    if (costElement) {
+                        costElement.textContent = '解放済み';
+                        costElement.classList.add('unlocked');
+                        costElement.style.color = '#fd79a8';
+                        costElement.style.fontWeight = 'bold';
+                    }
+                } else {
+                    // Check if user has enough points to unlock this stage
+                    let stageData = window.dataManager.getStage(stageId);
+
+                    if (stageData) {
+                        const cost = parseInt(stageData.unlock_cost);
+                        const canUnlock = currentPoints >= cost;
+
+                        if (canUnlock) {
+                            // User can unlock this stage
+
+                            // Remove all existing classes and add the correct ones
+                            btn.className = 'stage-tab unlockable';
+                            btn.disabled = false;
+
+                            // Force style reset and update
+                            btn.removeAttribute('style');
+                            btn.style.cssText = `
+                                background: linear-gradient(135deg, #00b894 0%, #00a085 100%) !important;
+                                cursor: pointer !important;
+                                opacity: 1 !important;
+                                pointer-events: auto !important;
+                            `;
+
+                            // Add visual indicator that it's unlockable
+                            if (costElement) {
+                                costElement.style.color = '#00b894';
+                                costElement.style.fontWeight = 'bold';
+                            }
+
+                        } else {
+                            // User cannot unlock this stage yet
+
+                            // Force locked state
+                            btn.className = 'stage-tab locked';
+                            btn.disabled = true;
+
+                            // Force locked styles
+                            btn.removeAttribute('style');
+                            btn.style.cssText = `
+                                background: #b2bec3 !important;
+                                cursor: not-allowed !important;
+                                opacity: 0.6 !important;
+                                pointer-events: none !important;
+                            `;
+
+                            if (costElement) {
+                                costElement.style.color = '';
+                                costElement.style.fontWeight = '';
+                            }
+
+                        }
+
+                        if (costElement) {
+                            costElement.textContent = cost.toLocaleString() + 'pt';
+                            costElement.classList.remove('unlocked');
+                        }
+                    } else {
+                        btn.classList.add('locked');
+                        btn.disabled = true;
+                    }
+                }
+            });
         }
 
         function updateClickValueDisplay() {
@@ -427,12 +696,15 @@
             const autoElement = document.getElementById('current-auto-value');
 
             if (clickElement) {
-                clickElement.textContent = `+${clickValue}ポイント`;
+                clickElement.textContent = `+${clickValue.toLocaleString()}ポイント`;
             }
 
             if (autoElement) {
-                autoElement.textContent = `毎秒${cpsValue}ポイント`;
+                autoElement.textContent = `毎秒${cpsValue.toLocaleString()}ポイント`;
             }
+
+            // Update stage buttons when stats change
+            updateStageButtons();
         }
 
         function updatePPSDisplay() {
@@ -465,15 +737,12 @@
                         targetContent.classList.add('active');
                     }
 
-                    console.log('Shop tab switched to:', targetTab);
                 });
             });
         }
 
         // CSVからアイテムを動的に読み込み
         async function loadItemsFromCSV() {
-            console.log('Starting loadItemsFromCSV...');
-            console.log('DataManager available:', !!window.dataManager);
 
             if (!window.dataManager) {
                 console.error('DataManager not available, loading fallback items');
@@ -485,12 +754,6 @@
             const clickItems = window.dataManager.getClickItems();
             const cpsItems = window.dataManager.getCPSItems();
 
-            console.log('Loading items from CSV:', {
-                clickItems: clickItems,
-                cpsItems: cpsItems,
-                clickCount: clickItems ? clickItems.length : 0,
-                cpsCount: cpsItems ? cpsItems.length : 0
-            });
 
             // アイテムが取得できない場合はフォールバック
             if (!clickItems || !cpsItems || clickItems.length === 0 || cpsItems.length === 0) {
@@ -507,7 +770,6 @@
                     const itemElement = createItemElement(item);
                     clickContainer.appendChild(itemElement);
                 });
-                console.log('Click items rendered:', clickItems.length);
             }
 
             // CPSアイテムを表示
@@ -518,7 +780,6 @@
                     const itemElement = createItemElement(item);
                     cpsContainer.appendChild(itemElement);
                 });
-                console.log('CPS items rendered:', cpsItems.length);
             }
 
             // ボタン状態を更新
@@ -527,7 +788,6 @@
 
         // フォールバック用の静的アイテム読み込み
         function loadFallbackItems() {
-            console.log('Loading fallback items...');
 
             // 更新されたコストでフォールバックアイテムを定義
             const fallbackClickItems = [
@@ -581,22 +841,91 @@
             shopItem.innerHTML = `
                 <div class="item-name">${item.name}</div>
                 <div class="item-desc">${effectText}</div>
-                <button class="buy-btn" data-cost="${item.cost}" onclick="buyItem('${item.id}', ${item.cost}, '${item.effect}', ${item.value})">${formatCost(parseInt(item.cost))}</button>
+                <button class="buy-btn" data-item-id="${item.id}" data-cost="${item.cost}" data-effect="${item.effect}" data-value="${item.value}">
+                    ${formatCost(parseInt(item.cost))}
+                </button>
             `;
 
             return shopItem;
         }
 
+        // 購入倍率管理
+        let currentMultiplier = 1;
+        window.currentMultiplier = 1;
+
+        // 購入倍率ボタンのイベントハンドラー
+        function setupMultiplierButtons() {
+            const multiplierButtons = document.querySelectorAll('.multiplier-btn');
+            multiplierButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // アクティブ状態を更新
+                    multiplierButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    // 倍率を更新
+                    currentMultiplier = parseInt(btn.dataset.multiplier);
+                    window.currentMultiplier = currentMultiplier;
+                    updateAllItemCosts();
+                });
+            });
+        }
+
+        // 購入ボタンのイベントハンドラー
+        function setupPurchaseButtons() {
+            document.addEventListener('click', (e) => {
+                if (e.target.classList.contains('buy-btn')) {
+                    const btn = e.target;
+                    const itemId = btn.dataset.itemId;
+                    const cost = parseInt(btn.dataset.cost);
+                    const effect = btn.dataset.effect;
+                    const value = parseInt(btn.dataset.value);
+
+                    buyItem(itemId, cost, effect, value, currentMultiplier);
+                }
+            });
+        }
+
+        // 全アイテムのコスト表示を更新
+        function updateAllItemCosts() {
+            const buyButtons = document.querySelectorAll('.buy-btn');
+            buyButtons.forEach(btn => {
+                const baseCost = parseInt(btn.dataset.cost);
+                const totalCost = baseCost * currentMultiplier;
+                btn.textContent = formatCost(totalCost);
+            });
+            updateButtonStates();
+        }
+
+        // Manual function to test stage button updates
+        window.testStageButtons = function() {
+            updateStageButtons();
+        };
+
         // 初期化
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('Shop functions loaded');
 
             // ショップタブ機能を設定
             setupShopTabs();
 
+            // 購入関連のイベントハンドラーを設定
+            setupMultiplierButtons();
+            setupPurchaseButtons();
+
+            // ステージボタンを設定
+            setupStageButtons();
+
+            // ステージボタンの状態を初期化（少し遅らせて実行）
+            setTimeout(() => {
+                updateStageButtons();
+            }, 500);
+
+            // 定期的にステージボタンの状態を更新
+            setInterval(() => {
+                updateStageButtons();
+            }, 1000);
+
             // CSVからアイテムを読み込み（少し遅らせる）
             setTimeout(async () => {
-                console.log('Attempting to load items...');
                 await loadItemsFromCSV();
                 updateButtonStates();
                 updateCurrentStats();
@@ -607,7 +936,6 @@
             const retryLoadItems = () => {
                 if (retryCount < 5) {
                     setTimeout(async () => {
-                        console.log(`Retry loading items (${retryCount + 1}/5)...`);
                         const clickContainer = document.getElementById('click-items-simple');
                         if (clickContainer && clickContainer.children.length === 0) {
                             await loadItemsFromCSV();

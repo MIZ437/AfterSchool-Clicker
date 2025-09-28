@@ -82,33 +82,8 @@ class SaveManager {
         }
 
         if (debugToggle && debugStatus) {
-            // Load saved debug setting
-            const settings = window.gameState ? window.gameState.get('settings') : {};
-            const isDebugEnabled = settings.debugMode === true;
-
-            debugToggle.checked = isDebugEnabled;
-            debugStatus.textContent = isDebugEnabled ? 'ON' : 'OFF';
-
-            // Apply debug mode immediately if enabled
-            if (window.gameState && isDebugEnabled) {
-                window.gameState.setDebugMode(true);
-                console.log('Debug mode restored from settings:', isDebugEnabled);
-            }
-
-            // Handle debug toggle changes
-            debugToggle.addEventListener('change', (e) => {
-                const enabled = e.target.checked;
-                debugStatus.textContent = enabled ? 'ON' : 'OFF';
-
-                // Save setting
-                if (window.gameState) {
-                    window.gameState.set('settings.debugMode', enabled);
-                    window.gameState.setDebugMode(enabled);
-                }
-
-                console.log('Debug mode toggled:', enabled);
-                this.showSaveStatus(enabled ? 'デバッグモードが有効になりました' : 'デバッグモードが無効になりました', 'success');
-            });
+            // Set up debug mode synchronization
+            this.setupDebugModeSync(debugToggle, debugStatus);
         }
     }
 
@@ -331,13 +306,18 @@ class SaveManager {
             const result = await window.electronAPI.deleteSave();
 
             if (result.success) {
-                // Reset game state
-                window.gameState.reset();
-
-                // Clear localStorage backup
+                // Clear localStorage backup first
                 localStorage.removeItem('afterschool_clicker_backup');
 
-                console.log('Save data deleted');
+                // Clear all game state
+                if (window.gameState) {
+                    window.gameState.reset();
+                    // Reset debug mode flag explicitly
+                    window.gameState.debugMode = false;
+                    console.log('SaveManager: GameState reset completed');
+                }
+
+                console.log('Save data deleted and systems reset');
                 return { success: true, message: 'セーブデータを削除しました' };
             } else {
                 throw new Error(result.error);
@@ -346,6 +326,200 @@ class SaveManager {
             console.error('Delete failed:', error);
             return { success: false, message: '削除に失敗しました: ' + error.message };
         }
+    }
+
+    // Reset all game systems to initial state
+    async resetAllSystems() {
+        console.log('SaveManager: Starting complete system reset...');
+
+        // Reset debug UI immediately
+        this.resetDebugUI();
+
+        // Step 1: Force GameState listeners to fire immediately
+        if (window.gameState) {
+            console.log('SaveManager: Triggering GameState notifications...');
+            const currentPoints = window.gameState.get('gameProgress.currentPoints');
+            window.gameState.notifyListeners('gameProgress.currentPoints', currentPoints, 0);
+            window.gameState.notifyListeners('*', window.gameState.state, null);
+        }
+
+        // Step 2: Complete ShopSystem reinitialization (multiple attempts)
+        if (window.shopSystem) {
+            console.log('SaveManager: Starting complete shop system reinitialization...');
+
+            // Attempt 1: Immediate
+            const attempt1 = async () => {
+                try {
+                    if (window.shopSystem.completeReinitialize) {
+                        const success = await window.shopSystem.completeReinitialize();
+                        console.log('SaveManager: Shop reinitialization attempt 1:', success ? 'SUCCESS' : 'FAILED');
+                        return success;
+                    }
+                    return false;
+                } catch (error) {
+                    console.error('SaveManager: Shop reinitialization attempt 1 error:', error);
+                    return false;
+                }
+            };
+
+            // Attempt 2: After 500ms delay
+            const attempt2 = async () => {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                try {
+                    if (window.shopSystem.completeReinitialize) {
+                        const success = await window.shopSystem.completeReinitialize();
+                        console.log('SaveManager: Shop reinitialization attempt 2:', success ? 'SUCCESS' : 'FAILED');
+                        return success;
+                    }
+                    return false;
+                } catch (error) {
+                    console.error('SaveManager: Shop reinitialization attempt 2 error:', error);
+                    return false;
+                }
+            };
+
+            // Attempt 3: After 1000ms delay (nuclear fallback)
+            const attempt3 = async () => {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                try {
+                    console.log('SaveManager: Nuclear fallback - manual shop reconstruction...');
+
+                    // Manual reconstruction
+                    window.shopSystem.clickItemsContainer = document.getElementById('click-items');
+                    window.shopSystem.cpsItemsContainer = document.getElementById('cps-items');
+
+                    if (window.shopSystem.clickItemsContainer) {
+                        window.shopSystem.clickItemsContainer.innerHTML = '';
+                    }
+                    if (window.shopSystem.cpsItemsContainer) {
+                        window.shopSystem.cpsItemsContainer.innerHTML = '';
+                    }
+
+                    window.shopSystem.loadItems();
+                    window.shopSystem.setupShopTabs();
+                    window.shopSystem.renderShop();
+                    window.shopSystem.setupEventListeners();
+                    window.shopSystem.updateAllItemsAffordability();
+
+                    console.log('SaveManager: Nuclear fallback completed');
+                    return true;
+                } catch (error) {
+                    console.error('SaveManager: Nuclear fallback error:', error);
+                    return false;
+                }
+            };
+
+            // Execute all attempts
+            try {
+                const success1 = await attempt1();
+                if (!success1) {
+                    const success2 = await attempt2();
+                    if (!success2) {
+                        await attempt3();
+                    }
+                }
+            } catch (error) {
+                console.error('SaveManager: Complete shop reset failed:', error);
+            }
+        }
+
+        console.log('SaveManager: Complete system reset finished');
+    }
+
+    // Reset debug mode UI to default state
+    resetDebugUI() {
+        const debugToggle = document.getElementById('debug-toggle');
+        const debugStatus = document.getElementById('debug-status');
+
+        if (debugToggle && debugStatus) {
+            debugToggle.checked = false;
+            debugStatus.textContent = 'OFF';
+            console.log('Debug UI reset to OFF state');
+        }
+    }
+
+    // Setup debug mode synchronization between UI and GameState
+    setupDebugModeSync(debugToggle, debugStatus) {
+        // Initial sync - wait for GameState to be fully initialized
+        const initialSync = () => {
+            if (!window.gameState) {
+                setTimeout(initialSync, 100);
+                return;
+            }
+
+            const settings = window.gameState.get('settings') || {};
+            const isDebugEnabled = settings.debugMode === true;
+            const actualDebugState = window.gameState.isDebugMode();
+
+            console.log('Debug mode sync check:', {
+                settingsDebugMode: settings.debugMode,
+                actualDebugState,
+                uiState: debugToggle.checked
+            });
+
+            // Always sync runtime state with settings
+            window.gameState.setDebugMode(isDebugEnabled);
+            console.log('Set runtime debug mode to match settings:', isDebugEnabled);
+
+            // Force final state check and UI sync
+            const finalState = window.gameState.isDebugMode();
+            debugToggle.checked = finalState;
+            debugStatus.textContent = finalState ? 'ON' : 'OFF';
+
+            console.log('Debug mode UI synchronized:', {
+                settingsState: isDebugEnabled,
+                runtimeState: finalState,
+                uiState: finalState
+            });
+        };
+
+        // Start initial sync with multiple retries
+        let syncAttempts = 0;
+        const retrySyncUntilReady = () => {
+            syncAttempts++;
+            if (window.gameState && syncAttempts <= 10) {
+                initialSync();
+            } else if (syncAttempts <= 10) {
+                setTimeout(retrySyncUntilReady, 100);
+            }
+        };
+        retrySyncUntilReady();
+
+        // Listen for GameState changes to keep UI in sync
+        const setupListener = () => {
+            if (window.gameState) {
+                window.gameState.addListener('settings.debugMode', (value) => {
+                    console.log('Debug mode setting changed via listener:', value);
+                    debugToggle.checked = value;
+                    debugStatus.textContent = value ? 'ON' : 'OFF';
+                    // Don't call setDebugMode here as it would create a loop
+                });
+            }
+        };
+
+        // Setup listener with delay to ensure GameState is ready
+        setTimeout(setupListener, 200);
+
+        // Handle debug toggle changes
+        debugToggle.addEventListener('change', (e) => {
+            const enabled = e.target.checked;
+            console.log('Debug toggle changed by user:', enabled);
+
+            debugStatus.textContent = enabled ? 'ON' : 'OFF';
+
+            // Save setting and apply immediately
+            if (window.gameState) {
+                // This will update both runtime and persistent state
+                window.gameState.setDebugMode(enabled);
+
+                console.log('Debug mode toggled:', enabled, {
+                    runtimeState: window.gameState.isDebugMode(),
+                    settingsState: window.gameState.get('settings.debugMode')
+                });
+            }
+
+            this.showSaveStatus(enabled ? 'デバッグモードが有効になりました' : 'デバッグモードが無効になりました', 'success');
+        });
     }
 
     // Import save data from file

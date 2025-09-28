@@ -10,6 +10,7 @@ class ShopSystem {
             click: [],
             cps: []
         };
+        this.listeners = []; // Track listeners for cleanup
 
         this.setupShop();
     }
@@ -44,17 +45,74 @@ class ShopSystem {
             this.loadItems();
             this.renderShop();
             this.setupEventListeners();
+
+            // Initial affordability check after everything is loaded
+            setTimeout(() => {
+                this.updateAllItemsAffordability();
+            }, 100);
+
+            // Force update after a longer delay to ensure GameState is fully initialized
+            setTimeout(() => {
+                console.log('ShopSystem: Force updating affordability after GameState initialization');
+                this.updateAllItemsAffordability();
+            }, 500);
         } else {
             console.error('ShopSystem: DataManager not found!');
         }
     }
 
-    loadItems() {
-        // Load items from data manager
-        this.items.click = window.dataManager.getClickItems();
-        this.items.cps = window.dataManager.getCPSItems();
+    async loadItems() {
+        // Ensure DataManager is available
+        if (!window.dataManager) {
+            console.error('ShopSystem: DataManager not available, waiting...');
 
-        console.log('Loaded shop items:', this.items);
+            // Wait for DataManager
+            let attempts = 0;
+            while (!window.dataManager && attempts < 20) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+
+            if (!window.dataManager) {
+                console.error('ShopSystem: DataManager not available after waiting, using fallback');
+                this.loadFallbackItems();
+                return;
+            }
+        }
+
+        // Load items from data manager
+        try {
+            // Ensure data is loaded
+            if (window.dataManager.loadAll) {
+                await window.dataManager.loadAll();
+            }
+
+            this.items.click = window.dataManager.getClickItems() || [];
+            this.items.cps = window.dataManager.getCPSItems() || [];
+
+            console.log('ShopSystem: Loaded shop items:', this.items);
+
+            // Validate items
+            if (this.items.click.length === 0 && this.items.cps.length === 0) {
+                console.warn('ShopSystem: No shop items loaded, using fallback data');
+                this.loadFallbackItems();
+            }
+        } catch (error) {
+            console.error('ShopSystem: Failed to load shop items:', error);
+            this.loadFallbackItems();
+        }
+    }
+
+    loadFallbackItems() {
+        // Fallback shop items
+        this.items.click = [
+            { id: 'CLICK_1', name: 'クリック強化', effect: 'click', value: '1', cost: '50', desc: '1クリック: +1ポイント' },
+            { id: 'CLICK_2', name: 'ダブルクリック', effect: 'click', value: '2', cost: '200', desc: '1クリック: +2ポイント' }
+        ];
+        this.items.cps = [
+            { id: 'CPS_1', name: '自動クリック', effect: 'cps', value: '1', cost: '100', desc: '毎秒 +1ポイント' }
+        ];
+        console.log('Using fallback shop items:', this.items);
     }
 
     renderShop() {
@@ -112,8 +170,64 @@ class ShopSystem {
     createItemElement(item) {
         const cost = parseInt(item.cost);
         const value = parseInt(item.value);
-        const owned = window.gameState.get(`purchases.items.${item.id}`) || 0;
-        const canAfford = window.gameState.canAfford(cost);
+
+        // Ensure GameState exists and is properly initialized
+        if (!window.gameState) {
+            console.error('ShopSystem: GameState not available when creating item element');
+            // Return a basic disabled element that will be refreshed later
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'shop-item disabled';
+            itemDiv.dataset.itemId = item.id;
+            itemDiv.innerHTML = `
+                <div class="item-header">
+                    <div class="item-info">
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-effect">Loading...</div>
+                    </div>
+                    <div class="item-cost">
+                        <span class="cost-amount">${this.formatNumber(cost)}</span>
+                        <span class="cost-unit">ポイント</span>
+                    </div>
+                </div>
+                <div class="item-description">${item.desc}</div>
+                <div class="item-action">
+                    <button class="purchase-btn disabled">読み込み中...</button>
+                </div>
+            `;
+            return itemDiv;
+        }
+
+        // Double-check GameState methods are available
+        let owned = 0;
+        let currentPoints = 0;
+        let canAfford = false;
+
+        try {
+            owned = window.gameState.get(`purchases.items.${item.id}`) || 0;
+            currentPoints = window.gameState.get('gameProgress.currentPoints') || 0;
+
+            // Check debug mode for affordability
+            const debugMode = window.gameState.isDebugMode();
+            if (debugMode) {
+                canAfford = true; // Debug mode: everything is affordable
+                console.log(`ShopSystem: Debug mode active - item ${item.id} is affordable`);
+            } else {
+                canAfford = currentPoints >= cost;
+            }
+        } catch (error) {
+            console.error('ShopSystem: Error accessing GameState:', error);
+            // Use safe defaults
+            owned = 0;
+            currentPoints = 0;
+            canAfford = false;
+        }
+
+        console.log(`ShopSystem: Creating item ${item.id}:`, {
+            cost,
+            currentPoints,
+            canAfford,
+            gameStateExists: !!window.gameState
+        });
 
         const itemDiv = document.createElement('div');
         itemDiv.className = `shop-item ${canAfford ? '' : 'disabled'}`;
@@ -144,8 +258,20 @@ class ShopSystem {
             </div>
         `;
 
-        // Add click handler
-        itemDiv.addEventListener('click', () => this.purchaseItem(item));
+        // Add click handler to purchase button
+        const purchaseBtn = itemDiv.querySelector('.purchase-btn');
+        if (purchaseBtn) {
+            console.log(`ShopSystem: Adding click handler for ${item.id}, button found:`, !!purchaseBtn);
+            purchaseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                console.log(`ShopSystem: Purchase button clicked for ${item.id}, disabled:`, purchaseBtn.classList.contains('disabled'));
+                if (!purchaseBtn.classList.contains('disabled')) {
+                    this.purchaseItem(item);
+                }
+            });
+        } else {
+            console.error(`ShopSystem: Purchase button not found for item ${item.id}`);
+        }
 
         return itemDiv;
     }
@@ -200,10 +326,36 @@ class ShopSystem {
         const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
         if (!itemElement) return;
 
+        // Check GameState availability
+        if (!window.gameState) {
+            console.warn(`ShopSystem: GameState not available for updating item ${itemId}`);
+            return;
+        }
+
         const item = this.getItemById(itemId);
+        if (!item) {
+            console.error(`ShopSystem: Item ${itemId} not found`);
+            return;
+        }
+
         const cost = parseInt(item.cost);
-        const owned = window.gameState.get(`purchases.items.${itemId}`) || 0;
-        const canAfford = window.gameState.canAfford(cost);
+        let owned = 0;
+        let canAfford = false;
+
+        try {
+            owned = window.gameState.get(`purchases.items.${itemId}`) || 0;
+
+            // Check debug mode for affordability
+            const debugMode = window.gameState.isDebugMode();
+            if (debugMode) {
+                canAfford = true; // Debug mode: everything is affordable
+            } else {
+                canAfford = window.gameState.canAfford(cost);
+            }
+        } catch (error) {
+            console.error(`ShopSystem: Error accessing GameState for item ${itemId}:`, error);
+            return;
+        }
 
         // Update affordability
         itemElement.className = `shop-item ${canAfford ? '' : 'disabled'}`;
@@ -237,9 +389,39 @@ class ShopSystem {
     }
 
     updateAllItemsAffordability() {
+        // Ensure GameState is available before updating
+        if (!window.gameState) {
+            console.warn('ShopSystem: GameState not available for affordability update, retrying...');
+            setTimeout(() => {
+                if (window.gameState) {
+                    this.updateAllItemsAffordability();
+                }
+            }, 100);
+            return;
+        }
+
+        console.log('ShopSystem: Updating affordability for all items');
+
         // Update all items' affordability status
         [...this.items.click, ...this.items.cps].forEach(item => {
-            this.updateItemDisplay(item.id);
+            try {
+                this.updateItemDisplay(item.id);
+            } catch (error) {
+                console.error(`ShopSystem: Failed to update item ${item.id}:`, error);
+                // Try to re-render this specific item
+                setTimeout(() => {
+                    try {
+                        const itemElement = document.querySelector(`[data-item-id="${item.id}"]`);
+                        if (itemElement && window.gameState) {
+                            const newElement = this.createItemElement(item);
+                            itemElement.parentNode.replaceChild(newElement, itemElement);
+                            console.log(`ShopSystem: Re-rendered item ${item.id}`);
+                        }
+                    } catch (retryError) {
+                        console.error(`ShopSystem: Retry failed for item ${item.id}:`, retryError);
+                    }
+                }, 200);
+            }
         });
     }
 
@@ -351,16 +533,68 @@ class ShopSystem {
     }
 
     setupEventListeners() {
+        if (!window.gameState) {
+            console.error('ShopSystem: Cannot setup listeners - GameState not available');
+            return;
+        }
+
+        console.log('ShopSystem: Setting up event listeners...');
+
+        // Clear existing listeners first
+        this.clearEventListeners();
+
         // Listen for game state changes to update affordability
-        window.gameState.addListener('gameProgress.currentPoints', () => {
+        const pointsListener = () => {
+            console.log('ShopSystem: Points changed, updating affordability');
             this.updateAllItemsAffordability();
-        });
+        };
+        window.gameState.addListener('gameProgress.currentPoints', pointsListener);
+        this.listeners.push({ path: 'gameProgress.currentPoints', callback: pointsListener });
 
         // Listen for purchases to update displays
-        window.gameState.addListener('purchases.items.*', () => {
+        const purchasesListener = () => {
+            console.log('ShopSystem: Purchase detected, updating displays');
             this.updatePointsDisplay();
             this.updatePPSDisplay();
-        });
+        };
+        window.gameState.addListener('purchases.items.*', purchasesListener);
+        this.listeners.push({ path: 'purchases.items.*', callback: purchasesListener });
+
+        // Listen for game state reset to refresh shop
+        const stateChangeListener = (value, oldValue, path) => {
+            // Only respond to significant state changes
+            if (path === '*' || path.includes('gameProgress') || path.includes('purchases')) {
+                console.log('ShopSystem: GameState changed, path:', path);
+                setTimeout(() => {
+                    this.updateAllItemsAffordability();
+                    this.updatePointsDisplay();
+                }, 100);
+            }
+        };
+        window.gameState.addListener('*', stateChangeListener);
+        this.listeners.push({ path: '*', callback: stateChangeListener });
+
+        // Additional listener specifically for debug mode changes
+        const debugModeListener = (value) => {
+            console.log('ShopSystem: Debug mode changed to:', value);
+            setTimeout(() => {
+                this.updateAllItemsAffordability();
+            }, 50);
+        };
+        window.gameState.addListener('settings.debugMode', debugModeListener);
+        this.listeners.push({ path: 'settings.debugMode', callback: debugModeListener });
+
+        console.log(`ShopSystem: Setup ${this.listeners.length} event listeners`);
+    }
+
+    clearEventListeners() {
+        if (window.gameState && this.listeners) {
+            console.log(`ShopSystem: Clearing ${this.listeners.length} event listeners`);
+            this.listeners.forEach(listener => {
+                window.gameState.removeListener(listener.path, listener.callback);
+            });
+            this.listeners = [];
+        }
     }
 
     // Get shop statistics
@@ -401,6 +635,108 @@ class ShopSystem {
         this.renderShop();
         this.updatePointsDisplay();
         this.updatePPSDisplay();
+    }
+
+    // Force complete refresh of shop system (for save data deletion)
+    forceRefresh() {
+        console.log('ShopSystem: Force refresh initiated');
+
+        try {
+            // Reload items from data manager
+            this.loadItems();
+
+            // Re-render everything
+            this.renderShop();
+
+            // Update all displays
+            this.updatePointsDisplay();
+            this.updatePPSDisplay();
+            this.updateAllItemsAffordability();
+
+            console.log('ShopSystem: Force refresh completed successfully');
+        } catch (error) {
+            console.error('ShopSystem: Force refresh failed:', error);
+
+            // Try again after a delay
+            setTimeout(() => {
+                try {
+                    this.loadItems();
+                    this.renderShop();
+                    this.updateAllItemsAffordability();
+                    console.log('ShopSystem: Force refresh retry succeeded');
+                } catch (retryError) {
+                    console.error('ShopSystem: Force refresh retry failed:', retryError);
+                }
+            }, 500);
+        }
+    }
+
+    // Complete system reinitialize (nuclear option for save deletion)
+    async completeReinitialize() {
+        console.log('ShopSystem: Starting complete reinitialization...');
+
+        try {
+            // Clear all existing listeners first
+            if (window.gameState && this.listeners) {
+                this.listeners.forEach(listener => {
+                    window.gameState.removeListener(listener.path, listener.callback);
+                });
+                this.listeners = [];
+            }
+
+            // Reset containers
+            this.clickItemsContainer = document.getElementById('click-items');
+            this.cpsItemsContainer = document.getElementById('cps-items');
+
+            if (!this.clickItemsContainer || !this.cpsItemsContainer) {
+                console.error('ShopSystem: Containers not found during reinitialization');
+                return false;
+            }
+
+            // Clear containers
+            this.clickItemsContainer.innerHTML = '';
+            this.cpsItemsContainer.innerHTML = '';
+
+            // Wait for GameState to be ready
+            let attempts = 0;
+            while ((!window.gameState || typeof window.gameState.get !== 'function') && attempts < 20) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                attempts++;
+            }
+
+            if (!window.gameState || typeof window.gameState.get !== 'function') {
+                console.error('ShopSystem: GameState not ready after waiting');
+                return false;
+            }
+
+            // Reload everything from scratch
+            await this.loadItems();
+            this.setupShopTabs();
+            this.renderShop();
+            this.setupEventListeners();
+
+            // Force multiple updates
+            setTimeout(() => {
+                this.updateAllItemsAffordability();
+                this.updatePointsDisplay();
+                this.updatePPSDisplay();
+            }, 100);
+
+            setTimeout(() => {
+                this.updateAllItemsAffordability();
+            }, 300);
+
+            setTimeout(() => {
+                this.updateAllItemsAffordability();
+            }, 600);
+
+            console.log('ShopSystem: Complete reinitialization successful');
+            return true;
+
+        } catch (error) {
+            console.error('ShopSystem: Complete reinitialization failed:', error);
+            return false;
+        }
     }
 }
 

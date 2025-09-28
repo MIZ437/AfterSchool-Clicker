@@ -80,6 +80,7 @@ class SceneManager {
         const settingsOkBtn = document.getElementById('settings-ok-btn');
         const settingsCancelBtn = document.getElementById('settings-cancel-btn');
         const deleteSaveBtn = document.getElementById('delete-save-btn');
+        const backupSaveBtn = document.getElementById('backup-save-btn');
 
         if (settingsOkBtn) {
             settingsOkBtn.addEventListener('click', () => this.returnToPreviousScene());
@@ -89,6 +90,9 @@ class SceneManager {
         }
         if (deleteSaveBtn) {
             deleteSaveBtn.addEventListener('click', () => this.handleDeleteSave());
+        }
+        if (backupSaveBtn) {
+            backupSaveBtn.addEventListener('click', () => this.handleManualSave());
         }
 
         // Stage tabs
@@ -337,6 +341,27 @@ class SceneManager {
         }
     }
 
+    async handleManualSave() {
+        console.log('SceneManager: Manual save requested');
+
+        try {
+            if (window.saveManager) {
+                const result = await window.saveManager.saveGameWithStatus();
+
+                if (result.success) {
+                    alert('現在の進捗をセーブしました。');
+                } else {
+                    alert('セーブに失敗しました: ' + result.message);
+                }
+            } else {
+                alert('セーブマネージャーが見つかりません。');
+            }
+        } catch (error) {
+            console.error('SceneManager: Manual save error:', error);
+            alert('セーブ中にエラーが発生しました: ' + error.message);
+        }
+    }
+
     async handleDeleteSave() {
         // Show confirmation dialog
         const confirmed = confirm('本当にセーブデータを削除しますか？\nこの操作は取り消せません。');
@@ -354,13 +379,10 @@ class SceneManager {
                 if (result.success) {
                     console.log('SceneManager: Save deletion successful, starting system refresh...');
 
-                    // Show progress message
-                    alert('セーブデータを削除しました。\nシステムをリセット中...');
-
                     // Force complete system refresh without reload
                     await this.completeSystemRefresh();
 
-                    alert('システムリセットが完了しました。');
+                    alert('セーブデータを削除しました。');
                 } else {
                     throw new Error(result.message || 'セーブデータの削除に失敗しました');
                 }
@@ -380,7 +402,7 @@ class SceneManager {
             // Step 1: Switch to game scene and update all UI
             this.showScene('game');
             this.switchToStageImmediate(1);
-            this.switchToPanel('gacha');
+            this.switchToPanel('shop');
 
             // Step 2: Force refresh all managers
             await this.refreshAllManagers();

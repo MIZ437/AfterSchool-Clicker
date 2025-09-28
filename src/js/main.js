@@ -246,19 +246,24 @@ class AfterSchoolClicker {
                 const totalTimeDelta = (newest.timestamp - oldest.timestamp) / 1000; // seconds
                 const totalPointsDelta = newest.points - oldest.points;
 
-                // Only calculate if we have meaningful time difference
-                if (totalTimeDelta >= 0.3) {
+                // Check if there was recent activity (points changed in last 0.5 seconds)
+                const recentActivityThreshold = 500; // 0.5 seconds
+                const timeSinceLastChange = currentTime - newest.timestamp;
+                const hasRecentActivity = totalPointsDelta > 0 && timeSinceLastChange < recentActivityThreshold;
+
+                // Only calculate if we have meaningful time difference AND recent activity
+                if (totalTimeDelta >= 0.3 && hasRecentActivity) {
                     // Calculate total PPS from rolling window
                     const totalPPS = totalPointsDelta / totalTimeDelta;
                     // Subtract base CPS to get click-only PPS
                     clickPPS = Math.max(0, totalPPS - baseCPS);
                 } else {
-                    // If time window is too short, decay the previous EMA value
-                    clickPPS = this.emaPPS * 0.8; // Gradual decay when no recent activity
+                    // No recent activity or insufficient time - fast decay
+                    clickPPS = this.emaPPS * 0.5; // Faster decay when no recent clicking
                 }
             } else {
-                // Not enough data points, decay the EMA
-                clickPPS = this.emaPPS * 0.8;
+                // Not enough data points, fast decay
+                clickPPS = this.emaPPS * 0.5;
             }
 
             // Apply EMA smoothing only to click-based PPS

@@ -207,23 +207,9 @@ class AfterSchoolClicker {
     updateCPSDisplay() {
         const cpsElement = document.getElementById('points-per-second');
         if (cpsElement && window.gameState) {
-            // Calculate real-time PPS using EMA
-            const currentPoints = window.gameState.get('gameProgress.currentPoints');
-            const currentTime = Date.now();
-            const deltaTime = (currentTime - this.lastUpdateTime) / 1000; // seconds
-            const deltaPoints = currentPoints - this.lastPoints;
-
-            if (deltaTime > 0 && this.lastPoints > 0) {
-                const instantPPS = deltaPoints / deltaTime;
-                // Apply EMA smoothing
-                this.realTimePPS = this.emaAlpha * instantPPS + (1 - this.emaAlpha) * this.realTimePPS;
-            }
-
-            this.lastPoints = currentPoints;
-            this.lastUpdateTime = currentTime;
-
-            // Display real-time PPS
-            cpsElement.textContent = this.formatNumber(Math.max(0, this.realTimePPS));
+            // Display the total CPS (Points Per Second) from purchased items
+            const totalCPS = window.gameState.getPointsPerSecond();
+            cpsElement.textContent = this.formatNumber(totalCPS);
         }
     }
 
@@ -236,54 +222,68 @@ class AfterSchoolClicker {
     }
 
     checkStageUnlocks() {
-        if (!window.gameState || !window.dataManager) return;
+        // Disabled automatic stage unlocking
+        // Stages are now unlocked only by manual button click
+        // This method is kept for compatibility but no longer performs auto-unlock
+        return;
+    }
+
+    // Manual stage unlock method (called by button click)
+    unlockStage(stageId) {
+        if (!window.gameState || !window.dataManager) return false;
 
         const currentPoints = window.gameState.get('gameProgress.currentPoints');
         const unlockedStages = window.gameState.get('gameProgress.unlockedStages');
         const stages = window.dataManager.getStages();
 
-        let newUnlocks = false;
-
-        stages.forEach(stage => {
-            // Convert stage ID to number (STAGE_1 -> 1, STAGE_2 -> 2, etc.)
-            const stageId = stage.id === 'STAGE_1' ? 1 :
-                           stage.id === 'STAGE_2' ? 2 :
-                           stage.id === 'STAGE_3' ? 3 :
-                           stage.id === 'STAGE_4' ? 4 : parseInt(stage.id);
-            const unlockCost = parseInt(stage.unlock_cost);
-
-            // Skip stage 1 as it's always unlocked by default
-            if (stageId === 1) return;
-
-            if (!unlockedStages.includes(stageId) && currentPoints >= unlockCost) {
-                unlockedStages.push(stageId);
-                newUnlocks = true;
-
-                // Show unlock notification and play sound
-                this.showStageUnlockNotification(stage);
-
-                // Play unlock sound
-                if (window.audioManager) {
-                    window.audioManager.playSE('stage_unlock_sound');
-                }
-
-                // Screen effect
-                if (window.effectSystem) {
-                    window.effectSystem.screenFlash('rgba(255, 215, 0, 0.5)', 1000);
-                }
-            }
+        // Find the stage data
+        const stage = stages.find(s => {
+            const id = s.id === 'STAGE_1' ? 1 :
+                      s.id === 'STAGE_2' ? 2 :
+                      s.id === 'STAGE_3' ? 3 :
+                      s.id === 'STAGE_4' ? 4 : parseInt(s.id);
+            return id === stageId;
         });
 
-        if (newUnlocks) {
-            window.gameState.set('gameProgress.unlockedStages', unlockedStages);
+        if (!stage) return false;
 
-            // Update stage UI after unlocking with slight delay to ensure state consistency
-            setTimeout(() => {
-                if (window.sceneManager) {
-                    window.sceneManager.updateStageUI();
-                }
-            }, 100);
+        const unlockCost = parseInt(stage.unlock_cost);
+
+        // Skip stage 1 as it's always unlocked by default
+        if (stageId === 1) return true;
+
+        // Check if already unlocked
+        if (unlockedStages.includes(stageId)) return true;
+
+        // Check if player has enough points
+        if (currentPoints < unlockCost) return false;
+
+        // Deduct points and unlock stage
+        window.gameState.spendPoints(unlockCost);
+        unlockedStages.push(stageId);
+        window.gameState.set('gameProgress.unlockedStages', unlockedStages);
+
+        // Show unlock notification and play sound
+        this.showStageUnlockNotification(stage);
+
+        // Play unlock sound
+        if (window.audioManager) {
+            window.audioManager.playSE('stage_unlock_sound');
         }
+
+        // Screen effect
+        if (window.effectSystem) {
+            window.effectSystem.screenFlash('rgba(255, 215, 0, 0.5)', 1000);
+        }
+
+        // Update stage UI after unlocking with slight delay to ensure state consistency
+        setTimeout(() => {
+            if (window.sceneManager) {
+                window.sceneManager.updateStageUI();
+            }
+        }, 100);
+
+        return true;
     }
 
     showStageUnlockNotification(stage) {

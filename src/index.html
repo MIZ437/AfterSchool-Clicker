@@ -555,28 +555,32 @@
                 // ポイントを消費してステージ解放
                 const success = window.gameState.spendPoints(requirement);
                 if (success) {
-                    window.gameState.unlockStage(stageId);
+                    // Update unlocked stages
+                    unlockedStages.push(stageId);
+                    window.gameState.set('gameProgress.unlockedStages', unlockedStages);
+
                     updateStageButtons();
                     switchToStageLocal(stageId);
 
-                    // ステージ解放通知
-                    if (window.showStageUnlockNotification) {
-                        window.showStageUnlockNotification(stageId);
-                    }
-
-                    // チャリーン効果音とファンファーレを再生
+                    // ステージ解放通知とエフェクト
                     if (window.audioManager) {
-                        window.audioManager.playSE('purchase_sound');
-                        // 少し遅らせてファンファーレを再生
-                        setTimeout(() => {
-                            window.audioManager.playSE('stage_unlock_sound');
-                        }, 200);
+                        window.audioManager.playSE('stage_unlock_sound');
                     }
 
-                } else {
+                    if (window.effectSystem) {
+                        window.effectSystem.screenFlash('rgba(255, 215, 0, 0.5)', 1000);
+                    }
+
+                    // Show unlock notification
+                    if (window.sceneManager) {
+                        window.sceneManager.showMessage(`ステージ${stageId}が解放されました！`);
+                    }
                 }
-            } else if (unlockedStages.includes(stageId)) {
             } else {
+                // ポイント不足またはすでに解放済み
+                if (window.sceneManager) {
+                    window.sceneManager.showMessage(`ステージ${stageId}の解放には${requirement.toLocaleString()}ポイントが必要です`);
+                }
             }
         }
 

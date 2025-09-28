@@ -6,10 +6,14 @@ class AfterSchoolClicker {
         this.autosaveInterval = null;
 
         // EMA calculation for real-time PPS
-        this.lastPoints = 0;
-        this.lastUpdateTime = Date.now();
-        this.realTimePPS = 0;
-        this.emaAlpha = 0.1; // Smoothing factor (0.1 = more smoothing)
+        this.lastPoints = null;
+        this.lastUpdateTime = null;
+        this.emaPPS = 0; // Exponential Moving Average for Points Per Second
+        this.emaAlpha = 0.1; // Smoothing factor (0.1 = more smoothing, 0.9 = less smoothing)
+
+        // Point tracking for rolling window calculation
+        this.pointsHistory = []; // Store {timestamp, points} for last few seconds
+        this.historyWindowMs = 1000; // 1 second window
 
         this.setupGame();
     }
@@ -207,9 +211,68 @@ class AfterSchoolClicker {
     updateCPSDisplay() {
         const cpsElement = document.getElementById('points-per-second');
         if (cpsElement && window.gameState) {
-            // Display the total CPS (Points Per Second) from purchased items
-            const totalCPS = window.gameState.getPointsPerSecond();
-            cpsElement.textContent = this.formatNumber(totalCPS);
+            const currentPoints = window.gameState.get('gameProgress.currentPoints');
+            const currentTime = Date.now();
+
+            // Get base CPS from purchased items (instant, no smoothing needed)
+            const baseCPS = window.gameState.getPointsPerSecond();
+
+            // Detect if points dramatically decreased (save reset, spending, etc.)
+            if (this.pointsHistory.length > 0) {
+                const lastEntry = this.pointsHistory[this.pointsHistory.length - 1];
+                const pointsDropped = currentPoints < lastEntry.points - 1000; // Threshold for major point decrease
+
+                if (pointsDropped) {
+                    console.log('[DEBUG] Major points decrease detected, clearing history');
+                    this.pointsHistory = [];
+                    this.emaPPS = 0;
+                }
+            }
+
+            // Add current data point to history
+            this.pointsHistory.push({ timestamp: currentTime, points: currentPoints });
+
+            // Remove old data points (older than window)
+            this.pointsHistory = this.pointsHistory.filter(entry =>
+                currentTime - entry.timestamp <= this.historyWindowMs
+            );
+
+            // Calculate click-based PPS using rolling window
+            let clickPPS = 0;
+            if (this.pointsHistory.length >= 2) {
+                const oldest = this.pointsHistory[0];
+                const newest = this.pointsHistory[this.pointsHistory.length - 1];
+
+                const totalTimeDelta = (newest.timestamp - oldest.timestamp) / 1000; // seconds
+                const totalPointsDelta = newest.points - oldest.points;
+
+                // Only calculate if we have meaningful time difference
+                if (totalTimeDelta >= 0.3) {
+                    // Calculate total PPS from rolling window
+                    const totalPPS = totalPointsDelta / totalTimeDelta;
+                    // Subtract base CPS to get click-only PPS
+                    clickPPS = Math.max(0, totalPPS - baseCPS);
+                } else {
+                    // If time window is too short, decay the previous EMA value
+                    clickPPS = this.emaPPS * 0.8; // Gradual decay when no recent activity
+                }
+            } else {
+                // Not enough data points, decay the EMA
+                clickPPS = this.emaPPS * 0.8;
+            }
+
+            // Apply EMA smoothing only to click-based PPS
+            this.emaPPS = this.emaAlpha * clickPPS + (1 - this.emaAlpha) * this.emaPPS;
+
+            // If EMA is very small, set it to 0 to prevent flickering
+            if (this.emaPPS < 0.5) {
+                this.emaPPS = 0;
+            }
+
+            // Display: Base CPS (instant) + Smoothed Click PPS
+            const displayPPS = Math.max(0, Math.round(baseCPS + this.emaPPS));
+            console.log('[DEBUG] CPS Display - Base CPS:', baseCPS, 'Click PPS:', Math.round(clickPPS), 'Smoothed Click:', Math.round(this.emaPPS), 'Total Display:', displayPPS);
+            cpsElement.textContent = this.formatNumber(displayPPS);
         }
     }
 

@@ -601,22 +601,31 @@ class ShopSystem {
         console.log('ShopSystem: Resetting scroll positions to top');
 
         try {
-            // Reset scroll position for click items container
-            if (this.clickItemsContainer) {
-                this.clickItemsContainer.scrollTop = 0;
-                console.log('ShopSystem: Click items scroll reset');
+            // Reset scroll position for actual item containers
+            const clickItemsSimple = document.getElementById('click-items-simple');
+            if (clickItemsSimple) {
+                clickItemsSimple.scrollTop = 0;
+                console.log('ShopSystem: Click items simple scroll reset');
             }
 
-            // Reset scroll position for CPS items container
-            if (this.cpsItemsContainer) {
-                this.cpsItemsContainer.scrollTop = 0;
-                console.log('ShopSystem: CPS items scroll reset');
+            const cpsItemsSimple = document.getElementById('cps-items-simple');
+            if (cpsItemsSimple) {
+                cpsItemsSimple.scrollTop = 0;
+                console.log('ShopSystem: CPS items simple scroll reset');
+            }
+
+            // Reset scroll position for shop items container (main scrollable area)
+            const shopItemsContainer = document.querySelector('.shop-items-container');
+            if (shopItemsContainer) {
+                shopItemsContainer.scrollTop = 0;
+                console.log('ShopSystem: Shop items container scroll reset');
             }
 
             // Reset scroll position for shop tab content areas
             const shopTabContents = document.querySelectorAll('.shop-tab-content');
-            shopTabContents.forEach(content => {
+            shopTabContents.forEach((content, index) => {
                 content.scrollTop = 0;
+                console.log(`ShopSystem: Shop tab content ${index} scroll reset`);
             });
 
             // Reset scroll position for main shop panel
@@ -625,6 +634,16 @@ class ShopSystem {
                 shopPanel.scrollTop = 0;
                 console.log('ShopSystem: Shop panel scroll reset');
             }
+
+            // Force immediate scroll reset with delay
+            setTimeout(() => {
+                [clickItemsSimple, cpsItemsSimple, shopItemsContainer].forEach(element => {
+                    if (element) {
+                        element.scrollTop = 0;
+                    }
+                });
+                console.log('ShopSystem: Delayed scroll reset completed');
+            }, 100);
 
             console.log('ShopSystem: All scroll positions reset to top');
         } catch (error) {

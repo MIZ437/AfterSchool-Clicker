@@ -464,30 +464,55 @@ class SceneManager {
             const gameScreen = document.getElementById('game-screen');
             if (gameScreen) {
                 gameScreen.scrollTop = 0;
+                console.log('SceneManager: Game screen scroll reset');
             }
 
             // Reset scroll position for shop panel and sub-panels
             const shopPanel = document.getElementById('shop-panel');
             if (shopPanel) {
                 shopPanel.scrollTop = 0;
+                console.log('SceneManager: Shop panel scroll reset');
             }
 
             // Reset scroll position for gacha panel
             const gachaPanel = document.getElementById('gacha-panel');
             if (gachaPanel) {
                 gachaPanel.scrollTop = 0;
+                console.log('SceneManager: Gacha panel scroll reset');
+            }
+
+            // Reset scroll position for shop items container
+            const shopItemsContainer = document.querySelector('.shop-items-container');
+            if (shopItemsContainer) {
+                shopItemsContainer.scrollTop = 0;
+                console.log('SceneManager: Shop items container scroll reset');
             }
 
             // Reset scroll position for all tab contents
             const tabContents = document.querySelectorAll('.shop-tab-content, .panel-content');
-            tabContents.forEach(content => {
+            tabContents.forEach((content, index) => {
                 content.scrollTop = 0;
+                console.log(`SceneManager: Tab content ${index} scroll reset`);
             });
 
-            // Reset scroll position for item containers
-            const itemContainers = document.querySelectorAll('#click-items, #cps-items');
-            itemContainers.forEach(container => {
+            // Reset scroll position for specific item containers
+            const itemContainers = document.querySelectorAll('#click-items-simple, #cps-items-simple');
+            itemContainers.forEach((container, index) => {
                 container.scrollTop = 0;
+                console.log(`SceneManager: Item container ${index} scroll reset`);
+            });
+
+            // Force multiple scroll resets with delays to ensure effectiveness
+            [100, 200, 500].forEach(delay => {
+                setTimeout(() => {
+                    if (shopItemsContainer) {
+                        shopItemsContainer.scrollTop = 0;
+                    }
+                    itemContainers.forEach(container => {
+                        container.scrollTop = 0;
+                    });
+                    console.log(`SceneManager: Delayed scroll reset (${delay}ms) completed`);
+                }, delay);
             });
 
             console.log('SceneManager: All scroll positions reset to top');

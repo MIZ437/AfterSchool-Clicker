@@ -367,9 +367,56 @@ class DataManager {
 
     // Reload data
     async reload() {
+        console.log('DataManager reload called - forcing CSV reload');
         this.loaded = false;
         this.loadPromise = null;
-        return await this.loadAll();
+        this.data = {
+            stages: null,
+            items: null,
+            images: null,
+            audio: null,
+            videos: null,
+            text: null
+        };
+        return await this._loadAllDataForced();
+    }
+
+    // Force load data directly from CSV, ignoring cache
+    async _loadAllDataForced() {
+        try {
+            console.log('Loading game data directly from CSV...');
+
+            // Force load from CSV files, ignore cache
+            const csvFiles = ['stages', 'items', 'images', 'audio', 'videos', 'text'];
+            const loadPromises = csvFiles.map(async (file) => {
+                try {
+                    console.log(`Force loading ${file}.csv...`);
+                    const result = await window.electronAPI.loadCSV(`${file}.csv`);
+                    if (result.success) {
+                        this.data[file] = result.data;
+                        console.log(`Force loaded ${file}.csv: ${result.data.length} entries`);
+                        console.log(`Sample data for ${file}:`, result.data.slice(0, 2));
+                    } else {
+                        console.error(`Failed to force load ${file}.csv:`, result.error);
+                        this.data[file] = [];
+                    }
+                } catch (error) {
+                    console.error(`Error force loading ${file}.csv:`, error);
+                    this.data[file] = [];
+                }
+            });
+
+            await Promise.all(loadPromises);
+            this.loaded = true;
+            console.log('All game data force loaded');
+            console.log('Final data state:', this.data);
+            return true;
+
+        } catch (error) {
+            console.error('Failed to force load game data:', error);
+            this.loadDefaultData();
+            return false;
+        }
     }
 }
 

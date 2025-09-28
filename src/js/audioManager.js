@@ -70,6 +70,9 @@ class AudioManager {
         }
 
         try {
+            // Ensure data is loaded first
+            await window.dataManager.loadAll();
+
             const audioData = window.dataManager.getAudio();
             console.log('Audio data loaded:', audioData.length, 'items');
             console.log('Available audio IDs:', audioData.map(a => a.id));
@@ -102,7 +105,9 @@ class AudioManager {
 
         const audio = this.sounds.get(id);
         if (audio) {
-            audio.volume = this.bgmVolume;
+            // Get individual volume from CSV data
+            const individualVolume = this.getIndividualVolume(id);
+            audio.volume = this.bgmVolume * individualVolume;
             audio.loop = loop;
             audio.currentTime = 0;
 
@@ -127,10 +132,13 @@ class AudioManager {
         }
     }
 
-    playSE(id) {
+    async playSE(id) {
+        console.log(`[DEBUG] playSE called with id: ${id}`);
+
         // Force load sounds if not loaded
         if (this.sounds.size === 0) {
-            this.loadSoundsSync();
+            console.log(`[DEBUG] No sounds loaded, calling loadSoundsSync()`);
+            await this.loadSoundsSync();
         }
 
         // Initialize audio context on first user interaction
@@ -143,7 +151,17 @@ class AudioManager {
             try {
                 // Clone audio for multiple simultaneous plays
                 const audioClone = audio.cloneNode();
-                audioClone.volume = this.seVolume;
+
+                // Get individual volume from CSV data
+                const individualVolume = this.getIndividualVolume(id);
+                const finalVolume = this.seVolume * individualVolume;
+
+                console.log(`[DEBUG] Volume calculation for ${id}:`);
+                console.log(`  - seVolume: ${this.seVolume}`);
+                console.log(`  - individualVolume: ${individualVolume}`);
+                console.log(`  - finalVolume: ${finalVolume}`);
+
+                audioClone.volume = finalVolume;
                 audioClone.currentTime = 0;
 
                 const playPromise = audioClone.play();
@@ -160,6 +178,8 @@ class AudioManager {
             }
         } else {
             console.warn(`SE not found: ${id}, playing beep instead`);
+            console.log(`[DEBUG] Available sounds in map:`, Array.from(this.sounds.keys()));
+            console.log(`[DEBUG] Total sounds loaded:`, this.sounds.size);
             // Create a simple beep if sound not found
             this.playBeep();
         }
@@ -191,27 +211,94 @@ class AudioManager {
         }
     }
 
-    loadSoundsSync() {
-        // Load essential sounds immediately
-        const essentialSounds = [
-            { id: 'click_sound', path: '../assets/se/click.mp3' },
-            { id: 'purchase_sound', path: '../assets/se/purchase.mp3' },
-            { id: 'stage_unlock_sound', path: '../assets/se/fanfare.mp3' },
-            { id: 'button_click', path: '../assets/se/button_click.wav' }
-        ];
+    async loadSoundsSync() {
+        console.log(`[DEBUG] loadSoundsSync called`);
 
-        essentialSounds.forEach(sound => {
-            if (!this.sounds.has(sound.id)) {
-                try {
-                    const audio = new Audio();
-                    audio.src = sound.path;
-                    audio.preload = 'auto';
-                    this.sounds.set(sound.id, audio);
-                } catch (error) {
-                    console.warn(`Failed to load ${sound.id}:`, error);
-                }
+        // Ensure DataManager is loaded
+        if (window.dataManager) {
+            if (!window.dataManager.isLoaded()) {
+                console.log(`[DEBUG] DataManager not loaded, forcing load...`);
+                await window.dataManager.loadAll();
             }
-        });
+
+            // Force reload if audio data is null/empty
+            const currentAudioData = window.dataManager.getAudio();
+            if (!currentAudioData || currentAudioData.length === 0) {
+                console.log(`[DEBUG] Audio data is null/empty, forcing DataManager reload...`);
+                await window.dataManager.reload();
+            }
+        }
+
+        // Try to use CSV data first
+        if (window.dataManager && window.dataManager.isLoaded()) {
+            console.log(`[DEBUG] Using CSV data for sound loading`);
+            console.log(`[DEBUG] DataManager loaded status:`, window.dataManager.isLoaded());
+            console.log(`[DEBUG] DataManager data:`, window.dataManager.data);
+            console.log(`[DEBUG] DataManager audio data:`, window.dataManager.data.audio);
+
+            const audioData = window.dataManager.getAudio();
+            console.log(`[DEBUG] audioData content:`, audioData);
+            console.log(`[DEBUG] audioData length:`, audioData.length);
+            console.log(`[DEBUG] audioData type:`, typeof audioData);
+
+            audioData.forEach((audioItem, index) => {
+                console.log(`[DEBUG] Processing item ${index}:`, audioItem);
+                console.log(`[DEBUG] Item id: ${audioItem.id}, has in sounds: ${this.sounds.has(audioItem.id)}`);
+
+                if (!this.sounds.has(audioItem.id)) {
+                    console.log(`[DEBUG] Will load ${audioItem.id}`);
+                    try {
+                        const audio = new Audio();
+                        const fullPath = `../assets/${audioItem.filename}`;
+                        audio.src = fullPath;
+                        audio.preload = 'auto';
+                        console.log(`[DEBUG] Attempting to load: ${audioItem.id} from path: ${fullPath}`);
+
+                        audio.addEventListener('loadstart', () => {
+                            console.log(`[DEBUG] Load started for ${audioItem.id}`);
+                        });
+
+                        audio.addEventListener('canplaythrough', () => {
+                            console.log(`[DEBUG] Successfully loaded ${audioItem.id}`);
+                            this.sounds.set(audioItem.id, audio);
+                        });
+
+                        audio.addEventListener('error', (e) => {
+                            console.warn(`[DEBUG] Failed to load ${audioItem.id} from ${fullPath}:`, e);
+                        });
+
+                        audio.load();
+                    } catch (error) {
+                        console.warn(`Failed to load ${audioItem.id}:`, error);
+                    }
+                } else {
+                    console.log(`[DEBUG] Skipping ${audioItem.id} (already loaded)`);
+                }
+            });
+        } else {
+            console.log(`[DEBUG] CSV data not available, using fallback sounds`);
+            // Fallback to essential sounds
+            const essentialSounds = [
+                { id: 'click_sound', path: '../assets/se/click.mp3' },
+                { id: 'purchase_sound', path: '../assets/se/purchase.mp3' },
+                { id: 'stage_unlock_sound', path: '../assets/se/fanfare.mp3' },
+                { id: 'button_click', path: '../assets/se/button_click.wav' }
+            ];
+
+            essentialSounds.forEach(sound => {
+                if (!this.sounds.has(sound.id)) {
+                    try {
+                        const audio = new Audio();
+                        audio.src = sound.path;
+                        audio.preload = 'auto';
+                        this.sounds.set(sound.id, audio);
+                        console.log(`[DEBUG] Loaded fallback sound: ${sound.id}`);
+                    } catch (error) {
+                        console.warn(`Failed to load ${sound.id}:`, error);
+                    }
+                }
+            });
+        }
     }
 
     playBeep() {
@@ -233,6 +320,53 @@ class AudioManager {
         } catch (error) {
             console.warn('Beep generation failed:', error);
         }
+    }
+
+    // Get individual volume setting from CSV data
+    getIndividualVolume(audioId) {
+        console.log(`[DEBUG] getIndividualVolume called for: ${audioId}`);
+
+        if (!window.dataManager) {
+            console.warn('[DEBUG] DataManager not available for volume lookup');
+            return 1.0; // Default volume multiplier
+        }
+
+        // Check if data is loaded
+        if (!window.dataManager.isLoaded()) {
+            console.warn('[DEBUG] DataManager data not loaded yet, using default volume');
+            return 1.0;
+        }
+
+        try {
+            const audioData = window.dataManager.getAudio();
+            console.log(`[DEBUG] Audio data from DataManager:`, audioData);
+
+            if (!audioData || audioData.length === 0) {
+                console.warn('[DEBUG] No audio data available, using default volume');
+                return 1.0;
+            }
+
+            console.log(`[DEBUG] Searching for audioId: ${audioId} in ${audioData.length} items`);
+            const audioItem = audioData.find(item => {
+                console.log(`[DEBUG] Checking item: ${item.id} === ${audioId}?`);
+                return item.id === audioId;
+            });
+
+            console.log(`[DEBUG] Found audio item:`, audioItem);
+
+            if (audioItem && audioItem.volume !== undefined) {
+                const volume = parseFloat(audioItem.volume);
+                console.log(`[DEBUG] Individual volume for ${audioId}: ${volume} (original: ${audioItem.volume})`);
+                return isNaN(volume) ? 1.0 : volume;
+            } else {
+                console.warn(`[DEBUG] Audio item not found for ${audioId}, using default volume`);
+            }
+        } catch (error) {
+            console.warn(`[DEBUG] Failed to get individual volume for ${audioId}:`, error);
+        }
+
+        console.log(`[DEBUG] Returning default volume 1.0 for ${audioId}`);
+        return 1.0; // Default volume multiplier if not found
     }
 
     setBGMVolume(volume) {

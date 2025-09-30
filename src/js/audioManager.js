@@ -8,6 +8,9 @@ class AudioManager {
         this.audioContext = null;
         this.sounds = new Map();
         this.isInitialized = false;
+        this.uiHandlersSetup = false;
+        this.lastPlayTime = new Map(); // Track last play time for each sound
+        this.isMuted = false; // Global mute state
         console.log('AudioManager constructor completed, calling setupAudio');
         this.setupAudio();
     }
@@ -97,6 +100,12 @@ class AudioManager {
     playBGM(id, loop = true) {
         if (!this.isInitialized) return;
 
+        // Check if muted
+        if (this.isMuted) {
+            console.log(`[DEBUG] Skipping BGM ${id} - audio is muted`);
+            return;
+        }
+
         // Stop current BGM
         if (this.currentBGM) {
             this.currentBGM.pause();
@@ -132,8 +141,36 @@ class AudioManager {
         }
     }
 
+    setMuted(muted) {
+        console.log('[DEBUG] AudioManager setMuted called with:', muted);
+        this.isMuted = muted;
+
+        // Stop current BGM if muting
+        if (muted && this.currentBGM) {
+            this.stopBGM();
+        }
+    }
+
     async playSE(id) {
         console.log(`[DEBUG] playSE called with id: ${id}`);
+
+        // Check if muted
+        if (this.isMuted) {
+            console.log(`[DEBUG] Skipping ${id} - audio is muted`);
+            return;
+        }
+
+        // Prevent rapid duplicate sounds (within 100ms)
+        const now = Date.now();
+        const lastPlayed = this.lastPlayTime.get(id) || 0;
+        const timeSince = now - lastPlayed;
+
+        if (timeSince < 100) {
+            console.log(`[DEBUG] Skipping ${id} - too soon after last play (${timeSince}ms)`);
+            return;
+        }
+
+        this.lastPlayTime.set(id, now);
 
         // Force load sounds if not loaded
         if (this.sounds.size === 0) {
@@ -149,22 +186,19 @@ class AudioManager {
         const audio = this.sounds.get(id);
         if (audio) {
             try {
-                // Clone audio for multiple simultaneous plays
-                const audioClone = audio.cloneNode();
+                // Reset audio instead of cloning for better performance
+                audio.currentTime = 0;
 
                 // Get individual volume from CSV data
                 const individualVolume = this.getIndividualVolume(id);
                 const finalVolume = this.seVolume * individualVolume;
 
-                console.log(`[DEBUG] Volume calculation for ${id}:`);
-                console.log(`  - seVolume: ${this.seVolume}`);
-                console.log(`  - individualVolume: ${individualVolume}`);
-                console.log(`  - finalVolume: ${finalVolume}`);
+                // Volume calculation (reduced logging for performance)
+                // console.log(`[DEBUG] Volume calculation for ${id}: ${finalVolume}`);
 
-                audioClone.volume = finalVolume;
-                audioClone.currentTime = 0;
+                audio.volume = finalVolume;
 
-                const playPromise = audioClone.play();
+                const playPromise = audio.play();
                 if (playPromise) {
                     playPromise.catch(error => {
                         console.warn('SE play failed:', error);
@@ -173,7 +207,7 @@ class AudioManager {
                     });
                 }
             } catch (error) {
-                console.warn('Audio clone failed:', error);
+                console.warn('Audio play failed:', error);
                 this.playBeep();
             }
         } else {
@@ -443,16 +477,42 @@ class AudioManager {
 
     // Audio event handlers for UI
     setupUIAudioHandlers() {
+        // Prevent multiple setup calls
+        if (this.uiHandlersSetup) {
+            console.log('[DEBUG] UI handlers already setup, skipping');
+            return;
+        }
+
+        console.log('[DEBUG] Setting up UI audio handlers');
+
         // Add click sounds to all buttons
         const buttons = document.querySelectorAll('button');
         buttons.forEach(button => {
             button.addEventListener('click', () => {
-                // Skip audio for purchase buttons (they have their own audio)
-                if (!button.id.includes('purchase') && !button.classList.contains('purchase-btn')) {
+                // Skip audio for buttons that handle their own audio
+                const skipAudioButtons = [
+                    'start-game-btn',
+                    'settings-btn',
+                    'quit-btn',
+                    'game-quit-btn',
+                    'audio-enable-btn',
+                    'audio-disable-btn'
+                ];
+
+                // Check for exact matches or class matches for specific buttons
+                const shouldSkip = skipAudioButtons.includes(button.id) ||
+                                 button.classList.contains('buy-btn') || // Exclude buy buttons as they play purchase sound
+                                 button.classList.contains('purchase-btn') ||
+                                 button.classList.contains('stage-tab'); // Exclude stage buttons as they have special handling
+
+                if (!shouldSkip) {
+                    console.log('[DEBUG] Playing click_sound via setupUIAudioHandlers');
                     this.playSE('click_sound');
                 }
             });
         });
+
+        this.uiHandlersSetup = true;
 
         // Add volume slider handlers
         const bgmSlider = document.getElementById('bgm-volume');

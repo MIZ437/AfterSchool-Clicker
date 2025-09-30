@@ -6,6 +6,8 @@ class SceneManager {
         this.scenes = new Map();
         this.isTransitioning = false;
         this.firstRun = true;
+        this.audioContextInitialized = false;
+        this.isMuted = false;
         this.setupScenes();
     }
 
@@ -27,6 +29,7 @@ class SceneManager {
         this.registerScene('settings', document.getElementById('settings-screen'));
 
         this.setupEventHandlers();
+        this.setupAudioActivationOverlay();
         this.startGame();
     }
 
@@ -83,7 +86,10 @@ class SceneManager {
             gameSettingsBtn.addEventListener('click', () => this.showScene('settings'));
         }
         if (gameQuitBtn) {
-            gameQuitBtn.addEventListener('click', () => this.showScene('title'));
+            gameQuitBtn.addEventListener('click', async () => {
+                await this.handleTitleButtonClick();
+                this.showScene('title');
+            });
         }
 
         // Settings screen buttons
@@ -124,6 +130,155 @@ class SceneManager {
         });
     }
 
+    setupAudioActivationOverlay() {
+        console.log('[DEBUG] Setting up audio activation overlay');
+
+        const audioEnableBtn = document.getElementById('audio-enable-btn');
+        const audioDisableBtn = document.getElementById('audio-disable-btn');
+
+        if (audioEnableBtn && audioDisableBtn) {
+            // Handle "する" (Enable) button
+            audioEnableBtn.addEventListener('click', async (event) => {
+                event.stopPropagation();
+                console.log('[DEBUG] Audio ENABLE button clicked');
+
+                try {
+                    // Initialize audio context and system
+                    await this.activateAudioSystem();
+
+                    // Hide the overlay with smooth transition
+                    this.hideAudioOverlay();
+
+                    // Start title BGM if available
+                    this.startTitleBGM();
+
+                    console.log('[DEBUG] Audio system enabled and BGM started');
+
+                } catch (error) {
+                    console.error('[DEBUG] Audio activation failed:', error);
+                    // Hide overlay anyway to not block the game
+                    this.hideAudioOverlay();
+                }
+            });
+
+            // Handle "しない" (Disable) button
+            audioDisableBtn.addEventListener('click', async (event) => {
+                event.stopPropagation();
+                console.log('[DEBUG] Audio DISABLE button clicked');
+
+                // Set mute mode
+                this.setMuteMode(true);
+
+                // Hide the overlay with smooth transition
+                this.hideAudioOverlay();
+
+                console.log('[DEBUG] Audio system disabled (muted)');
+            });
+
+            console.log('[DEBUG] Audio choice button event listeners added');
+        } else {
+            console.warn('[DEBUG] Audio choice button elements not found');
+        }
+    }
+
+    async activateAudioSystem() {
+        console.log('[DEBUG] Activating audio system');
+
+        // Create a temporary audio element to unlock the audio context
+        const unlockAudio = new Audio();
+        unlockAudio.src = '../assets/se/click.mp3';
+        unlockAudio.volume = 0.01;
+
+        try {
+            // Play the unlock audio
+            await unlockAudio.play();
+            console.log('[DEBUG] Audio context unlocked successfully');
+
+            // Initialize the main audio system
+            if (window.audioManager) {
+                await window.audioManager.initializeAudioContext();
+                await window.audioManager.loadSoundsSync();
+                window.audioManager.loadSettings();
+                window.audioManager.setupUIAudioHandlers();
+                console.log('[DEBUG] AudioManager fully initialized');
+            }
+
+            // Mark audio as activated
+            this.audioContextInitialized = true;
+
+        } catch (error) {
+            console.error('[DEBUG] Audio system activation failed:', error);
+            throw error;
+        }
+    }
+
+    hideAudioOverlay() {
+        console.log('[DEBUG] Hiding audio overlay');
+
+        const audioOverlay = document.getElementById('audio-activation-overlay');
+        if (audioOverlay) {
+            // Add hidden class for smooth transition
+            audioOverlay.classList.add('hidden');
+
+            // Remove from DOM after transition
+            setTimeout(() => {
+                audioOverlay.style.display = 'none';
+            }, 300);
+        }
+    }
+
+    showAudioOverlay() {
+        console.log('[DEBUG] Showing audio overlay');
+
+        const audioOverlay = document.getElementById('audio-activation-overlay');
+        if (audioOverlay) {
+            // Make sure overlay is visible and remove hidden class
+            audioOverlay.style.display = 'flex';
+            audioOverlay.classList.remove('hidden');
+            console.log('[DEBUG] Audio overlay displayed');
+        } else {
+            console.warn('[DEBUG] Audio overlay element not found');
+        }
+    }
+
+    setMuteMode(isMuted) {
+        console.log('[DEBUG] Setting mute mode:', isMuted);
+
+        // Mark audio as initialized but muted
+        this.audioContextInitialized = false;
+        this.isMuted = isMuted;
+
+        // Set audio manager to mute if available
+        if (window.audioManager) {
+            try {
+                // Set mute flag in audio manager
+                window.audioManager.setMuted(isMuted);
+                console.log('[DEBUG] Audio manager mute state set to:', isMuted);
+            } catch (error) {
+                console.warn('[DEBUG] Failed to set audio manager mute:', error);
+            }
+        }
+    }
+
+    startTitleBGM() {
+        console.log('[DEBUG] Starting title BGM');
+
+        // Don't start BGM if muted
+        if (this.isMuted) {
+            console.log('[DEBUG] Audio is muted - skipping title BGM');
+            return;
+        }
+
+        if (window.audioManager && window.audioManager.sounds.has('title_bgm')) {
+            try {
+                window.audioManager.playBGM('title_bgm');
+                console.log('[DEBUG] Title BGM started successfully');
+            } catch (error) {
+                console.warn('[DEBUG] Failed to start title BGM:', error);
+            }
+        }
+    }
+
     async startGame() {
         // Show loading screen initially
         this.showScene('loading');
@@ -137,29 +292,168 @@ class SceneManager {
                 await window.saveManager.loadGame();
             }
 
-            // Add minimal delay for smooth transition, then show title
+            // Skip complete audio initialization - will be done when user clicks overlay
+            console.log('[DEBUG] Skipping audio initialization - will activate on user click');
+
+            // Add minimal delay for smooth transition, then show title with overlay
             await this.delay(200);
             this.showScene('title');
+            this.showAudioOverlay();
 
         } catch (error) {
             console.error('Failed to start game:', error);
             this.showScene('title'); // Show title even if loading fails
+            this.showAudioOverlay();
         }
     }
 
-    async handleTitleButtonClick() {
-        // Initialize audio on first user interaction
-        if (window.audioManager) {
-            // Force audio context initialization
-            await window.audioManager.initializeAudioContext();
+    handleTitleButtonClick() {
+        console.log('[DEBUG] Title button clicked');
 
-            // Load sounds if not already loaded
-            if (window.audioManager.sounds.size === 0) {
-                await window.audioManager.loadSoundsSync();
-            }
+        // Check if audio is muted
+        if (this.isMuted) {
+            console.log('[DEBUG] Audio is muted - no sound will play');
+            return;
+        }
 
-            // Play button click sound
+        // Only play audio if audio system has been activated by user
+        if (!this.audioContextInitialized) {
+            console.log('[DEBUG] Audio not activated yet - no sound will play');
+            return;
+        }
+
+        // SINGLE AUDIO STRATEGY: Play only one sound
+
+        // Strategy 1: Try AudioManager first (best quality)
+        if (window.audioManager && window.audioManager.sounds.size > 0 && window.audioManager.sounds.has('button_click')) {
+            console.log('[DEBUG] Playing button_click via AudioManager');
             window.audioManager.playSE('button_click');
+            return;
+        }
+
+        console.log('[DEBUG] AudioManager button_click not available, skipping audio');
+    }
+
+    playImmediateBeep() {
+        try {
+            console.log('[DEBUG] Playing immediate beep');
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            // Higher frequency for more audible click
+            oscillator.frequency.setValueAtTime(1200, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.08);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.08);
+
+            console.log('[DEBUG] Immediate beep executed');
+            this.audioContextInitialized = true;
+        } catch (error) {
+            console.log('[DEBUG] Immediate beep failed:', error);
+        }
+    }
+
+    async tryPlayClickSound() {
+        try {
+            console.log('[DEBUG] Attempting to play click.mp3');
+            const clickAudio = new Audio();
+            clickAudio.src = '../assets/se/click.mp3';
+            clickAudio.volume = 0.4; // Lower volume to blend with beep
+
+            await clickAudio.play();
+            console.log('[DEBUG] Click sound overlay successful');
+        } catch (error) {
+            console.log('[DEBUG] Click sound overlay failed (beep already played):', error);
+        }
+    }
+
+    playDirectAudio() {
+        try {
+            console.log('[DEBUG] Playing direct audio');
+            const directAudio = new Audio();
+            directAudio.src = '../assets/se/click.mp3';
+            directAudio.volume = 0.6;
+
+            directAudio.play().then(() => {
+                console.log('[DEBUG] Direct audio successful');
+            }).catch(error => {
+                console.log('[DEBUG] Direct audio failed:', error);
+            });
+        } catch (error) {
+            console.log('[DEBUG] Direct audio creation failed:', error);
+        }
+    }
+
+    async reinitializeAndPlay() {
+        try {
+            console.log('[DEBUG] Reinitializing audio and playing');
+
+            // Force complete reinitialization
+            if (window.audioManager) {
+                await window.audioManager.initializeAudioContext();
+                await window.audioManager.loadSoundsSync();
+
+                // Try playing again
+                window.audioManager.playSE('button_click');
+            }
+        } catch (error) {
+            console.log('[DEBUG] Reinitialization failed:', error);
+        }
+    }
+
+    playSimpleBeep() {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+
+            console.log('[DEBUG] Simple beep played');
+        } catch (error) {
+            console.log('[DEBUG] Beep generation failed:', error);
+        }
+    }
+
+    async preloadTitleAudio() {
+        console.log('[DEBUG] Pre-loading title audio...');
+
+        if (window.audioManager) {
+            try {
+                // Force audio manager initialization
+                await window.audioManager.loadSoundsSync();
+
+                // Pre-create click audio element for instant playback
+                this.titleClickAudio = new Audio();
+                this.titleClickAudio.src = '../assets/se/click.mp3';
+                this.titleClickAudio.volume = 0.8 * 0.8;
+                this.titleClickAudio.preload = 'auto';
+
+                // Wait for audio to be ready
+                await new Promise((resolve) => {
+                    this.titleClickAudio.addEventListener('canplaythrough', resolve, { once: true });
+                    this.titleClickAudio.addEventListener('error', resolve, { once: true });
+                    this.titleClickAudio.load();
+                });
+
+                console.log('[DEBUG] Title audio pre-loaded successfully');
+            } catch (error) {
+                console.warn('[DEBUG] Title audio pre-loading failed:', error);
+            }
         }
     }
 
@@ -208,6 +502,9 @@ class SceneManager {
 
     onSceneEnter(sceneName) {
         switch (sceneName) {
+            case 'title':
+                this.initializeTitleScene();
+                break;
             case 'game':
                 this.initializeGameScene();
                 break;
@@ -217,6 +514,80 @@ class SceneManager {
             case 'settings':
                 this.initializeSettingsScene();
                 break;
+        }
+    }
+
+    async initializeCompleteAudioSystem() {
+        console.log('[DEBUG] Starting complete audio system initialization');
+
+        if (!window.audioManager) {
+            console.log('[DEBUG] AudioManager not available');
+            return;
+        }
+
+        try {
+            // Step 1: Initialize AudioContext
+            console.log('[DEBUG] Step 1: AudioContext initialization');
+            await window.audioManager.initializeAudioContext();
+
+            // Step 2: Load all sounds completely
+            console.log('[DEBUG] Step 2: Loading all sounds');
+            await window.audioManager.loadSoundsSync();
+
+            // Step 3: Load settings (like settings screen does)
+            console.log('[DEBUG] Step 3: Loading settings');
+            window.audioManager.loadSettings();
+
+            // Step 4: Setup UI handlers (like settings screen does)
+            console.log('[DEBUG] Step 4: Setting up UI handlers');
+            window.audioManager.setupUIAudioHandlers();
+
+            // Step 5: Pre-create title audio
+            console.log('[DEBUG] Step 5: Pre-creating title audio');
+            await this.preloadTitleAudio();
+
+            // Step 6: Wait for everything to settle
+            await this.delay(300);
+
+            console.log('[DEBUG] Complete audio system initialization finished');
+            console.log('[DEBUG] Loaded sounds count:', window.audioManager.sounds.size);
+            console.log('[DEBUG] Available sounds:', Array.from(window.audioManager.sounds.keys()));
+
+        } catch (error) {
+            console.error('[DEBUG] Complete audio initialization failed:', error);
+        }
+    }
+
+    async initializeTitleScene() {
+        console.log('[DEBUG] Title scene initialization (audio already pre-loaded)');
+
+        // Audio system should already be fully initialized before title screen
+        if (window.audioManager) {
+            console.log('[DEBUG] Audio status - Loaded sounds:', window.audioManager.sounds.size);
+            console.log('[DEBUG] Audio status - Available sounds:', Array.from(window.audioManager.sounds.keys()));
+        }
+    }
+
+    unlockAudioWithSilentPlay() {
+        try {
+            console.log('[DEBUG] Attempting silent audio unlock');
+
+            // Create silent audio to unlock the context
+            const silentAudio = new Audio();
+            silentAudio.src = '../assets/se/click.mp3';
+            silentAudio.volume = 0.01; // Very quiet
+            silentAudio.muted = true;
+
+            silentAudio.play().then(() => {
+                console.log('[DEBUG] Silent audio unlock successful');
+                silentAudio.muted = false;
+                silentAudio.volume = 0;
+            }).catch(error => {
+                console.log('[DEBUG] Silent audio unlock failed:', error);
+            });
+
+        } catch (error) {
+            console.log('[DEBUG] Silent unlock creation failed:', error);
         }
     }
 
@@ -587,11 +958,63 @@ class SceneManager {
         }
     }
 
-    quitGame() {
-        if (window.electronAPI) {
-            window.close();
-        } else {
-            this.showMessage('ゲームを終了します');
+    async quitGame() {
+        console.log('[DEBUG] Quit game called');
+
+        // Check if audio is muted
+        if (this.isMuted || (window.audioManager && window.audioManager.isMuted)) {
+            console.log('[DEBUG] Audio is muted - quitting without sound');
+            // Quit immediately without sound
+            if (window.electronAPI) {
+                window.close();
+            } else {
+                this.showMessage('ゲームを終了します');
+            }
+            return;
+        }
+
+        // Only play sound if audio is enabled
+        if (!this.audioContextInitialized) {
+            console.log('[DEBUG] Audio not initialized - quitting without sound');
+            // Quit immediately without sound
+            if (window.electronAPI) {
+                window.close();
+            } else {
+                this.showMessage('ゲームを終了します');
+            }
+            return;
+        }
+
+        // Try to play quit sound through AudioManager first
+        try {
+            if (window.audioManager && window.audioManager.sounds.has('button_click')) {
+                window.audioManager.playSE('button_click');
+                console.log('[DEBUG] Quit sound played via AudioManager');
+
+                // Wait for sound to finish
+                setTimeout(() => {
+                    if (window.electronAPI) {
+                        window.close();
+                    } else {
+                        this.showMessage('ゲームを終了します');
+                    }
+                }, 300);
+            } else {
+                // No audio manager available, quit immediately
+                if (window.electronAPI) {
+                    window.close();
+                } else {
+                    this.showMessage('ゲームを終了します');
+                }
+            }
+        } catch (error) {
+            console.log('[DEBUG] Quit audio failed:', error);
+            // Quit immediately on error
+            if (window.electronAPI) {
+                window.close();
+            } else {
+                this.showMessage('ゲームを終了します');
+            }
         }
     }
 

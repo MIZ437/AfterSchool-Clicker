@@ -3,6 +3,10 @@ class EffectSystem {
     constructor() {
         this.effectsContainer = null;
         this.particlePool = [];
+        this.pointsPool = [];
+        this.ripplePool = [];
+        this.starPool = [];
+        this.textPool = [];
         this.maxPoolSize = 50;
         this.setupEffects();
     }
@@ -23,10 +27,35 @@ class EffectSystem {
     initializeParticlePool() {
         // Pre-create particle elements for better performance
         for (let i = 0; i < this.maxPoolSize; i++) {
+            // Heart particles
             const particle = document.createElement('div');
             particle.className = 'particle';
             particle.style.display = 'none';
             this.particlePool.push(particle);
+
+            // Points display elements
+            const pointsElement = document.createElement('div');
+            pointsElement.className = 'points-element';
+            pointsElement.style.display = 'none';
+            this.pointsPool.push(pointsElement);
+
+            // Ripple elements
+            const rippleElement = document.createElement('div');
+            rippleElement.className = 'ripple-element';
+            rippleElement.style.display = 'none';
+            this.ripplePool.push(rippleElement);
+
+            // Star elements
+            const starElement = document.createElement('div');
+            starElement.className = 'star-element';
+            starElement.style.display = 'none';
+            this.starPool.push(starElement);
+
+            // Text elements
+            const textElement = document.createElement('div');
+            textElement.className = 'text-element';
+            textElement.style.display = 'none';
+            this.textPool.push(textElement);
         }
     }
 
@@ -67,7 +96,9 @@ class EffectSystem {
     createPointsDisplay(x, y, points) {
         if (!this.effectsContainer) return;
 
-        const pointsElement = document.createElement('div');
+        const pointsElement = this.getPointsFromPool();
+        if (!pointsElement) return;
+
         pointsElement.className = 'click-effect points';
         pointsElement.textContent = `+${this.formatPoints(points)}`;
         pointsElement.style.cssText = `
@@ -84,21 +115,22 @@ class EffectSystem {
             pointer-events: none;
             z-index: 21;
             animation: floatUp 1.5s ease-out forwards;
+            display: block;
         `;
 
         this.effectsContainer.appendChild(pointsElement);
 
         setTimeout(() => {
-            if (pointsElement.parentNode) {
-                pointsElement.parentNode.removeChild(pointsElement);
-            }
+            this.returnPointsToPool(pointsElement);
         }, 1500);
     }
 
     createRippleEffect(x, y) {
         if (!this.effectsContainer) return;
 
-        const ripple = document.createElement('div');
+        const ripple = this.getRippleFromPool();
+        if (!ripple) return;
+
         ripple.className = 'ripple-effect';
         ripple.style.cssText = `
             position: absolute;
@@ -111,14 +143,13 @@ class EffectSystem {
             pointer-events: none;
             z-index: 19;
             animation: rippleExpand 0.6s ease-out forwards;
+            display: block;
         `;
 
         this.effectsContainer.appendChild(ripple);
 
         setTimeout(() => {
-            if (ripple.parentNode) {
-                ripple.parentNode.removeChild(ripple);
-            }
+            this.returnRippleToPool(ripple);
         }, 600);
     }
 
@@ -255,7 +286,9 @@ class EffectSystem {
             direction = 'up'
         } = options;
 
-        const textElement = document.createElement('div');
+        const textElement = this.getTextFromPool();
+        if (!textElement || !this.effectsContainer) return;
+
         textElement.textContent = text;
         textElement.style.cssText = `
             position: absolute;
@@ -267,17 +300,14 @@ class EffectSystem {
             pointer-events: none;
             z-index: 30;
             animation: float${direction.charAt(0).toUpperCase() + direction.slice(1)} ${duration}ms ease-out forwards;
+            display: block;
         `;
 
-        if (this.effectsContainer) {
-            this.effectsContainer.appendChild(textElement);
+        this.effectsContainer.appendChild(textElement);
 
-            setTimeout(() => {
-                if (textElement.parentNode) {
-                    textElement.parentNode.removeChild(textElement);
-                }
-            }, duration);
-        }
+        setTimeout(() => {
+            this.returnTextToPool(textElement);
+        }, duration);
     }
 
     // Particle system helpers
@@ -292,6 +322,62 @@ class EffectSystem {
             particle.style.display = 'none';
             particle.className = 'particle';
             particle.textContent = '';
+        }
+    }
+
+    getPointsFromPool() {
+        const element = this.pointsPool.find(p => p.style.display === 'none');
+        return element || null;
+    }
+
+    returnPointsToPool(element) {
+        if (element && element.parentNode) {
+            element.parentNode.removeChild(element);
+            element.style.display = 'none';
+            element.className = 'points-element';
+            element.textContent = '';
+        }
+    }
+
+    getRippleFromPool() {
+        const element = this.ripplePool.find(p => p.style.display === 'none');
+        return element || null;
+    }
+
+    returnRippleToPool(element) {
+        if (element && element.parentNode) {
+            element.parentNode.removeChild(element);
+            element.style.display = 'none';
+            element.className = 'ripple-element';
+            element.textContent = '';
+        }
+    }
+
+    getStarFromPool() {
+        const element = this.starPool.find(p => p.style.display === 'none');
+        return element || null;
+    }
+
+    returnStarToPool(element) {
+        if (element && element.parentNode) {
+            element.parentNode.removeChild(element);
+            element.style.display = 'none';
+            element.className = 'star-element';
+            element.textContent = '';
+        }
+    }
+
+    getTextFromPool() {
+        const element = this.textPool.find(p => p.style.display === 'none');
+        return element || null;
+    }
+
+    returnTextToPool(element) {
+        if (element && element.parentNode) {
+            element.parentNode.removeChild(element);
+            element.style.display = 'none';
+            element.className = 'text-element';
+            element.textContent = '';
         }
     }
 

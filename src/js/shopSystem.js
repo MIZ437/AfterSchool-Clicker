@@ -168,36 +168,49 @@ class ShopSystem {
     }
 
     createItemElement(item) {
-        const cost = parseInt(item.cost);
-        const value = parseInt(item.value);
-
         // Ensure GameState exists and is properly initialized
         if (!window.gameState) {
-            console.error('ShopSystem: GameState not available when creating item element');
-            // Return a basic disabled element that will be refreshed later
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'shop-item disabled';
-            itemDiv.dataset.itemId = item.id;
-            itemDiv.innerHTML = `
-                <div class="item-header">
-                    <div class="item-info">
-                        <div class="item-name">${item.name}</div>
-                        <div class="item-effect">Loading...</div>
-                    </div>
-                    <div class="item-cost">
-                        <span class="cost-amount">${this.formatNumber(cost)}</span>
-                        <span class="cost-unit">ポイント</span>
-                    </div>
-                </div>
-                <div class="item-description">${item.desc}</div>
-                <div class="item-action">
-                    <button class="purchase-btn disabled">読み込み中...</button>
-                </div>
-            `;
-            return itemDiv;
+            return this.createLoadingItemElement(item);
         }
 
-        // Double-check GameState methods are available
+        const itemState = this.calculateItemState(item);
+        const itemDiv = this.buildItemElement(item, itemState);
+        this.attachPurchaseHandler(itemDiv, item);
+
+        return itemDiv;
+    }
+
+    // Create a loading element when GameState is not available
+    createLoadingItemElement(item) {
+        console.error('ShopSystem: GameState not available when creating item element');
+        const cost = parseInt(item.cost);
+
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'shop-item disabled';
+        itemDiv.dataset.itemId = item.id;
+        itemDiv.innerHTML = `
+            <div class="item-header">
+                <div class="item-info">
+                    <div class="item-name">${item.name}</div>
+                    <div class="item-effect">Loading...</div>
+                </div>
+                <div class="item-cost">
+                    <span class="cost-amount">${this.formatNumber(cost)}</span>
+                    <span class="cost-unit">ポイント</span>
+                </div>
+            </div>
+            <div class="item-description">${item.desc}</div>
+            <div class="item-action">
+                <button class="purchase-btn disabled">読み込み中...</button>
+            </div>
+        `;
+        return itemDiv;
+    }
+
+    // Calculate item state (ownership, affordability, etc.)
+    calculateItemState(item) {
+        const cost = parseInt(item.cost);
+        const value = parseInt(item.value);
         let owned = 0;
         let currentPoints = 0;
         let canAfford = false;
@@ -229,6 +242,13 @@ class ShopSystem {
             gameStateExists: !!window.gameState
         });
 
+        return { cost, value, owned, currentPoints, canAfford };
+    }
+
+    // Build the HTML element for an item
+    buildItemElement(item, itemState) {
+        const { cost, value, owned, canAfford } = itemState;
+
         const itemDiv = document.createElement('div');
         itemDiv.className = `shop-item ${canAfford ? '' : 'disabled'}`;
         itemDiv.dataset.itemId = item.id;
@@ -258,7 +278,11 @@ class ShopSystem {
             </div>
         `;
 
-        // Add click handler to purchase button
+        return itemDiv;
+    }
+
+    // Attach purchase event handler to the item element
+    attachPurchaseHandler(itemDiv, item) {
         const purchaseBtn = itemDiv.querySelector('.purchase-btn');
         if (purchaseBtn) {
             console.log(`ShopSystem: Adding click handler for ${item.id}, button found:`, !!purchaseBtn);
@@ -272,8 +296,6 @@ class ShopSystem {
         } else {
             console.error(`ShopSystem: Purchase button not found for item ${item.id}`);
         }
-
-        return itemDiv;
     }
 
     purchaseItem(item) {

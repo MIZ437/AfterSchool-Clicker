@@ -483,50 +483,14 @@ class AudioManager {
             return;
         }
 
-        console.log('[DEBUG] Setting up UI audio handlers');
+        console.log('[DEBUG] Setting up UI audio handlers with event delegation');
 
-        // Add click sounds to all buttons
-        const buttons = document.querySelectorAll('button');
-        buttons.forEach(button => {
-            button.addEventListener('click', () => {
-                // Skip audio for buttons that handle their own audio or have special handling
-                const skipAudioButtons = [
-                    'start-game-btn',      // Handles own audio in sceneManager
-                    'settings-btn',        // Handles own audio in sceneManager
-                    'quit-btn',           // Handles own audio in sceneManager
-                    'game-quit-btn',      // Handles own audio in sceneManager
-                    'audio-enable-btn',   // Special overlay button
-                    'audio-disable-btn'   // Special overlay button
-                ];
+        // Use event delegation for better performance and automatic handling of dynamic elements
+        this.handleUIClick = this.handleUIClick.bind(this);
+        this.handleUIChange = this.handleUIChange.bind(this);
 
-                // Check for exact matches or class matches for specific buttons
-                const shouldSkip = skipAudioButtons.includes(button.id) ||
-                                 button.classList.contains('buy-btn') || // Exclude buy buttons as they play purchase sound
-                                 button.classList.contains('purchase-btn') ||
-                                 button.classList.contains('stage-tab'); // Exclude stage buttons as they have special handling
-
-                // Additional debug info
-                if (button.id) {
-                    console.log('[DEBUG] Button check:', button.id, 'shouldSkip:', shouldSkip);
-                }
-
-                if (!shouldSkip) {
-                    console.log('[DEBUG] Playing click_sound via setupUIAudioHandlers for button:', button.id || button.className);
-                    this.playSE('click_sound');
-                } else {
-                    console.log('[DEBUG] Skipped audio for button:', button.id || button.className, 'Reason: in skip list');
-                }
-            });
-        });
-
-        // Add click sounds to toggle switches (checkbox inputs)
-        const toggleInputs = document.querySelectorAll('input[type="checkbox"]');
-        toggleInputs.forEach(input => {
-            input.addEventListener('change', () => {
-                console.log('[DEBUG] Playing click_sound for toggle input:', input.id);
-                this.playSE('click_sound');
-            });
-        });
+        document.addEventListener('click', this.handleUIClick);
+        document.addEventListener('change', this.handleUIChange);
 
         this.uiHandlersSetup = true;
 
@@ -620,6 +584,63 @@ class AudioManager {
             currentBGM: this.currentBGM ? 'playing' : 'stopped',
             loadedSounds: this.sounds.size
         };
+    }
+
+    // Event delegation handler for button clicks
+    handleUIClick(event) {
+        const target = event.target;
+
+        // Only handle button clicks
+        if (target.tagName !== 'BUTTON') return;
+
+        // Skip audio for buttons that handle their own audio or have special handling
+        const skipAudioButtons = [
+            'start-game-btn',      // Handles own audio in sceneManager
+            'settings-btn',        // Handles own audio in sceneManager
+            'quit-btn',           // Handles own audio in sceneManager
+            'game-quit-btn',      // Handles own audio in sceneManager
+            'audio-enable-btn',   // Special overlay button
+            'audio-disable-btn'   // Special overlay button
+        ];
+
+        // Check for exact matches or class matches for specific buttons
+        const shouldSkip = skipAudioButtons.includes(target.id) ||
+                         target.classList.contains('buy-btn') || // Exclude buy buttons as they play purchase sound
+                         target.classList.contains('purchase-btn') ||
+                         target.classList.contains('stage-tab'); // Exclude stage buttons as they have special handling
+
+        // Additional debug info
+        if (target.id) {
+            console.log('[DEBUG] Button check:', target.id, 'shouldSkip:', shouldSkip);
+        }
+
+        if (!shouldSkip) {
+            console.log('[DEBUG] Playing click_sound via event delegation for button:', target.id || target.className);
+            this.playSE('click_sound');
+        } else {
+            console.log('[DEBUG] Skipped audio for button:', target.id || target.className, 'Reason: in skip list');
+        }
+    }
+
+    // Event delegation handler for input changes (toggles)
+    handleUIChange(event) {
+        const target = event.target;
+
+        // Only handle checkbox inputs (toggle switches)
+        if (target.tagName === 'INPUT' && target.type === 'checkbox') {
+            console.log('[DEBUG] Playing click_sound for toggle input via event delegation:', target.id);
+            this.playSE('click_sound');
+        }
+    }
+
+    // Cleanup method for removing event listeners
+    removeUIAudioHandlers() {
+        if (this.uiHandlersSetup && this.handleUIClick && this.handleUIChange) {
+            document.removeEventListener('click', this.handleUIClick);
+            document.removeEventListener('change', this.handleUIChange);
+            this.uiHandlersSetup = false;
+            console.log('[DEBUG] UI audio handlers removed');
+        }
     }
 }
 

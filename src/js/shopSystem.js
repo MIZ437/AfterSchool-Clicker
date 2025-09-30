@@ -49,6 +49,14 @@ class ShopSystem {
             // Initial affordability check after everything is loaded
             setTimeout(() => {
                 this.updateAllItemsAffordability();
+
+                // Check if multiplier is already set and update effect displays
+                const currentMultiplier = window.currentMultiplier || 1;
+                console.log('ShopSystem: Initial multiplier check:', currentMultiplier);
+                if (currentMultiplier > 1) {
+                    console.log('ShopSystem: Multiplier detected during initialization, updating effects...');
+                    this.updateItemEffectDisplays();
+                }
             }, 100);
 
             // Force update after a longer delay to ensure GameState is fully initialized
@@ -253,10 +261,13 @@ class ShopSystem {
         itemDiv.className = `shop-item ${canAfford ? '' : 'disabled'}`;
         itemDiv.dataset.itemId = item.id;
 
-        // Create effect description
+        // Create effect description with multiplier consideration
+        const multiplier = window.currentMultiplier || 1;
+        const adjustedValue = value * multiplier;
+
         const effectText = item.effect === 'click'
-            ? `クリック +${value}ポイント`
-            : `毎秒 +${value}ポイント`;
+            ? `1クリック：+${adjustedValue}ポイント`
+            : `毎秒：+${adjustedValue}ポイント`;
 
         itemDiv.innerHTML = `
             <div class="item-header">
@@ -711,6 +722,73 @@ class ShopSystem {
         this.renderShop();
         this.updatePointsDisplay();
         this.updatePPSDisplay();
+    }
+
+    // Update item effect displays when multiplier changes
+    updateItemEffectDisplays() {
+        const multiplier = window.currentMultiplier || 1;
+        console.log('ShopSystem: Updating item effect displays for multiplier change...', 'multiplier:', multiplier);
+        console.log('ShopSystem: Containers available:', {
+            clickItems: !!this.clickItemsContainer,
+            cpsItems: !!this.cpsItemsContainer
+        });
+
+        // Update click items
+        if (this.clickItemsContainer) {
+            const clickItems = this.clickItemsContainer.querySelectorAll('.shop-item');
+            console.log('ShopSystem: Found', clickItems.length, 'click items to update');
+            clickItems.forEach(itemElement => {
+                this.updateItemEffectDisplay(itemElement);
+            });
+        }
+
+        // Update CPS items
+        if (this.cpsItemsContainer) {
+            const cpsItems = this.cpsItemsContainer.querySelectorAll('.shop-item');
+            console.log('ShopSystem: Found', cpsItems.length, 'CPS items to update');
+            cpsItems.forEach(itemElement => {
+                this.updateItemEffectDisplay(itemElement);
+            });
+        }
+    }
+
+    // Update individual item effect display
+    updateItemEffectDisplay(itemElement) {
+        const itemId = itemElement.dataset.itemId;
+        console.log('ShopSystem: Updating effect display for item:', itemId);
+
+        const item = this.getItemById(itemId);
+        if (!item) {
+            console.warn('ShopSystem: Item not found for ID:', itemId);
+            return;
+        }
+
+        const multiplier = window.currentMultiplier || 1;
+        const value = parseInt(item.value);
+        const adjustedValue = value * multiplier;
+
+        console.log('ShopSystem: Effect update details:', {
+            itemId,
+            multiplier,
+            originalValue: value,
+            adjustedValue,
+            effect: item.effect
+        });
+
+        const effectText = item.effect === 'click'
+            ? `1クリック：+${adjustedValue}ポイント`
+            : `毎秒：+${adjustedValue}ポイント`;
+
+        const effectElement = itemElement.querySelector('.item-effect');
+        console.log('ShopSystem: Effect element found:', !!effectElement);
+        console.log('ShopSystem: New effect text:', effectText);
+
+        if (effectElement) {
+            effectElement.textContent = effectText;
+            console.log('ShopSystem: Effect text updated for', itemId);
+        } else {
+            console.warn('ShopSystem: Effect element not found for item:', itemId);
+        }
     }
 
     // Force complete refresh of shop system (for save data deletion)

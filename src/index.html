@@ -856,10 +856,15 @@
         function createItemElement(item) {
             const shopItem = document.createElement('div');
             shopItem.className = 'shop-item';
+            shopItem.dataset.itemId = item.id;
+
+            // Consider current multiplier for effect display
+            const multiplier = window.currentMultiplier || 1;
+            const adjustedValue = item.value * multiplier;
 
             const effectText = item.effect === 'click'
-                ? `1クリック：+${item.value}ポイント`
-                : `毎秒：+${item.value}ポイント`;
+                ? `1クリック：+${adjustedValue}ポイント`
+                : `毎秒：+${adjustedValue}ポイント`;
 
             shopItem.innerHTML = `
                 <div class="item-name">${item.name}</div>
@@ -870,6 +875,82 @@
             `;
 
             return shopItem;
+        }
+
+        // index.html内のアイテムの効果表記を更新
+        function updateItemEffectDisplaysInHTML() {
+            console.log('[DEBUG] Updating HTML item effect displays...');
+            const multiplier = window.currentMultiplier || 1;
+
+            // Update click items
+            const clickContainer = document.getElementById('click-items-simple');
+            if (clickContainer) {
+                const clickItems = clickContainer.querySelectorAll('.shop-item');
+                console.log('[DEBUG] Found', clickItems.length, 'click items in HTML to update');
+
+                clickItems.forEach(itemElement => {
+                    const itemId = itemElement.dataset.itemId;
+                    if (!itemId) return;
+
+                    // Find the original item data
+                    const clickItemsData = window.dataManager ? window.dataManager.getItems().filter(item => item.effect === 'click') : [];
+                    const fallbackClickItems = [
+                        { id: 'ITM_CLICK_1', name: 'CLICK_1', cost: 50, effect: 'click', value: 1 },
+                        { id: 'ITM_CLICK_2', name: 'CLICK_2', cost: 2000, effect: 'click', value: 5 },
+                        { id: 'ITM_CLICK_3', name: 'CLICK_3', cost: 25000, effect: 'click', value: 20 },
+                        { id: 'ITM_CLICK_4', name: 'CLICK_4', cost: 300000, effect: 'click', value: 75 }
+                    ];
+
+                    const item = clickItemsData.find(i => i.id === itemId) || fallbackClickItems.find(i => i.id === itemId);
+                    if (!item) return;
+
+                    const value = parseInt(item.value);
+                    const adjustedValue = value * multiplier;
+
+                    const effectText = `1クリック：+${adjustedValue}ポイント`;
+
+                    const effectElement = itemElement.querySelector('.item-desc');
+                    if (effectElement) {
+                        effectElement.textContent = effectText;
+                        console.log('[DEBUG] Updated effect for', itemId, 'to:', effectText);
+                    }
+                });
+            }
+
+            // Update CPS items
+            const cpsContainer = document.getElementById('cps-items-simple');
+            if (cpsContainer) {
+                const cpsItems = cpsContainer.querySelectorAll('.shop-item');
+                console.log('[DEBUG] Found', cpsItems.length, 'CPS items in HTML to update');
+
+                cpsItems.forEach(itemElement => {
+                    const itemId = itemElement.dataset.itemId;
+                    if (!itemId) return;
+
+                    // Find the original item data
+                    const cpsItemsData = window.dataManager ? window.dataManager.getItems().filter(item => item.effect === 'cps') : [];
+                    const fallbackCPSItems = [
+                        { id: 'ITM_CPS_1', name: 'AUTO_1', cost: 500, effect: 'cps', value: 1 },
+                        { id: 'ITM_CPS_2', name: 'AUTO_2', cost: 5000, effect: 'cps', value: 5 },
+                        { id: 'ITM_CPS_3', name: 'AUTO_3', cost: 50000, effect: 'cps', value: 25 },
+                        { id: 'ITM_CPS_4', name: 'AUTO_4', cost: 500000, effect: 'cps', value: 100 }
+                    ];
+
+                    const item = cpsItemsData.find(i => i.id === itemId) || fallbackCPSItems.find(i => i.id === itemId);
+                    if (!item) return;
+
+                    const value = parseInt(item.value);
+                    const adjustedValue = value * multiplier;
+
+                    const effectText = `毎秒：+${adjustedValue}ポイント`;
+
+                    const effectElement = itemElement.querySelector('.item-desc');
+                    if (effectElement) {
+                        effectElement.textContent = effectText;
+                        console.log('[DEBUG] Updated effect for', itemId, 'to:', effectText);
+                    }
+                });
+            }
         }
 
         // 購入倍率管理
@@ -888,7 +969,21 @@
                     // 倍率を更新
                     currentMultiplier = parseInt(btn.dataset.multiplier);
                     window.currentMultiplier = currentMultiplier;
+                    console.log('[DEBUG] Multiplier changed to:', currentMultiplier);
+                    console.log('[DEBUG] window.shopSystem available:', !!window.shopSystem);
+
                     updateAllItemCosts();
+
+                    // ShopSystemの効果表記も更新
+                    if (window.shopSystem) {
+                        console.log('[DEBUG] Calling updateItemEffectDisplays...');
+                        window.shopSystem.updateItemEffectDisplays();
+                    } else {
+                        console.warn('[DEBUG] window.shopSystem not available for effect update');
+                    }
+
+                    // index.html内のアイテムも更新
+                    updateItemEffectDisplaysInHTML();
                 });
             });
         }

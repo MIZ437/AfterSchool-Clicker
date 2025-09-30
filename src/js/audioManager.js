@@ -489,14 +489,14 @@ class AudioManager {
         const buttons = document.querySelectorAll('button');
         buttons.forEach(button => {
             button.addEventListener('click', () => {
-                // Skip audio for buttons that handle their own audio
+                // Skip audio for buttons that handle their own audio or have special handling
                 const skipAudioButtons = [
-                    'start-game-btn',
-                    'settings-btn',
-                    'quit-btn',
-                    'game-quit-btn',
-                    'audio-enable-btn',
-                    'audio-disable-btn'
+                    'start-game-btn',      // Handles own audio in sceneManager
+                    'settings-btn',        // Handles own audio in sceneManager
+                    'quit-btn',           // Handles own audio in sceneManager
+                    'game-quit-btn',      // Handles own audio in sceneManager
+                    'audio-enable-btn',   // Special overlay button
+                    'audio-disable-btn'   // Special overlay button
                 ];
 
                 // Check for exact matches or class matches for specific buttons
@@ -505,10 +505,26 @@ class AudioManager {
                                  button.classList.contains('purchase-btn') ||
                                  button.classList.contains('stage-tab'); // Exclude stage buttons as they have special handling
 
-                if (!shouldSkip) {
-                    console.log('[DEBUG] Playing click_sound via setupUIAudioHandlers');
-                    this.playSE('click_sound');
+                // Additional debug info
+                if (button.id) {
+                    console.log('[DEBUG] Button check:', button.id, 'shouldSkip:', shouldSkip);
                 }
+
+                if (!shouldSkip) {
+                    console.log('[DEBUG] Playing click_sound via setupUIAudioHandlers for button:', button.id || button.className);
+                    this.playSE('click_sound');
+                } else {
+                    console.log('[DEBUG] Skipped audio for button:', button.id || button.className, 'Reason: in skip list');
+                }
+            });
+        });
+
+        // Add click sounds to toggle switches (checkbox inputs)
+        const toggleInputs = document.querySelectorAll('input[type="checkbox"]');
+        toggleInputs.forEach(input => {
+            input.addEventListener('change', () => {
+                console.log('[DEBUG] Playing click_sound for toggle input:', input.id);
+                this.playSE('click_sound');
             });
         });
 
@@ -521,16 +537,70 @@ class AudioManager {
         if (bgmSlider) {
             bgmSlider.addEventListener('input', (e) => {
                 const volume = e.target.value / 100;
+
+                // If user adjusts volume and it's not zero, unmute
+                if (volume > 0 && this.isMuted) {
+                    console.log('[DEBUG] User adjusted BGM volume, unmuting audio');
+                    this.setMuted(false);
+                    // Also notify sceneManager
+                    if (window.sceneManager) {
+                        window.sceneManager.isMuted = false;
+                    }
+                }
+
                 this.setBGMVolume(volume);
                 document.getElementById('bgm-value').textContent = e.target.value + '%';
+
+                // Real-time BGM volume feedback
+                if (this.currentBGM && !this.isMuted) {
+                    // Use a reasonable default individual volume if ID is unknown
+                    let individualVolume = 0.7; // Default volume
+                    try {
+                        // Try to get individual volume, but fallback to default if failed
+                        individualVolume = this.getIndividualVolume('title_bgm');
+                    } catch (error) {
+                        console.warn('[DEBUG] Could not get individual volume, using default:', error);
+                    }
+
+                    this.currentBGM.volume = volume * individualVolume;
+                    console.log('[DEBUG] BGM volume updated in real-time:', this.currentBGM.volume);
+                }
             });
         }
 
         if (seSlider) {
+            // Add throttling for SE feedback to avoid spam
+            let seSliderTimeout = null;
+
             seSlider.addEventListener('input', (e) => {
                 const volume = e.target.value / 100;
+
+                // If user adjusts volume and it's not zero, unmute
+                if (volume > 0 && this.isMuted) {
+                    console.log('[DEBUG] User adjusted SE volume, unmuting audio');
+                    this.setMuted(false);
+                    // Also notify sceneManager
+                    if (window.sceneManager) {
+                        window.sceneManager.isMuted = false;
+                    }
+                }
+
                 this.setSEVolume(volume);
                 document.getElementById('se-value').textContent = e.target.value + '%';
+
+                // Real-time SE feedback with throttling
+                if (!this.isMuted && volume > 0) {
+                    // Clear previous timeout
+                    if (seSliderTimeout) {
+                        clearTimeout(seSliderTimeout);
+                    }
+
+                    // Set new timeout for SE playback (throttled to avoid spam)
+                    seSliderTimeout = setTimeout(() => {
+                        this.playSE('click_sound');
+                        console.log('[DEBUG] SE feedback played for volume:', volume);
+                    }, 150); // 150ms throttle
+                }
             });
         }
     }

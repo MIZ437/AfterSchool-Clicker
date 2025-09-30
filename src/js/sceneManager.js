@@ -28,6 +28,9 @@ class SceneManager {
         this.registerScene('album', document.getElementById('album-screen'));
         this.registerScene('settings', document.getElementById('settings-screen'));
 
+        // Make sceneManager globally accessible for audioManager
+        window.sceneManager = this;
+
         this.setupEventHandlers();
         this.setupAudioActivationOverlay();
         this.startGame();
@@ -615,15 +618,32 @@ class SceneManager {
         const bgmSlider = document.getElementById('bgm-volume');
         const seSlider = document.getElementById('se-volume');
 
+        // Check if audio is muted
+        const isMuted = this.isMuted || (window.audioManager && window.audioManager.isMuted);
+
         if (bgmSlider && settings) {
-            bgmSlider.value = settings.bgmVolume * 100;
-            document.getElementById('bgm-value').textContent = Math.round(settings.bgmVolume * 100) + '%';
+            if (isMuted) {
+                // Show 0% when muted, but keep original value in slider for restoration
+                bgmSlider.value = 0;
+                document.getElementById('bgm-value').textContent = '0% (ミュート)';
+            } else {
+                bgmSlider.value = settings.bgmVolume * 100;
+                document.getElementById('bgm-value').textContent = Math.round(settings.bgmVolume * 100) + '%';
+            }
         }
 
         if (seSlider && settings) {
-            seSlider.value = settings.seVolume * 100;
-            document.getElementById('se-value').textContent = Math.round(settings.seVolume * 100) + '%';
+            if (isMuted) {
+                // Show 0% when muted, but keep original value in slider for restoration
+                seSlider.value = 0;
+                document.getElementById('se-value').textContent = '0% (ミュート)';
+            } else {
+                seSlider.value = settings.seVolume * 100;
+                document.getElementById('se-value').textContent = Math.round(settings.seVolume * 100) + '%';
+            }
         }
+
+        console.log('[DEBUG] Settings initialized - isMuted:', isMuted, 'settings:', settings);
     }
 
     updateGameUI() {
@@ -746,6 +766,11 @@ class SceneManager {
     }
 
     async handleManualSave() {
+        // Play click sound first
+        if (window.audioManager) {
+            window.audioManager.playSE('click_sound');
+        }
+
         console.log('SceneManager: Manual save requested');
 
         try {
@@ -767,6 +792,11 @@ class SceneManager {
     }
 
     async handleDeleteSave() {
+        // Play click sound first
+        if (window.audioManager) {
+            window.audioManager.playSE('click_sound');
+        }
+
         // Show confirmation dialog
         const confirmed = confirm('本当にセーブデータを削除しますか？\nこの操作は取り消せません。');
 

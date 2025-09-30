@@ -21,6 +21,9 @@ class AfterSchoolClickerMain {
     }
 
     setupApp() {
+        // Disable hardware acceleration to prevent GPU errors
+        app.disableHardwareAcceleration();
+
         // App event handlers
         app.whenReady().then(() => this.createWindow());
 
@@ -53,7 +56,7 @@ class AfterSchoolClickerMain {
                 backgroundThrottling: false
             },
             title: 'AfterSchool Clicker',
-            show: false, // Don't show until ready
+            show: true, // Show immediately for testing
             center: true,
             resizable: true,
             autoHideMenuBar: true,
@@ -63,15 +66,20 @@ class AfterSchoolClickerMain {
 
         // Load the game
         try {
-            await this.mainWindow.loadFile(path.join(__dirname, 'index.html'));
+            const htmlPath = path.join(__dirname, 'index.html');
+            console.log('Attempting to load HTML from:', htmlPath);
+            await this.mainWindow.loadFile(htmlPath);
             console.log('Game loaded successfully');
         } catch (error) {
             console.error('Failed to load game:', error);
+            console.error('Error details:', error.stack);
         }
 
         // Show window when ready to prevent white flash
         this.mainWindow.once('ready-to-show', () => {
+            console.log('Window ready-to-show event fired');
             this.mainWindow.show();
+            console.log('Window show() called');
 
             // Development mode - open devtools only in development
             if (process.env.NODE_ENV === 'development' || process.argv.includes('--dev')) {
@@ -94,9 +102,24 @@ class AfterSchoolClickerMain {
         await this.loadGameData();
 
         // Ensure window is shown after data loading
+        console.log('Window visibility check:');
+        console.log('  isVisible:', this.mainWindow.isVisible());
+        console.log('  isMinimized:', this.mainWindow.isMinimized());
+        console.log('  isDestroyed:', this.mainWindow.isDestroyed());
+
         if (!this.mainWindow.isVisible()) {
+            console.log('Window not visible, calling show()');
             this.mainWindow.show();
+            console.log('Window show() called, new visibility:', this.mainWindow.isVisible());
+        } else {
+            console.log('Window is already visible');
         }
+
+        // Force window to front
+        this.mainWindow.focus();
+        this.mainWindow.setAlwaysOnTop(true);
+        this.mainWindow.setAlwaysOnTop(false);
+        console.log('Window forced to front');
     }
 
     setupIPCHandlers() {

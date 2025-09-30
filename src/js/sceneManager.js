@@ -2,6 +2,7 @@
 class SceneManager {
     constructor() {
         this.currentScene = 'loading';
+        this.previousScene = null;
         this.scenes = new Map();
         this.isTransitioning = false;
         this.firstRun = true;
@@ -42,13 +43,22 @@ class SceneManager {
         const quitBtn = document.getElementById('quit-btn');
 
         if (startGameBtn) {
-            startGameBtn.addEventListener('click', () => this.handleGameStart());
+            startGameBtn.addEventListener('click', async () => {
+                await this.handleTitleButtonClick();
+                this.handleGameStart();
+            });
         }
         if (settingsBtn) {
-            settingsBtn.addEventListener('click', () => this.showScene('settings'));
+            settingsBtn.addEventListener('click', async () => {
+                await this.handleTitleButtonClick();
+                this.showScene('settings');
+            });
         }
         if (quitBtn) {
-            quitBtn.addEventListener('click', () => this.quitGame());
+            quitBtn.addEventListener('click', async () => {
+                await this.handleTitleButtonClick();
+                this.quitGame();
+            });
         }
 
         // Tutorial screen buttons
@@ -137,6 +147,22 @@ class SceneManager {
         }
     }
 
+    async handleTitleButtonClick() {
+        // Initialize audio on first user interaction
+        if (window.audioManager) {
+            // Force audio context initialization
+            await window.audioManager.initializeAudioContext();
+
+            // Load sounds if not already loaded
+            if (window.audioManager.sounds.size === 0) {
+                await window.audioManager.loadSoundsSync();
+            }
+
+            // Play button click sound
+            window.audioManager.playSE('button_click');
+        }
+    }
+
     handleGameStart() {
         if (this.firstRun) {
             this.showScene('tutorial');
@@ -157,6 +183,11 @@ class SceneManager {
 
         // Instant transition to prevent flickering
         if (newSceneElement) {
+            // Record previous scene when transitioning to settings
+            if (sceneName === 'settings') {
+                this.previousScene = this.currentScene;
+            }
+
             // Hide current scene immediately
             if (currentSceneElement && currentSceneElement !== newSceneElement) {
                 currentSceneElement.classList.remove('active');
@@ -333,10 +364,12 @@ class SceneManager {
     }
 
     returnToPreviousScene() {
-        // Simple logic: return to game if in settings, otherwise go to title
-        if (this.currentScene === 'settings') {
-            this.showScene('game');
+        // Return to the scene that was active before settings
+        if (this.currentScene === 'settings' && this.previousScene) {
+            this.showScene(this.previousScene);
+            this.previousScene = null; // Clear after use
         } else {
+            // Fallback to title if no previous scene recorded
             this.showScene('title');
         }
     }

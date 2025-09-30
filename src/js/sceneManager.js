@@ -816,6 +816,10 @@ class SceneManager {
                     // Force complete system refresh without reload
                     await this.completeSystemRefresh();
 
+                    // After deletion, always return to title screen
+                    this.showScene('title');
+                    this.previousScene = null; // Clear previous scene tracking
+
                     alert('セーブデータを削除しました。');
                 } else {
                     throw new Error(result.message || 'セーブデータの削除に失敗しました');

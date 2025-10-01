@@ -309,7 +309,7 @@ class SceneManager {
         console.log('[DEBUG] Final available sounds:', Array.from(window.audioManager.sounds.keys()));
     }
 
-    handleSceneBGM(sceneName) {
+    async handleSceneBGM(sceneName) {
         // Don't change BGM if muted
         if (this.isMuted || !window.audioManager) {
             console.log(`[DEBUG] Skipping BGM for scene ${sceneName} - muted or no audio manager`);
@@ -345,6 +345,15 @@ class SceneManager {
             if (window.audioManager.currentBGMId === 'title_bgm') {
                 console.log(`[DEBUG] Returning to title from settings - continuing existing title_bgm`);
                 // Don't restart BGM - let it continue
+                return;
+            }
+        }
+
+        // Special handling for tutorial scene (fade out from title)
+        if (sceneName === 'tutorial' && this.currentScene === 'title') {
+            if (window.audioManager.currentBGMId === 'title_bgm') {
+                console.log(`[DEBUG] Transitioning to tutorial - fading out title BGM`);
+                await window.audioManager.fadeOutBGM(7000); // 7 second fade
                 return;
             }
         }
@@ -552,7 +561,7 @@ class SceneManager {
         }
     }
 
-    showScene(sceneName, transition = 'fade') {
+    async showScene(sceneName, transition = 'fade') {
         if (this.isTransitioning || !this.scenes.has(sceneName)) {
             return;
         }
@@ -578,7 +587,7 @@ class SceneManager {
             newSceneElement.classList.add('active');
 
             // Scene-specific initialization (before updating currentScene for BGM logic)
-            this.onSceneEnter(sceneName);
+            await this.onSceneEnter(sceneName);
 
             this.currentScene = sceneName;
             this.isTransitioning = false;
@@ -587,9 +596,9 @@ class SceneManager {
         }
     }
 
-    onSceneEnter(sceneName) {
+    async onSceneEnter(sceneName) {
         // Handle BGM transitions between scenes
-        this.handleSceneBGM(sceneName);
+        await this.handleSceneBGM(sceneName);
 
         switch (sceneName) {
             case 'title':

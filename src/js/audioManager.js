@@ -176,6 +176,40 @@ class AudioManager {
         }
     }
 
+    async fadeOutBGM(duration = 1000) {
+        return new Promise((resolve) => {
+            if (!this.currentBGM) {
+                resolve();
+                return;
+            }
+
+            const audio = this.currentBGM;
+            const startVolume = audio.volume;
+            const fadeStep = startVolume / (duration / 50); // 50ms intervals
+
+            console.log(`[DEBUG] Starting BGM fade out: ${startVolume} -> 0 over ${duration}ms`);
+
+            const fadeInterval = setInterval(() => {
+                if (audio.volume > fadeStep) {
+                    audio.volume = Math.max(0, audio.volume - fadeStep);
+                } else {
+                    // Fade complete
+                    audio.volume = 0;
+                    audio.pause();
+                    audio.currentTime = 0;
+                    clearInterval(fadeInterval);
+
+                    // Clear current BGM references
+                    this.currentBGM = null;
+                    this.currentBGMId = null;
+
+                    console.log(`[DEBUG] BGM fade out completed`);
+                    resolve();
+                }
+            }, 50);
+        });
+    }
+
     setMuted(muted) {
         console.log('[DEBUG] AudioManager setMuted called with:', muted);
         this.isMuted = muted;

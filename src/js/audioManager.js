@@ -5,6 +5,7 @@ class AudioManager {
         this.bgmVolume = 0.7;
         this.seVolume = 0.8;
         this.currentBGM = null;
+        this.currentBGMId = null;
         this.audioContext = null;
         this.sounds = new Map();
         this.isInitialized = false;
@@ -39,11 +40,18 @@ class AudioManager {
 
     async loadSound(id, filename) {
         try {
+            // Skip loading if filename is empty (silent BGM)
+            if (!filename || filename.trim() === '') {
+                console.log(`[DEBUG] Skipping load for ${id} - empty filename (silent)`);
+                return null;
+            }
+
             const audio = new Audio();
             const fullPath = `../assets/${filename}`;
             audio.src = fullPath;
             audio.preload = 'auto';
-            console.log(`Loading sound ${id} from path: ${fullPath}`);
+            console.log(`[DEBUG] Loading sound ${id} from path: ${fullPath}`);
+            console.log(`[DEBUG] Audio element created for ${id}:`, audio);
 
             return new Promise((resolve, reject) => {
                 audio.addEventListener('canplaythrough', () => {
@@ -98,7 +106,14 @@ class AudioManager {
     }
 
     playBGM(id, loop = true) {
-        if (!this.isInitialized) return;
+        console.log(`[DEBUG] playBGM called with ID: ${id}`);
+        console.log(`[DEBUG] AudioManager initialized: ${this.isInitialized}`);
+        console.log(`[DEBUG] AudioManager muted: ${this.isMuted}`);
+
+        if (!this.isInitialized) {
+            console.warn(`[DEBUG] AudioManager not initialized, skipping BGM ${id}`);
+            return;
+        }
 
         // Check if muted
         if (this.isMuted) {
@@ -108,28 +123,47 @@ class AudioManager {
 
         // Stop current BGM
         if (this.currentBGM) {
+            console.log(`[DEBUG] Stopping current BGM`);
             this.currentBGM.pause();
             this.currentBGM.currentTime = 0;
         }
 
         const audio = this.sounds.get(id);
+        console.log(`[DEBUG] Audio element for ${id}:`, !!audio);
+
         if (audio) {
             // Get individual volume from CSV data
             const individualVolume = this.getIndividualVolume(id);
-            audio.volume = this.bgmVolume * individualVolume;
+            const finalVolume = this.bgmVolume * individualVolume;
+            console.log(`[DEBUG] Setting volume for ${id}: ${finalVolume} (bgm: ${this.bgmVolume} * individual: ${individualVolume})`);
+
+            audio.volume = finalVolume;
             audio.loop = loop;
             audio.currentTime = 0;
 
+            console.log(`[DEBUG] Attempting to play ${id}...`);
             const playPromise = audio.play();
             if (playPromise) {
-                playPromise.catch(error => {
-                    console.warn('BGM play failed:', error);
+                playPromise.then(() => {
+                    console.log(`[DEBUG] Successfully started playing ${id}`);
+                }).catch(error => {
+                    console.warn(`[DEBUG] BGM play failed for ${id}:`, error);
                 });
             }
 
             this.currentBGM = audio;
+            this.currentBGMId = id;
         } else {
-            console.warn(`BGM not found: ${id}`);
+            console.log(`[DEBUG] BGM not found in sounds map: ${id} (likely silent BGM)`);
+            console.log(`[DEBUG] Available sounds:`, Array.from(this.sounds.keys()));
+            // Simply stop current BGM if trying to play a silent BGM
+            if (this.currentBGM) {
+                console.log(`[DEBUG] Stopping current BGM for silent BGM: ${id}`);
+                this.currentBGM.pause();
+                this.currentBGM.currentTime = 0;
+                this.currentBGM = null;
+                this.currentBGMId = null;
+            }
         }
     }
 
@@ -138,6 +172,7 @@ class AudioManager {
             this.currentBGM.pause();
             this.currentBGM.currentTime = 0;
             this.currentBGM = null;
+            this.currentBGMId = null;
         }
     }
 

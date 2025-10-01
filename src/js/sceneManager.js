@@ -153,7 +153,7 @@ class SceneManager {
                     this.hideAudioOverlay();
 
                     // Start title BGM if available
-                    this.startTitleBGM();
+                    await this.startTitleBGM();
 
                     console.log('[DEBUG] Audio system enabled and BGM started');
 
@@ -263,8 +263,10 @@ class SceneManager {
         }
     }
 
-    startTitleBGM() {
+    async startTitleBGM() {
         console.log('[DEBUG] Starting title BGM');
+        console.log('[DEBUG] Mute status:', this.isMuted);
+        console.log('[DEBUG] AudioManager available:', !!window.audioManager);
 
         // Don't start BGM if muted
         if (this.isMuted) {
@@ -272,13 +274,95 @@ class SceneManager {
             return;
         }
 
-        if (window.audioManager && window.audioManager.sounds.has('title_bgm')) {
-            try {
-                window.audioManager.playBGM('title_bgm');
-                console.log('[DEBUG] Title BGM started successfully');
-            } catch (error) {
-                console.warn('[DEBUG] Failed to start title BGM:', error);
+        if (!window.audioManager) {
+            console.warn('[DEBUG] AudioManager not available');
+            return;
+        }
+
+        // Wait for audio to be loaded if necessary
+        let retryCount = 0;
+        const maxRetries = 10;
+
+        while (retryCount < maxRetries) {
+            console.log(`[DEBUG] Checking for title_bgm (attempt ${retryCount + 1}/${maxRetries})`);
+            console.log('[DEBUG] AudioManager sounds size:', window.audioManager.sounds.size);
+            console.log('[DEBUG] Available sound IDs:', Array.from(window.audioManager.sounds.keys()));
+
+            if (window.audioManager.sounds.has('title_bgm')) {
+                try {
+                    console.log('[DEBUG] Found title_bgm, attempting to play...');
+                    window.audioManager.playBGM('title_bgm');
+                    console.log('[DEBUG] Title BGM started successfully');
+                    return;
+                } catch (error) {
+                    console.warn('[DEBUG] Failed to start title BGM:', error);
+                    return;
+                }
             }
+
+            console.log('[DEBUG] title_bgm not found, waiting 500ms before retry...');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            retryCount++;
+        }
+
+        console.warn('[DEBUG] Failed to find title_bgm after maximum retries');
+        console.log('[DEBUG] Final available sounds:', Array.from(window.audioManager.sounds.keys()));
+    }
+
+    handleSceneBGM(sceneName) {
+        // Don't change BGM if muted
+        if (this.isMuted || !window.audioManager) {
+            console.log(`[DEBUG] Skipping BGM for scene ${sceneName} - muted or no audio manager`);
+            return;
+        }
+
+        // Skip BGM changes during system refresh (save deletion)
+        if (this.skipBGMDuringRefresh) {
+            console.log(`[DEBUG] Skipping BGM for scene ${sceneName} - system refresh in progress`);
+            return;
+        }
+
+        console.log(`[DEBUG] Handling BGM for scene: ${sceneName}`);
+
+        // Special handling for settings scene based on previous scene
+        if (sceneName === 'settings') {
+            if (this.previousScene === 'title') {
+                // Continue title BGM when coming from title (don't restart)
+                console.log(`[DEBUG] Settings from title - continuing title_bgm without restart`);
+                // Don't call playBGM to avoid restarting - let current BGM continue
+                return;
+            } else {
+                // Silent BGM when coming from other scenes (game/album)
+                console.log(`[DEBUG] Settings from ${this.previousScene} - using silent BGM`);
+                window.audioManager.playBGM('settings_bgm');
+            }
+            return;
+        }
+
+        // Special handling for title scene when returning from settings
+        if (sceneName === 'title' && this.currentScene === 'settings') {
+            // Check if title BGM is already playing
+            if (window.audioManager.currentBGMId === 'title_bgm') {
+                console.log(`[DEBUG] Returning to title from settings - continuing existing title_bgm`);
+                // Don't restart BGM - let it continue
+                return;
+            }
+        }
+
+        // Normal scene BGM mapping for other scenes
+        const sceneBGMMap = {
+            'title': 'title_bgm',
+            'tutorial': 'tutorial_bgm',      // Will be silent (empty filename)
+            'game': 'game_bgm_stage1',       // Will be silent (empty filename)
+            'album': 'album_bgm'             // Will be silent (empty filename)
+        };
+
+        const bgmId = sceneBGMMap[sceneName];
+        if (bgmId) {
+            console.log(`[DEBUG] Playing BGM for ${sceneName}: ${bgmId}`);
+            window.audioManager.playBGM(bgmId);
+        } else {
+            console.log(`[DEBUG] No BGM defined for scene: ${sceneName}`);
         }
     }
 
@@ -493,17 +577,20 @@ class SceneManager {
             // Show new scene immediately
             newSceneElement.classList.add('active');
 
+            // Scene-specific initialization (before updating currentScene for BGM logic)
+            this.onSceneEnter(sceneName);
+
             this.currentScene = sceneName;
             this.isTransitioning = false;
-
-            // Scene-specific initialization
-            this.onSceneEnter(sceneName);
         } else {
             this.isTransitioning = false;
         }
     }
 
     onSceneEnter(sceneName) {
+        // Handle BGM transitions between scenes
+        this.handleSceneBGM(sceneName);
+
         switch (sceneName) {
             case 'title':
                 this.initializeTitleScene();
@@ -813,14 +900,29 @@ class SceneManager {
                 if (result.success) {
                     console.log('SceneManager: Save deletion successful, starting system refresh...');
 
+                    // Stop all BGM during system refresh
+                    if (window.audioManager) {
+                        window.audioManager.stopBGM();
+                    }
+
+                    // Set flag to skip BGM during system refresh
+                    this.skipBGMDuringRefresh = true;
+
                     // Force complete system refresh without reload
                     await this.completeSystemRefresh();
 
-                    // After deletion, always return to title screen
+                    // After deletion, return to title screen but keep BGM muted
                     this.showScene('title');
                     this.previousScene = null; // Clear previous scene tracking
 
+                    // Show completion dialog first
                     alert('セーブデータを削除しました。');
+
+                    // Clear skip flag and start title BGM after dialog is closed
+                    this.skipBGMDuringRefresh = false;
+                    if (window.audioManager && !this.isMuted) {
+                        window.audioManager.playBGM('title_bgm');
+                    }
                 } else {
                     throw new Error(result.message || 'セーブデータの削除に失敗しました');
                 }

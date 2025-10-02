@@ -12,6 +12,7 @@ class AudioManager {
         this.uiHandlersSetup = false;
         this.lastPlayTime = new Map(); // Track last play time for each sound
         this.isMuted = false; // Global mute state
+        this.fadeTimers = { timeout: null, interval: null }; // Track fade timers
         console.log('AudioManager constructor completed, calling setupAudio');
         this.setupAudio();
     }
@@ -121,6 +122,9 @@ class AudioManager {
             return;
         }
 
+        // Clear any ongoing fade timers
+        this.clearFadeTimers();
+
         // Stop current BGM
         if (this.currentBGM) {
             console.log(`[DEBUG] Stopping current BGM`);
@@ -168,6 +172,9 @@ class AudioManager {
     }
 
     stopBGM() {
+        // Clear any ongoing fade timers
+        this.clearFadeTimers();
+
         if (this.currentBGM) {
             this.currentBGM.pause();
             this.currentBGM.currentTime = 0;
@@ -208,6 +215,91 @@ class AudioManager {
                 }
             }, 50);
         });
+    }
+
+    fadeInBGM(id, duration = 3000, loop = true, silentDelay = 500) {
+        console.log(`[DEBUG] fadeInBGM called with ID: ${id}, duration: ${duration}ms, silent delay: ${silentDelay}ms`);
+
+        if (!this.isInitialized) {
+            console.warn(`[DEBUG] AudioManager not initialized, skipping fade in for ${id}`);
+            return;
+        }
+
+        if (this.isMuted) {
+            console.log(`[DEBUG] AudioManager is muted, skipping fade in for ${id}`);
+            return;
+        }
+
+        // Clear any ongoing fade timers
+        this.clearFadeTimers();
+
+        // Stop current BGM
+        if (this.currentBGM) {
+            console.log(`[DEBUG] Stopping current BGM for fade in`);
+            this.currentBGM.pause();
+            this.currentBGM.currentTime = 0;
+        }
+
+        const audio = this.sounds.get(id);
+        if (!audio) {
+            console.log(`[DEBUG] BGM not found: ${id}`);
+            return;
+        }
+
+        // Get target volume
+        const individualVolume = this.getIndividualVolume(id);
+        const targetVolume = this.bgmVolume * individualVolume;
+
+        console.log(`[DEBUG] Target volume for ${id}: ${targetVolume}`);
+
+        // Start at volume 0
+        audio.volume = 0;
+        audio.loop = loop;
+        audio.currentTime = 0;
+
+        // Start playing
+        const playPromise = audio.play();
+        if (playPromise) {
+            playPromise.then(() => {
+                console.log(`[DEBUG] Started fade in for ${id}`);
+            }).catch(error => {
+                console.warn(`[DEBUG] Fade in play failed for ${id}:`, error);
+            });
+        }
+
+        this.currentBGM = audio;
+        this.currentBGMId = id;
+
+        // Wait for silent delay, then fade in gradually (non-blocking)
+        console.log(`[DEBUG] Waiting ${silentDelay}ms before starting fade in`);
+        this.fadeTimers.timeout = setTimeout(() => {
+            console.log(`[DEBUG] Starting fade in after silent period`);
+            const fadeStep = targetVolume / (duration / 50); // 50ms intervals
+            this.fadeTimers.interval = setInterval(() => {
+                if (audio.volume < targetVolume - fadeStep) {
+                    audio.volume = Math.min(targetVolume, audio.volume + fadeStep);
+                } else {
+                    // Fade complete
+                    audio.volume = targetVolume;
+                    clearInterval(this.fadeTimers.interval);
+                    this.fadeTimers.interval = null;
+                    console.log(`[DEBUG] Fade in completed for ${id} at volume ${targetVolume}`);
+                }
+            }, 50);
+        }, silentDelay);
+    }
+
+    clearFadeTimers() {
+        if (this.fadeTimers.timeout) {
+            console.log(`[DEBUG] Clearing fade timeout`);
+            clearTimeout(this.fadeTimers.timeout);
+            this.fadeTimers.timeout = null;
+        }
+        if (this.fadeTimers.interval) {
+            console.log(`[DEBUG] Clearing fade interval`);
+            clearInterval(this.fadeTimers.interval);
+            this.fadeTimers.interval = null;
+        }
     }
 
     setMuted(muted) {

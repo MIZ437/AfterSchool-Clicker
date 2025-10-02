@@ -331,8 +331,13 @@ class SceneManager {
                 console.log(`[DEBUG] Settings from title - continuing title_bgm without restart`);
                 // Don't call playBGM to avoid restarting - let current BGM continue
                 return;
+            } else if (this.previousScene === 'game') {
+                // Continue game BGM when coming from game (don't restart)
+                console.log(`[DEBUG] Settings from game - continuing game BGM without restart`);
+                // Don't call playBGM to avoid restarting - let current BGM continue
+                return;
             } else {
-                // Silent BGM when coming from other scenes (game/album)
+                // Silent BGM when coming from other scenes (album)
                 console.log(`[DEBUG] Settings from ${this.previousScene} - using silent BGM`);
                 window.audioManager.playBGM('settings_bgm');
             }
@@ -345,6 +350,26 @@ class SceneManager {
             if (window.audioManager.currentBGMId === 'title_bgm') {
                 console.log(`[DEBUG] Returning to title from settings - continuing existing title_bgm`);
                 // Don't restart BGM - let it continue
+                return;
+            }
+        }
+
+        // Special handling for game scene when returning from settings or album
+        if (sceneName === 'game' && (this.currentScene === 'settings' || this.currentScene === 'album')) {
+            // Check if game BGM is already playing
+            if (window.audioManager.currentBGMId === 'game_bgm_stage1') {
+                console.log(`[DEBUG] Returning to game from ${this.currentScene} - continuing existing game BGM`);
+                // Don't restart BGM - let it continue
+                return;
+            }
+        }
+
+        // Special handling for album scene when coming from game
+        if (sceneName === 'album' && this.currentScene === 'game') {
+            // Check if game BGM is playing - continue it in album
+            if (window.audioManager.currentBGMId === 'game_bgm_stage1') {
+                console.log(`[DEBUG] Moving to album from game - continuing game BGM`);
+                // Don't change BGM - let it continue
                 return;
             }
         }
@@ -363,14 +388,20 @@ class SceneManager {
         const sceneBGMMap = {
             'title': 'title_bgm',
             'tutorial': 'tutorial_bgm',      // Will be silent (empty filename)
-            'game': 'game_bgm_stage1',       // Will be silent (empty filename)
+            'game': 'game_bgm_stage1',
             'album': 'album_bgm'             // Will be silent (empty filename)
         };
 
         const bgmId = sceneBGMMap[sceneName];
         if (bgmId) {
-            console.log(`[DEBUG] Playing BGM for ${sceneName}: ${bgmId}`);
-            window.audioManager.playBGM(bgmId);
+            // Special handling: fade in for game scene
+            if (sceneName === 'game') {
+                console.log(`[DEBUG] Fading in BGM for ${sceneName}: ${bgmId}`);
+                window.audioManager.fadeInBGM(bgmId, 3000); // 3 second fade in
+            } else {
+                console.log(`[DEBUG] Playing BGM for ${sceneName}: ${bgmId}`);
+                window.audioManager.playBGM(bgmId);
+            }
         } else {
             console.log(`[DEBUG] No BGM defined for scene: ${sceneName}`);
         }

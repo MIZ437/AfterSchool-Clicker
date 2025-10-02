@@ -2,7 +2,7 @@ id,filename,category,loop,volume,scene,description
 title_bgm,bgm/title_theme.mp3,bgm,true,0.7,title,タイトル画面BGM
 button_click,se/click.mp3,se,false,0.8,title,ボタンクリック音
 tutorial_bgm,,bgm,true,0.6,tutorial,チュートリアルBGM（無音）
-game_bgm_stage1,,bgm,true,0.6,game,ステージ1 BGM（無音）
+game_bgm_stage1,bgm/stage1_theme.mp3,bgm,true,0.6,game,ステージ1 BGM
 game_bgm_stage2,,bgm,true,0.6,game,ステージ2 BGM（無音）
 game_bgm_stage3,,bgm,true,0.6,game,ステージ3 BGM（無音）
 game_bgm_stage4,,bgm,true,0.6,game,ステージ4 BGM（無音）

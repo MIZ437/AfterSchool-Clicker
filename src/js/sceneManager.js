@@ -353,7 +353,8 @@ class SceneManager {
         if (sceneName === 'tutorial' && this.currentScene === 'title') {
             if (window.audioManager.currentBGMId === 'title_bgm') {
                 console.log(`[DEBUG] Transitioning to tutorial - fading out title BGM`);
-                await window.audioManager.fadeOutBGM(7000); // 7 second fade
+                // Start fade out without waiting (non-blocking)
+                window.audioManager.fadeOutBGM(7000); // 7 second fade
                 return;
             }
         }

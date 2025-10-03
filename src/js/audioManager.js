@@ -196,7 +196,11 @@ class AudioManager {
 
             console.log(`[DEBUG] Starting BGM fade out: ${startVolume} -> 0 over ${duration}ms`);
 
-            const fadeInterval = setInterval(() => {
+            // Clear any existing fade timers before starting new one
+            this.clearFadeTimers();
+
+            // Store the interval in fadeTimers so it can be cleared by clearFadeTimers()
+            this.fadeTimers.interval = setInterval(() => {
                 if (audio.volume > fadeStep) {
                     audio.volume = Math.max(0, audio.volume - fadeStep);
                 } else {
@@ -204,7 +208,8 @@ class AudioManager {
                     audio.volume = 0;
                     audio.pause();
                     audio.currentTime = 0;
-                    clearInterval(fadeInterval);
+                    clearInterval(this.fadeTimers.interval);
+                    this.fadeTimers.interval = null;
 
                     // Clear current BGM references
                     this.currentBGM = null;
@@ -273,9 +278,23 @@ class AudioManager {
         // Wait for silent delay, then fade in gradually (non-blocking)
         console.log(`[DEBUG] Waiting ${silentDelay}ms before starting fade in`);
         this.fadeTimers.timeout = setTimeout(() => {
+            // Check if this timer is still valid (not cleared by another BGM transition)
+            if (this.currentBGMId !== id) {
+                console.log(`[DEBUG] Fade in cancelled - BGM changed from ${id} to ${this.currentBGMId}`);
+                return;
+            }
+
             console.log(`[DEBUG] Starting fade in after silent period`);
             const fadeStep = targetVolume / (duration / 50); // 50ms intervals
             this.fadeTimers.interval = setInterval(() => {
+                // Check if BGM is still current
+                if (this.currentBGMId !== id) {
+                    console.log(`[DEBUG] Fade in interrupted for ${id}`);
+                    clearInterval(this.fadeTimers.interval);
+                    this.fadeTimers.interval = null;
+                    return;
+                }
+
                 if (audio.volume < targetVolume - fadeStep) {
                     audio.volume = Math.min(targetVolume, audio.volume + fadeStep);
                 } else {
@@ -300,6 +319,118 @@ class AudioManager {
             clearInterval(this.fadeTimers.interval);
             this.fadeTimers.interval = null;
         }
+    }
+
+    crossFadeBGM(newId, duration = 3000, loop = true) {
+        console.log(`[DEBUG] crossFadeBGM called: current ${this.currentBGMId} -> new ${newId}, duration: ${duration}ms`);
+
+        if (!this.isInitialized) {
+            console.warn(`[DEBUG] AudioManager not initialized, skipping crossfade`);
+            return;
+        }
+
+        if (this.isMuted) {
+            console.log(`[DEBUG] AudioManager is muted, skipping crossfade`);
+            return;
+        }
+
+        // Get new audio
+        const newAudio = this.sounds.get(newId);
+        if (!newAudio) {
+            console.log(`[DEBUG] New BGM not found: ${newId}`);
+            return;
+        }
+
+        // Save old BGM for fade out (must be done BEFORE clearing timers)
+        const oldBGM = this.currentBGM;
+        const oldBGMId = this.currentBGMId;
+
+        console.log(`[DEBUG] Crossfade: old BGM is ${oldBGMId}, volume: ${oldBGM ? oldBGM.volume : 'N/A'}`);
+
+        // Clear any ongoing fade timers
+        this.clearFadeTimers();
+
+        // Immediately update current BGM references to prevent old timers from affecting
+        this.currentBGM = newAudio;
+        this.currentBGMId = newId;
+
+        // Get target volume for new BGM
+        const individualVolume = this.getIndividualVolume(newId);
+        const targetVolume = this.bgmVolume * individualVolume;
+
+        console.log(`[DEBUG] Target volume for ${newId}: ${targetVolume}`);
+
+        // Start new BGM at volume 0
+        newAudio.volume = 0;
+        newAudio.loop = loop;
+        newAudio.currentTime = 0;
+
+        // Start playing new BGM
+        const playPromise = newAudio.play();
+        if (playPromise) {
+            playPromise.then(() => {
+                console.log(`[DEBUG] Started crossfade - new BGM playing`);
+            }).catch(error => {
+                console.warn(`[DEBUG] Crossfade play failed for ${newId}:`, error);
+            });
+        }
+
+        // Crossfade: fade out old, fade in new simultaneously
+        const fadeStep = targetVolume / (duration / 50); // 50ms intervals
+        let oldBGMStopped = false;
+
+        console.log(`[DEBUG] Starting crossfade interval - fadeStep: ${fadeStep}`);
+
+        this.fadeTimers.interval = setInterval(() => {
+            // Check if BGM is still current (if changed, abort crossfade)
+            if (this.currentBGMId !== newId) {
+                console.log(`[DEBUG] Crossfade interrupted - BGM changed from ${newId} to ${this.currentBGMId}`);
+                clearInterval(this.fadeTimers.interval);
+                this.fadeTimers.interval = null;
+                // Immediately stop old BGM
+                if (oldBGM && !oldBGMStopped) {
+                    console.log(`[DEBUG] Force stopping old BGM ${oldBGMId} due to interruption`);
+                    oldBGM.volume = 0;
+                    oldBGM.pause();
+                    oldBGM.currentTime = 0;
+                }
+                return;
+            }
+
+            // Fade out old BGM
+            if (oldBGM && !oldBGMStopped) {
+                if (oldBGM.volume > fadeStep) {
+                    oldBGM.volume = Math.max(0, oldBGM.volume - fadeStep);
+                } else {
+                    // Old BGM fade complete - stop it completely
+                    console.log(`[DEBUG] Stopping old BGM ${oldBGMId} - final volume: ${oldBGM.volume}`);
+                    oldBGM.volume = 0;
+                    oldBGM.pause();
+                    oldBGM.currentTime = 0;
+                    oldBGMStopped = true;
+                    console.log(`[DEBUG] Old BGM ${oldBGMId} fully stopped`);
+                }
+            }
+
+            // Fade in new BGM
+            if (newAudio.volume < targetVolume - fadeStep) {
+                newAudio.volume = Math.min(targetVolume, newAudio.volume + fadeStep);
+            } else {
+                // New BGM fade complete
+                newAudio.volume = targetVolume;
+                clearInterval(this.fadeTimers.interval);
+                this.fadeTimers.interval = null;
+                console.log(`[DEBUG] Crossfade completed - ${newId} at volume ${targetVolume}, old BGM stopped: ${oldBGMStopped}`);
+
+                // Final safety check: ensure old BGM is completely stopped
+                if (oldBGM && !oldBGMStopped) {
+                    console.warn(`[DEBUG] Old BGM ${oldBGMId} was not stopped during crossfade - stopping now`);
+                    oldBGM.volume = 0;
+                    oldBGM.pause();
+                    oldBGM.currentTime = 0;
+                }
+            }
+        }, 50);
     }
 
     setMuted(muted) {

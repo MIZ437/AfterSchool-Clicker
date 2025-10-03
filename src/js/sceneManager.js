@@ -354,10 +354,14 @@ class SceneManager {
             }
         }
 
+        // Get current stage for game BGM
+        const currentStage = window.gameState ? window.gameState.get('gameProgress.currentStage') : 1;
+        const currentGameBGM = `game_bgm_stage${currentStage}`;
+
         // Special handling for game scene when returning from settings or album
         if (sceneName === 'game' && (this.currentScene === 'settings' || this.currentScene === 'album')) {
             // Check if game BGM is already playing
-            if (window.audioManager.currentBGMId === 'game_bgm_stage1') {
+            if (window.audioManager.currentBGMId === currentGameBGM) {
                 console.log(`[DEBUG] Returning to game from ${this.currentScene} - continuing existing game BGM`);
                 // Don't restart BGM - let it continue
                 return;
@@ -367,7 +371,7 @@ class SceneManager {
         // Special handling for album scene when coming from game
         if (sceneName === 'album' && this.currentScene === 'game') {
             // Check if game BGM is playing - continue it in album
-            if (window.audioManager.currentBGMId === 'game_bgm_stage1') {
+            if (window.audioManager.currentBGMId === currentGameBGM) {
                 console.log(`[DEBUG] Moving to album from game - continuing game BGM`);
                 // Don't change BGM - let it continue
                 return;
@@ -388,20 +392,29 @@ class SceneManager {
         const sceneBGMMap = {
             'title': 'title_bgm',
             'tutorial': 'tutorial_bgm',      // Will be silent (empty filename)
-            'game': 'game_bgm_stage1',
+            'game': currentGameBGM,          // Dynamic based on current stage
             'album': 'album_bgm'             // Will be silent (empty filename)
         };
 
         const bgmId = sceneBGMMap[sceneName];
         if (bgmId) {
-            // Special handling: fade in for game scene
-            if (sceneName === 'game') {
+            const currentBGMId = window.audioManager.currentBGMId;
+
+            // Determine appropriate BGM transition method
+            if (currentBGMId && currentBGMId !== bgmId && window.audioManager.sounds.has(bgmId)) {
+                // Different BGM exists - use crossfade
+                console.log(`[DEBUG] Crossfading BGM for ${sceneName}: ${currentBGMId} -> ${bgmId}`);
+                window.audioManager.crossFadeBGM(bgmId, 7000); // 7 second crossfade
+            } else if (!currentBGMId && sceneName === 'game') {
+                // No current BGM, game scene - use fade in with silent delay
                 console.log(`[DEBUG] Fading in BGM for ${sceneName}: ${bgmId}`);
                 window.audioManager.fadeInBGM(bgmId, 3000); // 3 second fade in
-            } else {
+            } else if (!currentBGMId) {
+                // No current BGM, other scenes - play normally
                 console.log(`[DEBUG] Playing BGM for ${sceneName}: ${bgmId}`);
                 window.audioManager.playBGM(bgmId);
             }
+            // If currentBGMId === bgmId, do nothing (already handled by continue logic above)
         } else {
             console.log(`[DEBUG] No BGM defined for scene: ${sceneName}`);
         }
@@ -830,6 +843,18 @@ class SceneManager {
         // Update gacha display
         if (window.gachaSystem) {
             window.gachaSystem.setStage(stageId);
+        }
+
+        // Switch BGM to new stage's BGM
+        if (window.audioManager && !this.isMuted) {
+            const newBGMId = `game_bgm_stage${stageId}`;
+            const currentBGMId = window.audioManager.currentBGMId;
+
+            // Only crossfade if different BGM and audio is available
+            if (currentBGMId !== newBGMId && window.audioManager.sounds.has(newBGMId)) {
+                console.log(`[DEBUG] Stage switched to ${stageId} - crossfading to ${newBGMId}`);
+                window.audioManager.crossFadeBGM(newBGMId, 7000); // 7 second crossfade
+            }
         }
     }
 

@@ -47,10 +47,10 @@
 /* Stage Navigation */
 .stage-nav {
     background: rgba(255, 255, 255, 0.8);
-    padding: 0.5rem 2rem;
+    padding: 1.2rem 2rem 1rem 2rem;
     display: flex;
     justify-content: center;
-    gap: 1rem;
+    gap: 1.5rem;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
@@ -71,8 +71,13 @@
 }
 
 .stage-tab.active {
-    background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
-    box-shadow: 0 4px 15px rgba(0, 184, 148, 0.4);
+    transform: scale(1.5);
+    margin: 0 1.2rem;
+}
+
+.stage-tab.unlocked {
+    background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
+    opacity: 0.8;
 }
 
 .stage-tab.locked {
@@ -1080,7 +1085,8 @@ input:checked + .toggle-slider:before {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.8rem;
+    min-height: 80px;
 }
 
 .stage-cost {

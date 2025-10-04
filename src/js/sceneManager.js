@@ -807,8 +807,18 @@ class SceneManager {
             const isUnlocked = unlockedStages.includes(stage);
             const isActive = stage === currentStage;
 
-            tab.classList.toggle('locked', !isUnlocked);
-            tab.classList.toggle('active', isActive);
+            // Remove all state classes first
+            tab.classList.remove('locked', 'unlocked', 'active');
+
+            // Add appropriate class
+            if (isActive) {
+                tab.classList.add('active');
+            } else if (isUnlocked) {
+                tab.classList.add('unlocked');
+            } else {
+                tab.classList.add('locked');
+            }
+
             tab.disabled = !isUnlocked;
         });
     }
@@ -845,8 +855,13 @@ class SceneManager {
             window.gachaSystem.setStage(stageId);
         }
 
+        // Play stage switch sound
+        if (window.audioManager && !this.isMuted && !window.audioManager.isMuted) {
+            window.audioManager.playSE('stage_switch_sound');
+        }
+
         // Switch BGM to new stage's BGM
-        if (window.audioManager && !this.isMuted) {
+        if (window.audioManager && !this.isMuted && !window.audioManager.isMuted) {
             const newBGMId = `game_bgm_stage${stageId}`;
             const currentBGMId = window.audioManager.currentBGMId;
 

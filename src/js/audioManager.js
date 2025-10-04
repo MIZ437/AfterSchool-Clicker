@@ -13,6 +13,7 @@ class AudioManager {
         this.lastPlayTime = new Map(); // Track last play time for each sound
         this.isMuted = false; // Global mute state
         this.fadeTimers = { timeout: null, interval: null }; // Track fade timers
+        this.fadingOutBGM = null; // Track BGM currently fading out
         console.log('AudioManager constructor completed, calling setupAudio');
         this.setupAudio();
     }
@@ -341,11 +342,23 @@ class AudioManager {
             return;
         }
 
+        // Immediately stop any previously fading BGM to limit to 2 tracks max
+        if (this.fadingOutBGM) {
+            console.log(`[DEBUG] Stopping previously fading BGM immediately`);
+            this.fadingOutBGM.volume = 0;
+            this.fadingOutBGM.pause();
+            this.fadingOutBGM.currentTime = 0;
+            this.fadingOutBGM = null;
+        }
+
         // Save old BGM for fade out (must be done BEFORE clearing timers)
         const oldBGM = this.currentBGM;
         const oldBGMId = this.currentBGMId;
 
         console.log(`[DEBUG] Crossfade: old BGM is ${oldBGMId}, volume: ${oldBGM ? oldBGM.volume : 'N/A'}`);
+
+        // Save old BGM as the one currently fading out
+        this.fadingOutBGM = oldBGM;
 
         // Clear any ongoing fade timers
         this.clearFadeTimers();
@@ -393,6 +406,7 @@ class AudioManager {
                     oldBGM.volume = 0;
                     oldBGM.pause();
                     oldBGM.currentTime = 0;
+                    this.fadingOutBGM = null; // Clear fading out BGM reference
                 }
                 return;
             }
@@ -408,6 +422,7 @@ class AudioManager {
                     oldBGM.pause();
                     oldBGM.currentTime = 0;
                     oldBGMStopped = true;
+                    this.fadingOutBGM = null; // Clear fading out BGM reference
                     console.log(`[DEBUG] Old BGM ${oldBGMId} fully stopped`);
                 }
             }
@@ -428,6 +443,7 @@ class AudioManager {
                     oldBGM.volume = 0;
                     oldBGM.pause();
                     oldBGM.currentTime = 0;
+                    this.fadingOutBGM = null; // Clear fading out BGM reference
                 }
             }
         }, 50);

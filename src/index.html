@@ -124,15 +124,15 @@
             </div>
             <div class="stage-button-container">
                 <button class="stage-tab locked" data-stage="2">ステージ2</button>
-                <span class="stage-cost" id="stage-cost-2">2,000pt</span>
+                <span class="stage-cost" id="stage-cost-2">未開放：2,000pt</span>
             </div>
             <div class="stage-button-container">
                 <button class="stage-tab locked" data-stage="3">ステージ3</button>
-                <span class="stage-cost" id="stage-cost-3">15,000pt</span>
+                <span class="stage-cost" id="stage-cost-3">未開放：15,000pt</span>
             </div>
             <div class="stage-button-container">
                 <button class="stage-tab locked" data-stage="4">ステージ4</button>
-                <span class="stage-cost" id="stage-cost-4">100,000pt</span>
+                <span class="stage-cost" id="stage-cost-4">未開放：100,000pt</span>
             </div>
         </nav>
 
@@ -620,18 +620,11 @@
 
                 if (unlockedStages.includes(stageId)) {
 
-                    // Force unlocked state with active styling
-                    btn.className = 'stage-tab active';
+                    // Set unlocked state (active class will be added by sceneManager.updateStageUI)
+                    btn.classList.remove('locked', 'unlockable');
+                    btn.classList.add('unlocked');
                     btn.disabled = false;
-
-                    // Force active styles
                     btn.removeAttribute('style');
-                    btn.style.cssText = `
-                        background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%) !important;
-                        cursor: pointer !important;
-                        opacity: 1 !important;
-                        pointer-events: auto !important;
-                    `;
 
                     if (costElement) {
                         costElement.textContent = '解放済み';
@@ -693,7 +686,7 @@
                         }
 
                         if (costElement) {
-                            costElement.textContent = cost.toLocaleString() + 'pt';
+                            costElement.textContent = '未開放：' + cost.toLocaleString() + 'pt';
                             costElement.classList.remove('unlocked');
                         }
                     } else {

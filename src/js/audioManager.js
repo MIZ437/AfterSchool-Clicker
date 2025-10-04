@@ -2,8 +2,8 @@
 class AudioManager {
     constructor() {
         console.log('AudioManager constructor called');
-        this.bgmVolume = 0.7;
-        this.seVolume = 0.8;
+        this.bgmVolume = 0.5;
+        this.seVolume = 0.5;
         this.currentBGM = null;
         this.currentBGMId = null;
         this.audioContext = null;
@@ -698,8 +698,10 @@ class AudioManager {
 
             if (audioItem && audioItem.volume !== undefined) {
                 const volume = parseFloat(audioItem.volume);
-                console.log(`[DEBUG] Individual volume for ${audioId}: ${volume} (original: ${audioItem.volume})`);
-                return isNaN(volume) ? 1.0 : volume;
+                // Clamp volume to valid range [0, 1]
+                const clampedVolume = Math.max(0, Math.min(1, volume));
+                console.log(`[DEBUG] Individual volume for ${audioId}: ${clampedVolume} (original: ${audioItem.volume})`);
+                return isNaN(volume) ? 1.0 : clampedVolume;
             } else {
                 console.warn(`[DEBUG] Audio item not found for ${audioId}, using default volume`);
             }
@@ -714,8 +716,10 @@ class AudioManager {
     setBGMVolume(volume) {
         this.bgmVolume = Math.max(0, Math.min(1, volume));
 
-        if (this.currentBGM) {
-            this.currentBGM.volume = this.bgmVolume;
+        if (this.currentBGM && this.currentBGMId) {
+            // Apply individual volume multiplier
+            const individualVolume = this.getIndividualVolume(this.currentBGMId);
+            this.currentBGM.volume = this.bgmVolume * individualVolume;
         }
 
         // Save to game state
@@ -747,8 +751,8 @@ class AudioManager {
     }
 
     unmuteAll() {
-        this.setBGMVolume(0.7);
-        this.setSEVolume(0.8);
+        this.setBGMVolume(0.5);
+        this.setSEVolume(0.5);
     }
 
     // Scene-specific audio management
@@ -777,8 +781,8 @@ class AudioManager {
         if (window.gameState) {
             const settings = window.gameState.get('settings');
             if (settings) {
-                this.bgmVolume = settings.bgmVolume || 0.7;
-                this.seVolume = settings.seVolume || 0.8;
+                this.bgmVolume = settings.bgmVolume !== undefined ? settings.bgmVolume : 0.5;
+                this.seVolume = settings.seVolume !== undefined ? settings.seVolume : 0.5;
             }
         }
     }

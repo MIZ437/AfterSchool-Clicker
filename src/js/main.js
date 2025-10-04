@@ -270,12 +270,13 @@ class AfterSchoolClicker {
             this.emaPPS = this.emaAlpha * clickPPS + (1 - this.emaAlpha) * this.emaPPS;
 
             // If EMA is very small, set it to 0 to prevent flickering
-            if (this.emaPPS < 0.5) {
+            // Use a much smaller threshold to avoid oscillating between 0 and non-zero
+            if (this.emaPPS < 0.01) {
                 this.emaPPS = 0;
             }
 
             // Display: Base CPS (instant) + Smoothed Click PPS
-            const displayPPS = Math.max(0, Math.round(baseCPS + this.emaPPS));
+            const displayPPS = Math.max(0, Math.floor(baseCPS + this.emaPPS));
             console.log('[DEBUG] CPS Display - Base CPS:', baseCPS, 'Click PPS:', Math.round(clickPPS), 'Smoothed Click:', Math.round(this.emaPPS), 'Total Display:', displayPPS);
             cpsElement.textContent = this.formatNumber(displayPPS);
         }

@@ -56,13 +56,16 @@ class AfterSchoolClickerMain {
                 backgroundThrottling: false
             },
             title: 'AfterSchool Clicker',
-            show: true, // Show immediately for testing
+            show: false, // Will show after maximizing in ready-to-show event
             center: true,
             resizable: true,
             autoHideMenuBar: true,
             backgroundColor: '#667eea', // Gradient start color to prevent white flash
             titleBarStyle: 'default'
         });
+
+        // Maximize window before showing
+        this.mainWindow.maximize();
 
         // Load the game
         try {

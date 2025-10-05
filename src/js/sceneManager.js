@@ -975,6 +975,11 @@ class SceneManager {
         try {
             console.log('SceneManager: Starting save deletion process...');
 
+            // Save current audio settings before deletion
+            const savedBGMVolume = window.audioManager ? window.audioManager.getBGMVolume() : 0.5;
+            const savedSEVolume = window.audioManager ? window.audioManager.getSEVolume() : 0.5;
+            console.log('SceneManager: Saved audio settings before deletion - BGM:', savedBGMVolume, 'SE:', savedSEVolume);
+
             if (window.saveManager) {
                 const result = await window.saveManager.deleteSave();
 
@@ -991,6 +996,13 @@ class SceneManager {
 
                     // Force complete system refresh without reload
                     await this.completeSystemRefresh();
+
+                    // Restore audio settings after system refresh
+                    if (window.audioManager) {
+                        window.audioManager.setBGMVolume(savedBGMVolume);
+                        window.audioManager.setSEVolume(savedSEVolume);
+                        console.log('SceneManager: Restored audio settings - BGM:', savedBGMVolume, 'SE:', savedSEVolume);
+                    }
 
                     // After deletion, return to title screen but keep BGM muted
                     this.showScene('title');

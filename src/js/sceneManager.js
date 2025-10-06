@@ -972,21 +972,47 @@ class SceneManager {
     updateHeroineDisplay() {
         const currentStage = window.gameState.get('gameProgress.currentStage');
         const unlockedHeroines = window.gameState.get(`collection.heroine.stage${currentStage}`) || [];
+        const currentDisplayImage = window.gameState.get('collection.currentDisplayImage');
 
         console.log('[DEBUG] updateHeroineDisplay - currentStage:', currentStage);
         console.log('[DEBUG] updateHeroineDisplay - unlockedHeroines:', unlockedHeroines);
+        console.log('[DEBUG] updateHeroineDisplay - currentDisplayImage:', currentDisplayImage);
 
         if (unlockedHeroines.length > 0 && window.clickSystem) {
-            // Show random unlocked heroine
-            const randomHeroine = window.dataManager.getRandomHeroine(currentStage);
-            console.log('[DEBUG] updateHeroineDisplay - randomHeroine:', randomHeroine);
+            let heroineToDisplay = null;
 
-            if (randomHeroine) {
-                const imagePath = window.dataManager.getAssetPath(randomHeroine.filename);
+            // If currentDisplayImage is set and unlocked in current stage, use it
+            if (currentDisplayImage && unlockedHeroines.includes(currentDisplayImage)) {
+                // Try to get from dataManager first
+                const imageData = window.dataManager.getImage(currentDisplayImage);
+                if (imageData) {
+                    heroineToDisplay = imageData;
+                    console.log('[DEBUG] Using saved currentDisplayImage from CSV:', currentDisplayImage);
+                } else {
+                    // If not in CSV, generate from collection
+                    const heroines = window.dataManager.getHeroineCollection(currentStage);
+                    heroineToDisplay = heroines.find(h => h.id === currentDisplayImage);
+                    console.log('[DEBUG] Using saved currentDisplayImage from generated list:', currentDisplayImage);
+                }
+            }
+
+            // If no saved image or not unlocked in current stage, pick random and save
+            if (!heroineToDisplay) {
+                heroineToDisplay = window.dataManager.getRandomHeroine(currentStage);
+                console.log('[DEBUG] Using random heroine:', heroineToDisplay);
+
+                // Save the random selection as currentDisplayImage
+                if (heroineToDisplay) {
+                    window.gameState.set('collection.currentDisplayImage', heroineToDisplay.id);
+                }
+            }
+
+            if (heroineToDisplay) {
+                const imagePath = window.dataManager.getAssetPath(heroineToDisplay.filename);
                 console.log('[DEBUG] updateHeroineDisplay - imagePath:', imagePath);
                 window.clickSystem.setHeroineImage(imagePath);
             } else {
-                console.warn('[DEBUG] updateHeroineDisplay - No random heroine found!');
+                console.warn('[DEBUG] updateHeroineDisplay - No heroine found!');
             }
         } else {
             console.warn('[DEBUG] updateHeroineDisplay - No unlocked heroines or clickSystem not ready');

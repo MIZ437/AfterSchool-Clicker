@@ -131,6 +131,10 @@ class GameState {
         if (!currentCollection.includes(heroineId)) {
             currentCollection.push(heroineId);
             this.set(`collection.heroine.stage${stageId}`, currentCollection);
+
+            // Set as current display image when unlocked via gacha
+            this.set('collection.currentDisplayImage', heroineId);
+
             return true;
         }
 

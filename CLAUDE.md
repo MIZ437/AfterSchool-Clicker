@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Core Game Systems
 - **Point System**: Click-based earning with upgrades for Click Per Point (CPP) and Points Per Second (PPS)
 - **Stage Progression**: 4 sequential stages (教室→図書館→屋上→体育館) with unlock costs
-- **Gacha Collection**: Point-based image collection system (no duplicates, 8 images per stage)
+- **Gacha Collection**: Point-based image collection system (no duplicates, 9 images for stage 1)
 - **Album System**: Gallery for viewing collected images and reward videos, organized by stage
 - **Shop System**: Upgrades for click efficiency and automatic point generation
 
@@ -28,7 +28,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 src/
 ├── main.js          # Electron main process
 ├── preload.js       # Secure IPC bridge
-└── index.html       # Complete game UI
+├── index.html       # Complete game UI
+└── styles/
+    ├── main.css     # Title screen, common styles
+    └── game.css     # Game screen, album, settings
 
 assets/
 ├── data/            # CSV configuration files
@@ -36,7 +39,12 @@ assets/
 │   ├── audio.csv    # BGM and SE definitions
 │   ├── text.csv     # UI text and dialogue
 │   └── stages.csv   # Stage configuration
-├── images/          # Heroine images, UI graphics
+├── images/
+│   ├── heroines/
+│   │   └── stage1/  # Stage 1 heroine images (heroine_1_01.png ~ heroine_1_09.png)
+│   └── ui/
+│       ├── title_logo.png       # Title logo (blackboard style)
+│       └── title_character.png  # Title character image
 ├── videos/          # Reward videos
 └── audio/           # BGM and sound effects
 ```
@@ -102,10 +110,17 @@ The game should start successfully and display all CSV data loading confirmation
 - Stage themes: 教室 (classroom) → 図書館 (library) → 屋上 (rooftop) → 体育館 (gymnasium)
 
 ### Asset Integration
-- Images referenced via CSV ID system, not hardcoded paths
-- Audio system supports BGM looping and SE triggering
-- Video rewards tied to stage progression milestones
-- UI elements themed consistently across all stages
+- **Images**: Referenced via CSV ID system, not hardcoded paths
+  - Heroine images use sequential naming: `heroine_{stageId}_{number}.png` (e.g., heroine_1_01.png, heroine_1_02.png)
+  - Numbers are zero-padded (01, 02, ..., 09) for consistent sorting
+  - Image aspect ratios preserved with `object-fit: contain` to prevent distortion
+  - Original image dimensions: 992 x 1456px (2:3 vertical ratio)
+- **UI Graphics**:
+  - Title logo: 1536 x 1024px (blackboard-style design)
+  - Title character: 992 x 1456px (vertical portrait)
+- **Audio**: System supports BGM looping and SE triggering
+- **Video**: Rewards tied to stage progression milestones
+- **Theming**: UI elements themed consistently across all stages
 
 ### Build Considerations
 - ASAR archive ensures source protection for distribution

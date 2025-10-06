@@ -67,9 +67,6 @@ class AfterSchoolClickerMain {
         // Maximize window before showing
         this.mainWindow.maximize();
 
-        // Open DevTools for debugging
-        this.mainWindow.webContents.openDevTools();
-
         // Load the game
         try {
             const htmlPath = path.join(__dirname, 'index.html');

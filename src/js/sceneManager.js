@@ -8,6 +8,7 @@ class SceneManager {
         this.firstRun = true;
         this.audioContextInitialized = false;
         this.isMuted = false;
+        this.titleImageRotationTimer = null;
         this.setupScenes();
     }
 
@@ -645,6 +646,11 @@ class SceneManager {
         // Handle BGM transitions between scenes
         await this.handleSceneBGM(sceneName);
 
+        // Stop title image rotation when leaving title screen
+        if (sceneName !== 'title') {
+            this.stopTitleImageRotation();
+        }
+
         switch (sceneName) {
             case 'title':
                 this.initializeTitleScene();
@@ -709,6 +715,84 @@ class SceneManager {
         if (window.audioManager) {
             console.log('[DEBUG] Audio status - Loaded sounds:', window.audioManager.sounds.size);
             console.log('[DEBUG] Audio status - Available sounds:', Array.from(window.audioManager.sounds.keys()));
+        }
+
+        // Start title character image rotation
+        this.startTitleImageRotation();
+    }
+
+    startTitleImageRotation() {
+        // Clear any existing timer
+        if (this.titleImageRotationTimer) {
+            clearInterval(this.titleImageRotationTimer);
+        }
+
+        // Get stage 1 heroine images
+        if (!window.dataManager) {
+            console.warn('[DEBUG] DataManager not available for title image rotation');
+            return;
+        }
+
+        const stage1Images = [];
+        for (let i = 1; i <= 9; i++) {
+            const paddedNum = String(i).padStart(2, '0');
+            stage1Images.push(`images/heroines/stage1/heroine_1_${paddedNum}.png`);
+        }
+
+        if (stage1Images.length === 0) {
+            console.warn('[DEBUG] No stage 1 images found for rotation');
+            return;
+        }
+
+        const titleCharacterImg = document.querySelector('.title-character-image');
+        if (!titleCharacterImg) {
+            console.warn('[DEBUG] Title character image element not found');
+            return;
+        }
+
+        let currentIndex = 0;
+        let lastDisplayedIndex = -1; // Track last displayed image to prevent duplicates
+
+        // Set initial image immediately
+        const initialPath = window.dataManager.getAssetPath(stage1Images[0]);
+        titleCharacterImg.src = initialPath;
+        titleCharacterImg.style.opacity = '1';
+        lastDisplayedIndex = 0;
+        currentIndex = 1;
+
+        // Change image every 2 seconds with cross-dissolve effect
+        this.titleImageRotationTimer = setInterval(() => {
+            // Make sure we don't show the same image twice in a row
+            if (currentIndex === lastDisplayedIndex) {
+                currentIndex = (currentIndex + 1) % stage1Images.length;
+            }
+
+            // Fade out
+            titleCharacterImg.style.opacity = '0';
+
+            // Wait for fade out, then change image and fade in
+            setTimeout(() => {
+                const imagePath = stage1Images[currentIndex];
+                const fullPath = window.dataManager.getAssetPath(imagePath);
+                titleCharacterImg.src = fullPath;
+                console.log('[DEBUG] Rotated to image:', imagePath, '(previous:', lastDisplayedIndex, ')');
+
+                // Fade in
+                titleCharacterImg.style.opacity = '1';
+
+                lastDisplayedIndex = currentIndex;
+                currentIndex = (currentIndex + 1) % stage1Images.length;
+            }, 800); // Wait for fade out animation (0.8s)
+        }, 2000);
+
+        console.log('[DEBUG] Title image rotation started with', stage1Images.length, 'images');
+    }
+
+    stopTitleImageRotation() {
+        if (this.titleImageRotationTimer) {
+            clearInterval(this.titleImageRotationTimer);
+            this.titleImageRotationTimer = null;
+            console.log('[DEBUG] Title image rotation stopped');
         }
     }
 

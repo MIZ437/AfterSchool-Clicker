@@ -120,6 +120,7 @@ class AlbumManager {
                 itemDiv.innerHTML = `
                     <img src="${window.dataManager.getAssetPath(item.filename)}"
                          alt="${item.name || item.id}"
+                         style="width: 100%; height: 100%; object-fit: contain;"
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <div class="placeholder-icon" style="display:none;">🌸</div>
                 `;
@@ -128,6 +129,7 @@ class AlbumManager {
                     <div class="video-thumbnail">
                         <img src="${window.dataManager.getAssetPath(item.thumbnail)}"
                              alt="${item.title}"
+                             style="width: 100%; height: 100%; object-fit: contain;"
                              onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                         <div class="placeholder-icon" style="display:none;">🎬</div>
                         <div class="play-icon">▶️</div>
@@ -158,7 +160,8 @@ class AlbumManager {
             <div class="modal-backdrop" onclick="this.parentElement.remove()"></div>
             <div class="modal-content">
                 <img src="${window.dataManager.getAssetPath(image.filename)}"
-                     alt="${image.name || image.id}">
+                     alt="${image.name || image.id}"
+                     style="max-width: 90vw; max-height: 90vh; object-fit: contain;">
                 <div class="modal-close" onclick="this.parentElement.parentElement.remove()">×</div>
             </div>
         `;

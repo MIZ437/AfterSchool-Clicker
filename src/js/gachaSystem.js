@@ -211,6 +211,7 @@ class GachaSystem {
                     <div class="heroine-image">
                         <img src="${window.dataManager.getAssetPath(heroine.filename)}"
                              alt="${heroine.name}"
+                             style="width: 100%; height: 100%; object-fit: contain;"
                              onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                         <div class="placeholder-heroine" style="display:none;">🌸</div>
                     </div>

@@ -167,10 +167,17 @@ class DataManager {
     // Get images by category and stage
     getImagesByStage(stageId, category = 'heroine') {
         const images = this.getImages();
-        return images.filter(img =>
-            img.stage === stageId.toString() &&
-            img.category === category
-        );
+        const filtered = images.filter(img => {
+            const stageMatch = img.stage === stageId.toString();
+            const categoryMatch = img.category === category;
+            return stageMatch && categoryMatch;
+        });
+
+        console.log('[DEBUG] getImagesByStage - stageId:', stageId, 'category:', category);
+        console.log('[DEBUG] getImagesByStage - all images:', images);
+        console.log('[DEBUG] getImagesByStage - filtered:', filtered);
+
+        return filtered;
     }
 
     // Get image by ID
@@ -234,9 +241,11 @@ class DataManager {
         const heroines = [];
 
         for (let i = 1; i <= count; i++) {
+            // Use 2-digit zero-padded format (01, 02, etc.)
+            const paddedNum = String(i).padStart(2, '0');
             heroines.push({
-                id: `heroine_${stageId}_${i}`,
-                filename: `heroines/stage${stageId}/heroine_${stageId}_${i}.png`,
+                id: `heroine_${stageId}_${paddedNum}`,
+                filename: `images/heroines/stage${stageId}/heroine_${stageId}_${paddedNum}.png`,
                 name: `ヒロイン${stageId}-${i}`,
                 stage: stageId
             });
@@ -250,12 +259,17 @@ class DataManager {
         // First try to get from images data
         const stageHeroines = this.getImagesByStage(stageId, 'heroine');
 
+        console.log('[DEBUG] getHeroineCollection - stageId:', stageId);
+        console.log('[DEBUG] getHeroineCollection - stageHeroines from CSV:', stageHeroines);
+
         if (stageHeroines.length > 0) {
             return stageHeroines;
         }
 
         // If no data in CSV, generate default list
-        return this.generateHeroineList(stageId);
+        const generated = this.generateHeroineList(stageId);
+        console.log('[DEBUG] getHeroineCollection - generated list:', generated);
+        return generated;
     }
 
     // Get random heroine for display
@@ -263,7 +277,11 @@ class DataManager {
         const heroines = this.getHeroineCollection(stageId);
         const unlockedHeroines = window.gameState.get(`collection.heroine.stage${stageId}`) || [];
 
+        console.log('[DEBUG] getRandomHeroine - heroines:', heroines);
+        console.log('[DEBUG] getRandomHeroine - unlockedHeroines:', unlockedHeroines);
+
         if (unlockedHeroines.length === 0) {
+            console.warn('[DEBUG] getRandomHeroine - No unlocked heroines');
             return null;
         }
 
@@ -271,7 +289,10 @@ class DataManager {
             unlockedHeroines.includes(h.id)
         );
 
+        console.log('[DEBUG] getRandomHeroine - availableHeroines:', availableHeroines);
+
         if (availableHeroines.length === 0) {
+            console.warn('[DEBUG] getRandomHeroine - No available heroines after filtering');
             return null;
         }
 

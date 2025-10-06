@@ -181,7 +181,7 @@ class ClickSystem {
             img.alt = 'Heroine';
             img.style.width = '100%';
             img.style.height = '100%';
-            img.style.objectFit = 'cover';
+            img.style.objectFit = 'contain';
             img.style.borderRadius = '15px';
 
             // Handle image load

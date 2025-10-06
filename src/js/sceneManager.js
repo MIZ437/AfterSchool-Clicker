@@ -889,13 +889,23 @@ class SceneManager {
         const currentStage = window.gameState.get('gameProgress.currentStage');
         const unlockedHeroines = window.gameState.get(`collection.heroine.stage${currentStage}`) || [];
 
+        console.log('[DEBUG] updateHeroineDisplay - currentStage:', currentStage);
+        console.log('[DEBUG] updateHeroineDisplay - unlockedHeroines:', unlockedHeroines);
+
         if (unlockedHeroines.length > 0 && window.clickSystem) {
             // Show random unlocked heroine
             const randomHeroine = window.dataManager.getRandomHeroine(currentStage);
+            console.log('[DEBUG] updateHeroineDisplay - randomHeroine:', randomHeroine);
+
             if (randomHeroine) {
                 const imagePath = window.dataManager.getAssetPath(randomHeroine.filename);
+                console.log('[DEBUG] updateHeroineDisplay - imagePath:', imagePath);
                 window.clickSystem.setHeroineImage(imagePath);
+            } else {
+                console.warn('[DEBUG] updateHeroineDisplay - No random heroine found!');
             }
+        } else {
+            console.warn('[DEBUG] updateHeroineDisplay - No unlocked heroines or clickSystem not ready');
         }
     }
 

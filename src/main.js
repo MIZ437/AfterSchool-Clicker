@@ -67,6 +67,9 @@ class AfterSchoolClickerMain {
         // Maximize window before showing
         this.mainWindow.maximize();
 
+        // Open DevTools for debugging
+        this.mainWindow.webContents.openDevTools();
+
         // Load the game
         try {
             const htmlPath = path.join(__dirname, 'index.html');
@@ -240,13 +243,13 @@ class AfterSchoolClickerMain {
             },
             collection: {
                 heroine: {
-                    stage1: ["heroine_1_1"],
+                    stage1: ["heroine_1_01"],
                     stage2: [],
                     stage3: [],
                     stage4: []
                 },
                 videos: [],
-                currentDisplayImage: "heroine_1_1"
+                currentDisplayImage: "heroine_1_01"
             },
             purchases: {
                 items: {}

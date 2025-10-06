@@ -122,22 +122,21 @@ class ClickSystem {
     }
 
     animateClickTarget() {
-        this.clickTarget.classList.add('bounce');
-
-        setTimeout(() => {
-            this.clickTarget.classList.remove('bounce');
-        }, 1000);
+        // Removed bounce animation to maintain hover scale effect
+        // The hover/active CSS handles the visual feedback
     }
 
     onMouseDown() {
         if (this.isEnabled) {
-            this.clickTarget.style.transform = 'scale(0.95)';
+            // Remove inline transform to let CSS :hover and :active handle it
+            this.clickTarget.style.transform = '';
         }
     }
 
     onMouseUp() {
         if (this.isEnabled) {
-            this.clickTarget.style.transform = 'scale(1)';
+            // Remove inline transform to let CSS :hover and :active handle it
+            this.clickTarget.style.transform = '';
         }
     }
 

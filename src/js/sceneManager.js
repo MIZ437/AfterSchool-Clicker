@@ -750,6 +750,29 @@ class SceneManager {
             return;
         }
 
+        const titleCharacterContainer = document.querySelector('.title-character');
+        if (!titleCharacterContainer) {
+            console.warn('[DEBUG] Title character container not found');
+            return;
+        }
+
+        // Add mousemove handler for precise hover detection on original image area
+        this.titleImageHoverHandler = (e) => {
+            const rect = titleCharacterContainer.getBoundingClientRect();
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            // Check if mouse is within original image container bounds (fixed 300x350px)
+            if (mouseX >= rect.left && mouseX <= rect.right &&
+                mouseY >= rect.top && mouseY <= rect.bottom) {
+                titleCharacterImg.classList.add('zoomed');
+            } else {
+                titleCharacterImg.classList.remove('zoomed');
+            }
+        };
+
+        document.addEventListener('mousemove', this.titleImageHoverHandler);
+
         let currentIndex = 0;
         let lastDisplayedIndex = -1; // Track last displayed image to prevent duplicates
 
@@ -793,6 +816,18 @@ class SceneManager {
             clearInterval(this.titleImageRotationTimer);
             this.titleImageRotationTimer = null;
             console.log('[DEBUG] Title image rotation stopped');
+        }
+
+        // Remove hover handler
+        if (this.titleImageHoverHandler) {
+            document.removeEventListener('mousemove', this.titleImageHoverHandler);
+            this.titleImageHoverHandler = null;
+
+            // Remove zoomed class if present
+            const titleCharacterImg = document.querySelector('.title-character-image');
+            if (titleCharacterImg) {
+                titleCharacterImg.classList.remove('zoomed');
+            }
         }
     }
 

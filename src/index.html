@@ -577,12 +577,11 @@
                 // ポイントを消費してステージ解放
                 const success = window.gameState.spendPoints(requirement);
                 if (success) {
-                    // Update unlocked stages
-                    unlockedStages.push(stageId);
-                    window.gameState.set('gameProgress.unlockedStages', unlockedStages);
+                    // Use unlockStage() method to properly unlock the stage
+                    // This will add the first heroine image and update currentDisplayImage
+                    window.gameState.unlockStage(stageId);
 
                     updateStageButtons();
-                    switchToStageLocal(stageId);
 
                     // ステージ解放通知とエフェクト
                     if (window.audioManager) {
@@ -591,6 +590,11 @@
 
                     if (window.effectSystem) {
                         window.effectSystem.screenFlash('rgba(255, 215, 0, 0.5)', 1000);
+                    }
+
+                    // Show stage unlock notification
+                    if (window.showStageUnlockNotification) {
+                        window.showStageUnlockNotification(stageId);
                     }
 
                     // Show unlock notification

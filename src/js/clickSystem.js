@@ -170,6 +170,9 @@ class ClickSystem {
     // Change heroine image
     setHeroineImage(imageUrl) {
         if (this.clickTarget) {
+            // Store the URL to detect if it changed during load
+            this.currentImageUrl = imageUrl;
+
             // Remove placeholder content
             this.clickTarget.innerHTML = '';
             this.clickTarget.classList.remove('placeholder');
@@ -185,12 +188,20 @@ class ClickSystem {
 
             // Handle image load
             img.onload = () => {
-                this.clickTarget.appendChild(img);
+                // Only append if this is still the current image URL (prevent race conditions)
+                if (this.currentImageUrl === imageUrl) {
+                    // Clear any existing images before appending
+                    this.clickTarget.innerHTML = '';
+                    this.clickTarget.appendChild(img);
+                }
             };
 
             // Handle image error
             img.onerror = () => {
-                this.setPlaceholderImage();
+                // Only show error if this is still the current image URL
+                if (this.currentImageUrl === imageUrl) {
+                    this.setPlaceholderImage();
+                }
             };
         }
     }

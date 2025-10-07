@@ -73,11 +73,28 @@ class GameState {
         const oldValue = target[lastKey];
         target[lastKey] = value;
 
-        // Notify listeners
-        this.notifyListeners(path, value, oldValue);
+        // Notify listeners (unless notifications are suspended)
+        if (!this.suspendNotifications) {
+            this.notifyListeners(path, value, oldValue);
+        }
 
         // Check for auto-save triggers
         this.checkAutoSave(path);
+    }
+
+    // Batch update multiple state changes without triggering listeners until done
+    batchUpdate(updateFn) {
+        this.suspendNotifications = true;
+        const changes = [];
+
+        try {
+            updateFn();
+        } finally {
+            this.suspendNotifications = false;
+        }
+
+        // Notify wildcard listeners after batch is complete
+        this.notifyListeners('*', this.state, null);
     }
 
     // Add points to current and total
@@ -129,8 +146,9 @@ class GameState {
         const currentCollection = this.get(`collection.heroine.stage${stageId}`) || [];
 
         if (!currentCollection.includes(heroineId)) {
-            currentCollection.push(heroineId);
-            this.set(`collection.heroine.stage${stageId}`, currentCollection);
+            // Create new array to ensure state change detection
+            const newCollection = [...currentCollection, heroineId];
+            this.set(`collection.heroine.stage${stageId}`, newCollection);
 
             // Set as current display image when unlocked via gacha
             this.set('collection.currentDisplayImage', heroineId);
@@ -146,21 +164,57 @@ class GameState {
         const unlockedStages = this.get('gameProgress.unlockedStages');
 
         if (!unlockedStages.includes(stageId)) {
-            unlockedStages.push(stageId);
-            this.set('gameProgress.unlockedStages', unlockedStages);
+            console.log(`[unlockStage] Unlocking stage ${stageId}`);
 
-            // Add reward video
-            const videos = this.get('collection.videos');
-            const rewardVideoId = `stage${stageId}_unlock`;
-            if (!videos.includes(rewardVideoId)) {
-                videos.push(rewardVideoId);
-                this.set('collection.videos', videos);
+            const firstHeroineId = `heroine_${stageId}_01`;
+
+            // Use batchUpdate to update all state at once without triggering listeners multiple times
+            this.batchUpdate(() => {
+                // Create new array to ensure state change detection
+                const newUnlockedStages = [...unlockedStages, stageId];
+                this.set('gameProgress.unlockedStages', newUnlockedStages);
+
+                // Add reward video
+                const videos = this.get('collection.videos');
+                const rewardVideoId = `stage${stageId}_unlock`;
+                if (!videos.includes(rewardVideoId)) {
+                    // Create new array to ensure state change detection
+                    const newVideos = [...videos, rewardVideoId];
+                    this.set('collection.videos', newVideos);
+                }
+
+                // IMPORTANT: Switch to the newly unlocked stage FIRST
+                // This must be done before setting currentDisplayImage to avoid race conditions
+                this.set('gameProgress.currentStage', stageId);
+                console.log(`[unlockStage] Set currentStage to:`, stageId);
+
+                // Add first heroine image of the new stage to collection
+                const currentCollection = this.get(`collection.heroine.stage${stageId}`) || [];
+                console.log(`[unlockStage] Before adding - stage${stageId} collection:`, currentCollection);
+
+                if (!currentCollection.includes(firstHeroineId)) {
+                    // Create new array to ensure state change detection
+                    const newCollection = [...currentCollection, firstHeroineId];
+                    this.set(`collection.heroine.stage${stageId}`, newCollection);
+                    console.log(`[unlockStage] After adding - stage${stageId} collection:`, newCollection);
+                }
+
+                // Set as current display image (now currentStage is already updated)
+                this.set('collection.currentDisplayImage', firstHeroineId);
+                console.log(`[unlockStage] Set currentDisplayImage to:`, firstHeroineId);
+            });
+
+            // Update gacha system
+            if (window.gachaSystem) {
+                window.gachaSystem.setStage(stageId);
             }
 
-            // Show stage unlock notification
-            if (window.showStageUnlockNotification) {
-                window.showStageUnlockNotification(stageId);
-            }
+            // UI will be updated automatically by the listener in sceneManager
+            // No need to manually call updateHeroineDisplay here
+            console.log(`[unlockStage] Stage unlocked, listener will update UI`);
+            console.log(`[unlockStage] currentStage:`, this.get('gameProgress.currentStage'));
+            console.log(`[unlockStage] stage${stageId} collection:`, this.get(`collection.heroine.stage${stageId}`));
+            console.log(`[unlockStage] currentDisplayImage:`, this.get('collection.currentDisplayImage'));
 
             return true;
         }
@@ -319,6 +373,48 @@ class GameState {
 
             // Load debug mode setting
             this.debugMode = this.get('settings.debugMode') || false;
+
+            // Ensure first heroine image exists for all unlocked stages
+            const unlockedStages = this.get('gameProgress.unlockedStages') || [];
+            const currentStage = this.get('gameProgress.currentStage');
+            const currentDisplayImage = this.get('collection.currentDisplayImage');
+
+            // Use batchUpdate to ensure all changes happen atomically
+            let needsUpdate = false;
+            this.suspendNotifications = true; // Temporarily suspend notifications
+
+            try {
+                for (const stageId of unlockedStages) {
+                    const firstHeroineId = `heroine_${stageId}_01`;
+                    const currentCollection = this.get(`collection.heroine.stage${stageId}`) || [];
+
+                    if (!currentCollection.includes(firstHeroineId)) {
+                        const newCollection = [...currentCollection, firstHeroineId];
+                        this.set(`collection.heroine.stage${stageId}`, newCollection);
+                        needsUpdate = true;
+                    }
+                }
+
+                // Update currentDisplayImage to match current stage if needed
+                if (currentDisplayImage && currentStage) {
+                    if (!currentDisplayImage.startsWith(`heroine_${currentStage}_`)) {
+                        const correctFirstHeroineId = `heroine_${currentStage}_01`;
+                        this.set('collection.currentDisplayImage', correctFirstHeroineId);
+                        needsUpdate = true;
+                    }
+                }
+            } finally {
+                this.suspendNotifications = false; // Re-enable notifications
+            }
+
+            // If we added any images, trigger save immediately
+            if (needsUpdate) {
+                setTimeout(() => {
+                    if (window.saveManager) {
+                        window.saveManager.autoSave();
+                    }
+                }, 500);
+            }
 
             // Notify all listeners that state has been loaded
             this.notifyListeners('*', this.state, null);

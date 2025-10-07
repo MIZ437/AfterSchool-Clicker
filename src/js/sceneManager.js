@@ -32,9 +32,37 @@ class SceneManager {
         // Make sceneManager globally accessible for audioManager
         window.sceneManager = this;
 
+        // Setup state listeners for automatic UI updates
+        this.setupStateListeners();
+
         this.setupEventHandlers();
         this.setupAudioActivationOverlay();
         this.startGame();
+    }
+
+    setupStateListeners() {
+        // Listen for all state changes using wildcard listener
+        // This ensures we catch changes from batchUpdate()
+        window.gameState.addListener('*', (newValue, oldValue, path) => {
+            console.log('[setupStateListeners] State changed:', path);
+
+            // Only respond to relevant changes when in game scene
+            if (this.currentScene !== 'game') return;
+
+            // Update heroine display when collection or stage changes
+            if (path === 'collection.currentDisplayImage' ||
+                path.startsWith('collection.heroine.') ||
+                path === 'gameProgress.currentStage' ||
+                path === '*') { // Catch batch updates
+
+                console.log('[setupStateListeners] Triggering updateHeroineDisplay for path:', path);
+                this.updateHeroineDisplay();
+
+                if (path === 'gameProgress.currentStage' || path === '*') {
+                    this.updateStageUI();
+                }
+            }
+        });
     }
 
     registerScene(name, element) {
@@ -855,6 +883,26 @@ class SceneManager {
     }
 
     initializeGameScene() {
+        console.log('[initializeGameScene] Initializing game scene');
+
+        // Ensure current display image matches current stage
+        const currentStage = window.gameState.get('gameProgress.currentStage');
+        const currentDisplayImage = window.gameState.get('collection.currentDisplayImage');
+        const firstHeroineId = `heroine_${currentStage}_01`;
+        const stageCollection = window.gameState.get(`collection.heroine.stage${currentStage}`) || [];
+
+        console.log('[initializeGameScene] currentStage:', currentStage);
+        console.log('[initializeGameScene] currentDisplayImage:', currentDisplayImage);
+        console.log('[initializeGameScene] stageCollection:', stageCollection);
+
+        // If current display image doesn't match current stage, update it
+        if (currentDisplayImage && !currentDisplayImage.startsWith(`heroine_${currentStage}_`)) {
+            if (stageCollection.includes(firstHeroineId)) {
+                console.log('[initializeGameScene] Updating currentDisplayImage to match stage:', firstHeroineId);
+                window.gameState.set('collection.currentDisplayImage', firstHeroineId);
+            }
+        }
+
         // Update all game displays
         this.updateGameUI();
         this.updateStageUI();
@@ -964,8 +1012,21 @@ class SceneManager {
     }
 
     switchToStageImmediate(stageId) {
+        console.log(`[switchToStageImmediate] Switching to stage ${stageId}`);
 
         window.gameState.set('gameProgress.currentStage', stageId);
+
+        // Set current display image to first heroine of this stage
+        const firstHeroineId = `heroine_${stageId}_01`;
+        const stageCollection = window.gameState.get(`collection.heroine.stage${stageId}`) || [];
+
+        console.log(`[switchToStageImmediate] Stage ${stageId} collection:`, stageCollection);
+
+        if (stageCollection.includes(firstHeroineId)) {
+            window.gameState.set('collection.currentDisplayImage', firstHeroineId);
+            console.log(`[switchToStageImmediate] Set currentDisplayImage to:`, firstHeroineId);
+        }
+
         this.updateStageUI();
         this.updateHeroineDisplay();
 

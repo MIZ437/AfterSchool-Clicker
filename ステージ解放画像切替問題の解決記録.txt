@@ -1,0 +1,357 @@
+# ステージ解放時の画像切り替え問題 - 解決記録
+
+## 問題の概要
+
+ステージ2を解放した際、クリックエリアのヒロイン画像が即座にステージ2の画像に切り替わらず、
+さらに修正後には画像が3枚重なって表示される問題が発生した。
+
+---
+
+## 問題1: ステージ解放時に画像が即座に切り替わらない
+
+### 原因
+
+#### 根本原因
+ステージ解放ボタンのイベントハンドラ（index.html内のunlockStageLocal関数）が、
+GameStateクラスの`unlockStage()`メソッドを呼ばずに、直接状態を変更していた。
+
+```javascript
+// 問題のあったコード (index.html)
+const unlockedStages = window.gameState.get('gameProgress.unlockedStages');
+unlockedStages.push(stageId);  // 配列を直接変更
+window.gameState.set('gameProgress.unlockedStages', unlockedStages);
+```
+
+これにより、`unlockStage()`内の重要な処理（第一画像の自動付与、currentDisplayImageの更新）がスキップされた。
+
+#### 副次的な問題
+1. **配列の参照問題**: `push()`で配列を変更後、同じ参照をsetしても状態変更が検出されない
+2. **リスナー通知の問題**: batchUpdateは`notifyListeners('*')`のみを呼ぶが、
+   setupStateListenersが特定パスのリスナーのみ登録していたため、通知が届かなかった
+
+### 解決策
+
+#### 1. 正しいメソッド呼び出しに修正
+```javascript
+// 修正後 (index.html)
+window.gameState.unlockStage(stageId);  // 専用メソッドを呼び出す
+```
+
+#### 2. 配列の不変性を保証
+```javascript
+// gameState.js - unlockStage()
+const newUnlockedStages = [...unlockedStages, stageId];  // 新しい配列を作成
+this.set('gameProgress.unlockedStages', newUnlockedStages);
+```
+
+#### 3. ワイルドカードリスナーの実装
+```javascript
+// sceneManager.js - setupStateListeners()
+window.gameState.addListener('*', (newValue, oldValue, path) => {
+    // batchUpdateからの通知をキャッチ
+    if (path === '*') {
+        this.updateHeroineDisplay();
+    }
+});
+```
+
+---
+
+## 問題2: 画像が3枚重なって表示される
+
+### 原因
+
+`setHeroineImage()`が非同期で画像を読み込むため、複数回呼び出されると競合状態（race condition）が発生。
+
+```javascript
+// 問題のあったコード (clickSystem.js)
+setHeroineImage(imageUrl) {
+    this.clickTarget.innerHTML = '';  // (1) クリア
+
+    const img = document.createElement('img');
+    img.src = imageUrl;  // (2) 読み込み開始（非同期）
+
+    img.onload = () => {
+        this.clickTarget.appendChild(img);  // (3) 読み込み完了時に追加
+    };
+}
+```
+
+**タイムライン例**:
+```
+時刻  呼び出し       動作
+0ms   1回目呼出  →  innerHTML='', 画像Aの読み込み開始
+5ms   2回目呼出  →  innerHTML='', 画像Bの読み込み開始
+10ms  3回目呼出  →  innerHTML='', 画像Cの読み込み開始
+15ms  画像A完了  →  appendChild(画像A)
+20ms  画像B完了  →  appendChild(画像B)  ← 画像Aの上に重なる
+25ms  画像C完了  →  appendChild(画像C)  ← 画像A, Bの上に重なる
+```
+
+`innerHTML = ''`でクリアしても、既に開始された画像読み込みの`onload`コールバックは実行され、
+すべての画像が`appendChild`される。
+
+### 解決策
+
+現在読み込み中のURLを記録し、`onload`時に最新のURLかチェックする。
+
+```javascript
+// 修正後 (clickSystem.js)
+setHeroineImage(imageUrl) {
+    this.currentImageUrl = imageUrl;  // 現在のURLを記録
+
+    this.clickTarget.innerHTML = '';
+
+    const img = document.createElement('img');
+    img.src = imageUrl;
+
+    img.onload = () => {
+        // このURLがまだ最新の場合のみ追加
+        if (this.currentImageUrl === imageUrl) {
+            this.clickTarget.innerHTML = '';  // 念のため再度クリア
+            this.clickTarget.appendChild(img);
+        }
+        // 古いURLの場合は無視される
+    };
+}
+```
+
+**修正後のタイムライン**:
+```
+時刻  呼び出し           動作
+0ms   1回目呼出      →  currentImageUrl='A', 画像Aの読み込み開始
+5ms   2回目呼出      →  currentImageUrl='B', 画像Bの読み込み開始
+10ms  3回目呼出      →  currentImageUrl='C', 画像Cの読み込み開始
+15ms  画像A完了      →  currentImageUrl !== 'A' なので無視
+20ms  画像B完了      →  currentImageUrl !== 'B' なので無視
+25ms  画像C完了      →  currentImageUrl === 'C' なので追加 ✓
+```
+
+---
+
+## 一般化された教訓
+
+### 1. 状態管理のベストプラクティス
+
+#### 問題パターン
+- UI層が直接状態を変更している
+- 専用のメソッドをバイパスしてgetterとsetterだけで状態変更
+
+#### 解決パターン
+```javascript
+// ❌ 悪い例: 直接状態変更
+const items = state.get('items');
+items.push(newItem);
+state.set('items', items);
+
+// ✅ 良い例: 専用メソッド使用
+state.addItem(newItem);
+```
+
+**理由**:
+- ビジネスロジック（第一画像の自動付与など）が専用メソッドにカプセル化されている
+- 状態変更の一貫性が保証される
+- デバッグが容易（メソッド呼び出しをログできる）
+
+---
+
+### 2. 配列・オブジェクトの不変性
+
+#### 問題パターン
+```javascript
+const array = state.get('array');
+array.push(item);  // 元の配列を変更
+state.set('array', array);  // 同じ参照なので変更検出されない
+```
+
+#### 解決パターン
+```javascript
+// ✅ 新しい配列を作成
+const array = state.get('array');
+const newArray = [...array, item];
+state.set('array', newArray);
+```
+
+**適用場面**:
+- React/Vueなどの状態管理
+- リスナーベースの変更検出
+- イミュータブルな設計全般
+
+---
+
+### 3. リスナーとbatchUpdateの整合性
+
+#### 問題パターン
+```javascript
+// batchUpdateはワイルドカード通知のみ
+batchUpdate(() => {
+    this.set('a', 1);
+    this.set('b', 2);
+});
+// notifyListeners('*') のみ実行
+
+// しかしリスナーは特定パスのみ登録
+addListener('a', callback);  // '*'通知を受け取れない
+```
+
+#### 解決パターン
+```javascript
+// ワイルドカードリスナーを追加
+addListener('*', (newValue, oldValue, path) => {
+    if (path === '*' || path === 'a' || path.startsWith('a.')) {
+        callback();
+    }
+});
+```
+
+**一般化**:
+- バッチ更新を使う場合、ワイルドカード通知を実装
+- リスナー側でワイルドカードパターンマッチングをサポート
+- または両方のパターン（個別通知 + ワイルドカード通知）を実装
+
+---
+
+### 4. 非同期処理の競合状態（Race Condition）
+
+#### 問題パターン
+```javascript
+function loadData(url) {
+    clearDisplay();
+
+    fetchData(url).then(data => {
+        displayData(data);  // 複数回呼ぶと全て表示される
+    });
+}
+```
+
+#### 解決パターン1: トークンベース
+```javascript
+function loadData(url) {
+    this.currentToken = url;  // または Symbol() でユニークなトークン
+    clearDisplay();
+
+    fetchData(url).then(data => {
+        if (this.currentToken === url) {  // 最新のリクエストか確認
+            displayData(data);
+        }
+    });
+}
+```
+
+#### 解決パターン2: AbortControllerを使用（fetch API）
+```javascript
+function loadData(url) {
+    // 前回のリクエストをキャンセル
+    if (this.abortController) {
+        this.abortController.abort();
+    }
+
+    this.abortController = new AbortController();
+
+    fetch(url, { signal: this.abortController.signal })
+        .then(response => response.json())
+        .then(data => displayData(data))
+        .catch(err => {
+            if (err.name !== 'AbortError') throw err;
+        });
+}
+```
+
+#### 解決パターン3: デバウンス/スロットル
+```javascript
+const loadData = debounce((url) => {
+    fetchData(url).then(displayData);
+}, 300);
+```
+
+**適用場面**:
+- 画像読み込み
+- API呼び出し
+- ファイル読み込み
+- アニメーション
+
+---
+
+### 5. UIの重複更新を防ぐ
+
+#### 問題パターン
+```javascript
+// 状態変更時にUIを直接更新
+function unlockStage(id) {
+    state.set('stage', id);
+    updateUI();  // (1) 直接呼び出し
+}
+
+// さらにリスナーでも更新
+state.addListener('stage', () => {
+    updateUI();  // (2) リスナーからも呼び出し → 重複
+});
+```
+
+#### 解決パターン
+```javascript
+// 状態変更はリスナーに任せる
+function unlockStage(id) {
+    state.set('stage', id);
+    // updateUI()を呼ばない
+}
+
+// リスナーのみがUIを更新
+state.addListener('stage', () => {
+    updateUI();
+});
+```
+
+**メリット**:
+- UIロジックが一箇所に集約
+- 重複更新による画像の重なりなどを防止
+- デバッグが容易
+
+---
+
+## チェックリスト（次回の開発時用）
+
+### 状態管理の設計時
+- [ ] 状態変更は専用メソッド経由で行う設計になっているか
+- [ ] 配列・オブジェクトは不変（immutable）に扱っているか
+- [ ] batchUpdate使用時、ワイルドカードリスナーが実装されているか
+- [ ] リスナー通知のパターンが統一されているか
+
+### 非同期処理の実装時
+- [ ] 複数回呼び出された場合の競合を考慮しているか
+- [ ] 最新のリクエストのみ処理する仕組みがあるか
+- [ ] 不要なリクエストをキャンセルできるか
+
+### UI更新の実装時
+- [ ] 更新ロジックが一箇所に集約されているか
+- [ ] 状態変更とUI更新が分離されているか
+- [ ] リスナーベースで自動更新される設計か
+
+### デバッグ時
+- [ ] console.logで状態遷移を追跡できるか
+- [ ] どのコードパスで状態が変更されたか特定できるか
+- [ ] 非同期処理のタイミングを可視化できるか
+
+---
+
+## 参考資料
+
+### 状態管理パターン
+- Flux Architecture (Facebook)
+- Redux Design Patterns
+- MobX Reactive Programming
+
+### 不変性
+- Immutable.js
+- Immer.js
+- ECMAScript Spread Operator
+
+### 非同期制御
+- Promise Cancellation Patterns
+- RxJS (Observable patterns)
+- AbortController API
+
+---
+
+作成日: 2025-10-08
+プロジェクト: AfterSchool Clicker

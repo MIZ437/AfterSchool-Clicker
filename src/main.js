@@ -143,10 +143,22 @@ class AfterSchoolClickerMain {
             try {
                 const savePath = path.join(this.userData, 'save.json');
                 const data = await fs.readFile(savePath, 'utf8');
-                return { success: true, data: JSON.parse(data) };
+                const parsedData = JSON.parse(data);
+
+                // Debug logging
+                console.log('\n=== SAVE DATA DEBUG ===');
+                console.log('Current Stage:', parsedData.gameProgress?.currentStage);
+                console.log('Unlocked Stages:', parsedData.gameProgress?.unlockedStages);
+                console.log('Current Display Image:', parsedData.collection?.currentDisplayImage);
+                console.log('Stage 1 Collection:', parsedData.collection?.heroine?.stage1);
+                console.log('Stage 2 Collection:', parsedData.collection?.heroine?.stage2);
+                console.log('=======================\n');
+
+                return { success: true, data: parsedData };
             } catch (error) {
                 // Return default save data if file doesn't exist
                 if (error.code === 'ENOENT') {
+                    console.log('[Load Game] No save file found, returning default');
                     return { success: true, data: this.getDefaultSaveData() };
                 }
                 console.error('Load failed:', error);

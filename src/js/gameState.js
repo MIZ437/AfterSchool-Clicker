@@ -280,7 +280,7 @@ class GameState {
     // Get total collection progress
     getTotalCollectionProgress() {
         let totalCollected = 0;
-        let totalMax = 160; // Total images across all stages
+        let totalMax = 160; // Total images across all stages (10 + 30 + 50 + 70)
 
         for (let stage = 1; stage <= 4; stage++) {
             const progress = this.getCollectionProgress(stage);

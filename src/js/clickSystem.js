@@ -4,6 +4,7 @@ class ClickSystem {
         this.clickTarget = null;
         this.effectsContainer = null;
         this.isEnabled = true;
+        this.isGachaAnimating = false;
         this.setupClickHandler();
     }
 
@@ -169,6 +170,9 @@ class ClickSystem {
 
     // Change heroine image
     setHeroineImage(imageUrl) {
+        // Skip updates during gacha animation (except from gacha system itself)
+        if (this.isGachaAnimating) return;
+
         if (this.clickTarget) {
             // Store the URL to detect if it changed during load
             this.currentImageUrl = imageUrl;

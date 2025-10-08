@@ -38,6 +38,12 @@ class GachaSystem {
         // Wait for data manager to load
         if (window.dataManager) {
             await window.dataManager.loadAll();
+
+            // Set current stage from game state
+            if (window.gameState) {
+                this.currentStage = window.gameState.get('gameProgress.currentStage');
+            }
+
             this.updateGachaDisplay();
             this.setupEventListeners();
         }
@@ -79,6 +85,11 @@ class GachaSystem {
                 // Animate gacha draw
                 await this.animateGachaDraw();
 
+                // Block click area image updates during animation
+                if (window.clickSystem) {
+                    window.clickSystem.isGachaAnimating = true;
+                }
+
                 // Add heroine to collection
                 const unlocked = window.gameState.addHeroine(this.currentStage, availableHeroine.id);
 
@@ -88,8 +99,8 @@ class GachaSystem {
                         window.audioManager.playSE('gacha_sound');
                     }
 
-                    // Show success result
-                    this.showGachaResult(true, `${availableHeroine.name || availableHeroine.id}を獲得しました！`, availableHeroine);
+                    // Show new overlay effect
+                    await this.showGachaOverlayEffect(availableHeroine);
 
                     // Update displays
                     this.updateGachaDisplay();
@@ -192,6 +203,82 @@ class GachaSystem {
                 this.gachaButton.classList.remove('shake');
             }, 500);
         }
+    }
+
+    async showGachaOverlayEffect(heroine) {
+        return new Promise((resolve) => {
+            // クリックエリアの位置を取得
+            const clickArea = document.getElementById('current-heroine');
+            if (!clickArea) {
+                resolve();
+                return;
+            }
+
+            const clickAreaRect = clickArea.getBoundingClientRect();
+            const imageUrl = window.dataManager.getAssetPath(heroine.filename);
+
+            // オーバーレイを作成
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            `;
+
+            // 画像を作成
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = heroine.name;
+            img.style.cssText = `
+                max-width: 80%;
+                max-height: 80%;
+                object-fit: contain;
+                transform: scale(0.5);
+                transition: transform 0.5s ease;
+            `;
+
+            overlay.appendChild(img);
+            document.body.appendChild(overlay);
+
+            // フェードイン
+            requestAnimationFrame(() => {
+                overlay.style.opacity = '1';
+                img.style.transform = 'scale(1)';
+            });
+
+            // 1.5秒待機後、吸い込みアニメーション
+            setTimeout(() => {
+                // クリックエリアへの移動アニメーション
+                const targetX = clickAreaRect.left + clickAreaRect.width / 2;
+                const targetY = clickAreaRect.top + clickAreaRect.height / 2;
+
+                img.style.transition = 'all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1)';
+                img.style.transform = `translate(${targetX - window.innerWidth / 2}px, ${targetY - window.innerHeight / 2}px) scale(0.1)`;
+                overlay.style.opacity = '0';
+
+                // アニメーション完了後、オーバーレイを削除してクリックエリアに画像を設定
+                setTimeout(() => {
+                    overlay.remove();
+
+                    // クリックエリアに画像を設定（フラグを一時的に解除して設定）
+                    if (window.clickSystem) {
+                        window.clickSystem.isGachaAnimating = false;
+                        window.clickSystem.setHeroineImage(imageUrl);
+                    }
+
+                    resolve();
+                }, 800);
+            }, 1500);
+        });
     }
 
     showGachaResult(success, message, heroine = null) {
@@ -319,6 +406,15 @@ class GachaSystem {
         // Listen for collection changes to update remaining count
         window.gameState.addListener('collection.heroine.*', () => {
             this.updateGachaDisplay();
+        });
+
+        // Listen for wildcard updates (loadState, batchUpdate)
+        window.gameState.addListener('*', (newValue, oldValue, path) => {
+            if (path === '*') {
+                // Update current stage from game state
+                this.currentStage = window.gameState.get('gameProgress.currentStage');
+                this.updateGachaDisplay();
+            }
         });
     }
 

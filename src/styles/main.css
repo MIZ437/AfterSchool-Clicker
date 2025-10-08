@@ -161,7 +161,18 @@ body {
 
 /* Title Screen */
 #title-screen {
-    background: linear-gradient(135deg, #f4e4c1 0%, #e8d5b7 100%);
+    /* Option 1: Sunset school background (default) */
+    background: url('../../assets/images/ui/title_background_sunset.png') center center / cover no-repeat;
+
+    /* Option 2: Original gradient */
+    /* background: linear-gradient(135deg, #f4e4c1 0%, #e8d5b7 100%); */
+
+    /* Option 3: Simple background image */
+    /* background: url('../../assets/images/ui/title_background.png') center center / cover no-repeat; */
+
+    /* Option 4: Classroom background with elements */
+    /* background: url('../../assets/images/ui/title_background_classroom.png') center center / cover no-repeat; */
+
     display: flex;
     align-items: center;
     justify-content: center;
@@ -178,6 +189,11 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 0.5rem;
+    /* Add subtle backdrop for better visibility on sunset background */
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    padding: 2rem;
+    border-radius: 20px;
 }
 
 .title-logo h1 {

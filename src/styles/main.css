@@ -281,7 +281,7 @@ body {
 
 /* Tutorial Screen */
 #tutorial-screen {
-    background: linear-gradient(135deg, #a8e6cf 0%, #7fcdcd 100%);
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
 }
 
 .tutorial-content {
@@ -308,12 +308,12 @@ body {
     align-items: center;
     margin-bottom: 1.5rem;
     padding: 1rem;
-    background: rgba(127, 205, 205, 0.1);
+    background: rgba(253, 121, 168, 0.1);
     border-radius: 10px;
 }
 
 .step-number {
-    background: #00b894;
+    background: #e84393;
     color: white;
     border-radius: 50%;
     width: 30px;

@@ -31,12 +31,22 @@ class ClickSystem {
     handleClick(event) {
         if (!this.isEnabled) return;
 
+        // Only accept clicks on the actual image element
+        const target = event.target;
+        if (target.tagName !== 'IMG') {
+            return; // Ignore clicks outside the image
+        }
+
+        // Check if click is within the center vertical strip (where character usually is)
+        if (!this.isWithinClickableArea(event, target)) {
+            return; // Ignore clicks outside the clickable area
+        }
+
         event.preventDefault();
 
-        // Get click position relative to the target
-        const rect = this.clickTarget.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+        // Get click position - use viewport coordinates for effects
+        const effectX = event.clientX;
+        const effectY = event.clientY;
 
         // Calculate points earned
         const pointsEarned = window.gameState.getClickValue();
@@ -45,7 +55,7 @@ class ClickSystem {
         window.gameState.addPoints(pointsEarned);
 
         // Create visual effects
-        this.createClickEffects(x, y, pointsEarned);
+        this.createClickEffects(effectX, effectY, pointsEarned);
 
         // Play click sound
         if (window.audioManager) {
@@ -54,6 +64,22 @@ class ClickSystem {
 
         // Update UI
         this.updateClickDisplay();
+    }
+
+    // Check if click is within the center vertical strip where character is visible
+    isWithinClickableArea(event, img) {
+        const rect = img.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        // Image dimensions: 992 x 1456 (2:3 aspect ratio)
+        // Character is roughly in the center 50% width (stricter bounds)
+        const centerMargin = 0.25; // 25% margin on each side
+        const leftBound = rect.width * centerMargin;
+        const rightBound = rect.width * (1 - centerMargin);
+
+        // Check if click is within the center vertical strip
+        return x >= leftBound && x <= rightBound;
     }
 
     createClickEffects(x, y, points) {

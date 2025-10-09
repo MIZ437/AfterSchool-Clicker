@@ -158,6 +158,11 @@
     position: relative;
     overflow: visible;
     z-index: 1;
+    pointer-events: none;
+}
+
+.heroine-image img {
+    pointer-events: auto;
 }
 
 .heroine-image:hover {
@@ -217,13 +222,13 @@
 
 /* Click Effects */
 .click-effects {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     pointer-events: none;
-    z-index: 10;
+    z-index: 9999;
 }
 
 /* Side Panel */

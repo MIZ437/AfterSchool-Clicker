@@ -133,24 +133,25 @@ class AlbumManager {
         const closeButton = modal.querySelector('.modal-close');
         closeButton.style.cssText = `
             position: absolute;
-            top: 1rem;
-            right: 1rem;
+            top: -15px;
+            right: -15px;
             font-size: 2.5rem;
             color: #2d3436;
             cursor: pointer;
             background: white;
-            width: 40px;
-            height: 40px;
+            width: 45px;
+            height: 45px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             line-height: 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             transition: all 0.2s ease;
             padding: 0;
             font-family: Arial, sans-serif;
             font-weight: normal;
+            z-index: 10001;
         `;
 
         // Close on backdrop click

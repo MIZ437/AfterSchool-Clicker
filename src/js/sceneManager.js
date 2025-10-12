@@ -407,12 +407,24 @@ class SceneManager {
             }
         }
 
-        // Special handling for tutorial scene (fade out from title)
+        // Special handling for tutorial scene (continue title BGM)
         if (sceneName === 'tutorial' && this.currentScene === 'title') {
             if (window.audioManager.currentBGMId === 'title_bgm') {
-                console.log(`[DEBUG] Transitioning to tutorial - fading out title BGM`);
-                // Start fade out without waiting (non-blocking)
-                window.audioManager.fadeOutBGM(7000); // 7 second fade
+                console.log(`[DEBUG] Transitioning to tutorial - continuing title BGM`);
+                // Continue title_bgm without any changes (Plan B)
+                return;
+            }
+        }
+
+        // Special handling for game scene when coming from tutorial (crossfade)
+        if (sceneName === 'game' && this.currentScene === 'tutorial') {
+            const currentStageForCrossfade = window.gameState ? window.gameState.get('gameProgress.currentStage') : 1;
+            const gameBGMId = `game_bgm_stage${currentStageForCrossfade}`;
+
+            if (window.audioManager.currentBGMId === 'title_bgm') {
+                console.log(`[DEBUG] Game start from tutorial - crossfading from title_bgm to ${gameBGMId}`);
+                // Crossfade from title_bgm to game_bgm (5 seconds - smooth transition)
+                window.audioManager.crossFadeBGM(gameBGMId, 5000);
                 return;
             }
         }

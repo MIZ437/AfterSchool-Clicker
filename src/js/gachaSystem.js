@@ -335,17 +335,8 @@ class GachaSystem {
 
     // Handle when all images are collected
     handleCollectionComplete() {
-        // Add completion video to collection
-        const videos = window.gameState.get('collection.videos');
-        const completionVideoId = 'complete_ending';
-
-        if (!videos.includes(completionVideoId)) {
-            videos.push(completionVideoId);
-            window.gameState.set('collection.videos', videos);
-
-            // Show completion message
-            this.showCompletionMessage();
-        }
+        // Show completion message
+        this.showCompletionMessage();
     }
 
     showCompletionMessage() {
@@ -356,7 +347,6 @@ class GachaSystem {
             <div class="completion-content">
                 <h2>🎉 コンプリート！ 🎉</h2>
                 <p>全てのキャラクターを集めました！</p>
-                <p>エンディング動画が解放されました！</p>
                 <button onclick="this.parentElement.parentElement.remove()">OK</button>
             </div>
         `;

@@ -322,7 +322,7 @@ class AudioManager {
         }
     }
 
-    crossFadeBGM(newId, duration = 3000, loop = true) {
+    async crossFadeBGM(newId, duration = 3000, loop = true) {
         console.log(`[DEBUG] crossFadeBGM called: current ${this.currentBGMId} -> new ${newId}, duration: ${duration}ms`);
 
         if (!this.isInitialized) {
@@ -378,15 +378,22 @@ class AudioManager {
         newAudio.loop = loop;
         newAudio.currentTime = 0;
 
-        // Start playing new BGM
+        // Start playing new BGM and wait for it to be ready
+        console.log(`[DEBUG] Pre-buffering new BGM ${newId}...`);
         const playPromise = newAudio.play();
         if (playPromise) {
-            playPromise.then(() => {
-                console.log(`[DEBUG] Started crossfade - new BGM playing`);
-            }).catch(error => {
+            try {
+                await playPromise;
+                console.log(`[DEBUG] New BGM ${newId} ready and playing (silent)`);
+            } catch (error) {
                 console.warn(`[DEBUG] Crossfade play failed for ${newId}:`, error);
-            });
+                return;
+            }
         }
+
+        // Wait a brief moment to ensure audio buffer is fully ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+        console.log(`[DEBUG] Audio buffering complete, starting crossfade`);
 
         // Crossfade: fade out old, fade in new simultaneously
         const fadeStep = targetVolume / (duration / 50); // 50ms intervals

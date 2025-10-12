@@ -18,7 +18,6 @@ class GameState {
                     stage3: [],
                     stage4: []
                 },
-                videos: [],
                 currentDisplayImage: "heroine_1_01"
             },
             purchases: {
@@ -173,15 +172,6 @@ class GameState {
                 // Create new array to ensure state change detection
                 const newUnlockedStages = [...unlockedStages, stageId];
                 this.set('gameProgress.unlockedStages', newUnlockedStages);
-
-                // Add reward video
-                const videos = this.get('collection.videos');
-                const rewardVideoId = `stage${stageId}_unlock`;
-                if (!videos.includes(rewardVideoId)) {
-                    // Create new array to ensure state change detection
-                    const newVideos = [...videos, rewardVideoId];
-                    this.set('collection.videos', newVideos);
-                }
 
                 // IMPORTANT: Switch to the newly unlocked stage FIRST
                 // This must be done before setting currentDisplayImage to avoid race conditions
@@ -468,7 +458,6 @@ class GameState {
                     stage3: [],
                     stage4: []
                 },
-                videos: [],
                 currentDisplayImage: "heroine_1_01"
             },
             purchases: {

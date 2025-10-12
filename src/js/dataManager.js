@@ -6,7 +6,6 @@ class DataManager {
             items: null,
             images: null,
             audio: null,
-            videos: null,
             text: null
         };
 
@@ -39,7 +38,7 @@ class DataManager {
             }
 
             // If no cached data, load from CSV files
-            const csvFiles = ['stages', 'items', 'images', 'audio', 'videos', 'text'];
+            const csvFiles = ['stages', 'items', 'images', 'audio', 'text'];
             const loadPromises = csvFiles.map(async (file) => {
                 try {
                     const result = await window.electronAPI.loadCSV(`${file}.csv`);
@@ -93,7 +92,6 @@ class DataManager {
             ],
             images: [],
             audio: [],
-            videos: [],
             text: [
                 { id: 'game_start', category: 'button', japanese: 'ゲーム開始', scene: 'title', context: 'タイトル画面' },
                 { id: 'current_points', category: 'label', japanese: 'ポイント:', scene: 'game', context: 'ゲーム画面ヘッダー' }
@@ -201,17 +199,6 @@ class DataManager {
     getAudioById(audioId) {
         const audio = this.getAudio();
         return audio.find(a => a.id === audioId);
-    }
-
-    // Get videos data
-    getVideos() {
-        return this.data.videos || [];
-    }
-
-    // Get video by ID
-    getVideo(videoId) {
-        const videos = this.getVideos();
-        return videos.find(v => v.id === videoId);
     }
 
     // Get text data
@@ -396,7 +383,6 @@ class DataManager {
             items: null,
             images: null,
             audio: null,
-            videos: null,
             text: null
         };
         return await this._loadAllDataForced();
@@ -408,7 +394,7 @@ class DataManager {
             console.log('Loading game data directly from CSV...');
 
             // Force load from CSV files, ignore cache
-            const csvFiles = ['stages', 'items', 'images', 'audio', 'videos', 'text'];
+            const csvFiles = ['stages', 'items', 'images', 'audio', 'text'];
             const loadPromises = csvFiles.map(async (file) => {
                 try {
                     console.log(`Force loading ${file}.csv...`);

@@ -25,12 +25,10 @@ class AlbumManager {
         albumTabs.forEach(tab => {
             tab.addEventListener('click', () => {
                 const stage = tab.dataset.albumStage;
-                if (stage === 'videos') {
-                    this.showVideos();
-                } else {
+                if (stage !== 'videos') {
                     this.showStage(parseInt(stage));
+                    this.updateActiveTab(tab);
                 }
-                this.updateActiveTab(tab);
             });
         });
     }
@@ -60,22 +58,12 @@ class AlbumManager {
         this.updateCollectionCounter();
     }
 
-    showVideos() {
-        this.isVideoMode = true;
-        this.renderVideos();
-        this.updateCollectionCounter();
-    }
-
     renderStageImages(stageId) {
         const imageGrid = document.getElementById('album-images');
-        const videoGrid = document.getElementById('album-videos');
 
         if (imageGrid) {
             imageGrid.classList.remove('hidden');
             imageGrid.innerHTML = '';
-        }
-        if (videoGrid) {
-            videoGrid.classList.add('hidden');
         }
 
         const heroines = window.dataManager.getHeroineCollection(stageId);
@@ -88,69 +76,26 @@ class AlbumManager {
         });
     }
 
-    renderVideos() {
-        const imageGrid = document.getElementById('album-images');
-        const videoGrid = document.getElementById('album-videos');
-
-        if (imageGrid) {
-            imageGrid.classList.add('hidden');
-        }
-        if (videoGrid) {
-            videoGrid.classList.remove('hidden');
-            videoGrid.innerHTML = '';
-        }
-
-        const videos = window.dataManager.getVideos();
-        const unlockedVideos = window.gameState.get('collection.videos') || [];
-
-        videos.forEach(video => {
-            const isUnlocked = unlockedVideos.includes(video.id);
-            const itemElement = this.createAlbumItem(video, isUnlocked, 'video');
-            videoGrid.appendChild(itemElement);
-        });
-    }
-
     createAlbumItem(item, isUnlocked, type) {
         const itemDiv = document.createElement('div');
         itemDiv.className = `album-item ${isUnlocked ? '' : 'locked'}`;
         itemDiv.dataset.itemId = item.id;
 
         if (isUnlocked) {
-            if (type === 'image') {
-                itemDiv.innerHTML = `
-                    <img src="${window.dataManager.getAssetPath(item.filename)}"
-                         alt="${item.name || item.id}"
-                         style="width: 100%; height: 100%; object-fit: contain;"
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <div class="placeholder-icon" style="display:none;">🌸</div>
-                `;
-            } else {
-                itemDiv.innerHTML = `
-                    <div class="video-thumbnail">
-                        <img src="${window.dataManager.getAssetPath(item.thumbnail)}"
-                             alt="${item.title}"
-                             style="width: 100%; height: 100%; object-fit: contain;"
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                        <div class="placeholder-icon" style="display:none;">🎬</div>
-                        <div class="play-icon">▶️</div>
-                    </div>
-                `;
-            }
+            itemDiv.innerHTML = `
+                <img src="${window.dataManager.getAssetPath(item.filename)}"
+                     alt="${item.name || item.id}"
+                     style="width: 100%; height: 100%; object-fit: contain;"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div class="placeholder-icon" style="display:none;">🌸</div>
+            `;
 
-            itemDiv.addEventListener('click', () => this.viewItem(item, type));
+            itemDiv.addEventListener('click', () => this.showImageModal(item));
         } else {
             itemDiv.innerHTML = '<div class="locked-icon">🔒</div>';
         }
 
         return itemDiv;
-    }
-
-    viewItem(item, type) {
-        if (type === 'image') {
-            this.showImageModal(item);
-        } else {
-            this.showVideoModal(item);
-        }
     }
 
     showImageModal(image) {
@@ -162,28 +107,6 @@ class AlbumManager {
                 <img src="${window.dataManager.getAssetPath(image.filename)}"
                      alt="${image.name || image.id}"
                      style="max-width: 90vw; max-height: 90vh; object-fit: contain;">
-                <div class="modal-close" onclick="this.parentElement.parentElement.remove()">×</div>
-            </div>
-        `;
-
-        modal.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.9); display: flex; align-items: center;
-            justify-content: center; z-index: 10000;
-        `;
-
-        document.body.appendChild(modal);
-    }
-
-    showVideoModal(video) {
-        const modal = document.createElement('div');
-        modal.className = 'video-modal';
-        modal.innerHTML = `
-            <div class="modal-backdrop" onclick="this.parentElement.remove()"></div>
-            <div class="modal-content">
-                <video controls autoplay style="max-width: 90vw; max-height: 90vh;">
-                    <source src="${window.dataManager.getAssetPath(video.filename)}" type="video/mp4">
-                </video>
                 <div class="modal-close" onclick="this.parentElement.parentElement.remove()">×</div>
             </div>
         `;

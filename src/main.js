@@ -13,7 +13,6 @@ class AfterSchoolClickerMain {
             items: null,
             images: null,
             audio: null,
-            videos: null,
             text: null
         };
 
@@ -213,7 +212,7 @@ class AfterSchoolClickerMain {
     }
 
     async loadGameData() {
-        const csvFiles = ['stages.csv', 'items.csv', 'images.csv', 'audio.csv', 'videos.csv', 'text.csv'];
+        const csvFiles = ['stages.csv', 'items.csv', 'images.csv', 'audio.csv', 'text.csv'];
 
         for (const file of csvFiles) {
             try {
@@ -257,7 +256,6 @@ class AfterSchoolClickerMain {
                     stage3: [],
                     stage4: []
                 },
-                videos: [],
                 currentDisplayImage: "heroine_1_01"
             },
             purchases: {

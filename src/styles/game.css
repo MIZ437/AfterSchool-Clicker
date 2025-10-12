@@ -1123,3 +1123,111 @@ input:checked + .toggle-slider:before {
 .stage-cost.unlocked {
     color: #00b894;
 }
+
+/* Lucky Effect Styles */
+.lucky-effect {
+    position: fixed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8));
+}
+
+.lucky-heart {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.heart-shape {
+    font-size: 80px;
+    animation: heartbeat 1s ease-in-out infinite, rainbowPulse 0.8s linear infinite;
+    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.8));
+    z-index: 2;
+}
+
+.wing-left, .wing-right {
+    position: absolute;
+    font-size: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    animation: wingFlap 0.5s ease-in-out infinite alternate;
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.6));
+}
+
+.wing-left {
+    left: -30px;
+    animation-delay: 0s;
+}
+
+.wing-right {
+    right: -30px;
+    animation-delay: 0.25s;
+}
+
+/* Lucky Effect Animations */
+@keyframes luckyFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes rainbowGlow {
+    0% { filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.8)); }
+    14% { filter: drop-shadow(0 0 20px rgba(255, 127, 0, 0.8)); }
+    28% { filter: drop-shadow(0 0 20px rgba(255, 255, 0, 0.8)); }
+    42% { filter: drop-shadow(0 0 20px rgba(0, 255, 0, 0.8)); }
+    57% { filter: drop-shadow(0 0 20px rgba(0, 0, 255, 0.8)); }
+    71% { filter: drop-shadow(0 0 20px rgba(75, 0, 130, 0.8)); }
+    85% { filter: drop-shadow(0 0 20px rgba(148, 0, 211, 0.8)); }
+    100% { filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.8)); }
+}
+
+@keyframes rainbowPulse {
+    0% { color: #ff0000; }
+    14% { color: #ff7f00; }
+    28% { color: #ffff00; }
+    42% { color: #00ff00; }
+    57% { color: #0000ff; }
+    71% { color: #4b0082; }
+    85% { color: #9400d3; }
+    100% { color: #ff0000; }
+}
+
+@keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+@keyframes wingFlap {
+    from { transform: translateY(-50%) rotate(-5deg); }
+    to { transform: translateY(-50%) rotate(5deg); }
+}
+
+/* Lucky Reward Popup */
+@keyframes luckyRewardPopup {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+    }
+    20% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+    80% {
+        opacity: 1;
+        transform: translate(-50%, -60%) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -80%) scale(0.8);
+    }
+}

@@ -62,6 +62,11 @@ class ClickSystem {
             window.audioManager.playSE('click_sound');
         }
 
+        // Track click for lucky effect
+        if (window.luckyEffectManager) {
+            window.luckyEffectManager.trackClick();
+        }
+
         // Update UI
         this.updateClickDisplay();
     }

@@ -30,6 +30,10 @@ class GameState {
                 autoSaveInterval: 60, // seconds
                 debugMode: false
             },
+            luckyEffect: {
+                lastSpawnTime: Date.now(),
+                clicksSinceLastSpawn: 0
+            },
             lastSaved: new Date().toISOString()
         };
 
@@ -469,6 +473,10 @@ class GameState {
                 autoSaveEnabled: true,
                 autoSaveInterval: 60, // seconds
                 debugMode: false
+            },
+            luckyEffect: {
+                lastSpawnTime: Date.now(),
+                clicksSinceLastSpawn: 0
             },
             lastSaved: new Date().toISOString()
         };

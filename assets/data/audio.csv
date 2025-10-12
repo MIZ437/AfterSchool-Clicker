@@ -9,6 +9,7 @@ game_bgm_stage4,bgm/stage4_theme.mp3,bgm,true,0.3,game,ステージ4 BGM
 click_sound,se/click.mp3,se,false,0.8,game,クリック効果音
 purchase_sound,se/purchase.mp3,se,false,0.2,game,購入効果音
 gacha_sound,se/fanfare.mp3,se,false,0.8,game,ガチャ演出音
+lucky_spawn_sound,se/click.mp3,se,false,0.8,game,ラッキーエフェクト出現音
 stage_unlock_sound,se/fanfare.mp3,se,false,0.5,game,ステージ解放音
 stage_switch_sound,se/click.mp3,se,false,0.6,game,ステージ切り替え音
 album_bgm,,bgm,true,0.5,album,アルバム画面BGM（無音）

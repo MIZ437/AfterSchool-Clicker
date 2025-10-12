@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm start)",
+      "Bash(git restore:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix: Make tutorial screen transition instant while BGM fades out\n\n- Remove await from fadeOutBGM to make screen transition non-blocking\n- BGM now fades out in background while tutorial screen appears immediately\n- Improves user experience by not delaying screen transition for 7 seconds\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add Stage 1 BGM with fade-in effect and seamless scene transitions\n\n- Add stage1_theme.mp3 and configure in audio.csv\n- Implement fadeInBGM method with 0.5s silent delay and 3s fade-in\n- Add timer cleanup mechanism to prevent BGM overlap issues\n- Enable BGM continuity between game/settings/album scenes\n- Fix BGM not stopping properly when transitioning from game to title\n- Add clearFadeTimers to prevent orphaned setTimeout/setInterval\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Read(//c/Users/ashim/Pictures/Screenshots/**)",
+      "Bash(move:*)",
+      "Bash(git commit:*)",
+      "Bash(python:*)",
+      "Bash(taskkill:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

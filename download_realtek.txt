@@ -1,0 +1,16 @@
+Realtekオーディオドライバーのダウンロード方法
+
+【推奨】マウスコンピューター公式サポート:
+https://www2.mouse-jp.co.jp/ssl/user_support2/
+
+モデル名: Z6I7G60SRACC
+→ サポートページで型番を検索
+→ 「ドライバ・ソフトウェア」タブ
+→ 「オーディオドライバー」をダウンロード
+
+または
+
+【汎用】Realtek公式（最新版）:
+https://www.realtek.com/en/component/zoo/category/pc-audio-codecs-high-definition-audio-codecs-software
+
+注意: インストール前に必ずPCメーカーのドライバーを優先してください

@@ -612,6 +612,13 @@
     color: #2d3436;
 }
 
+.gacha-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+}
+
 .gacha-button {
     width: 100%;
     padding: 1rem;
@@ -623,12 +630,20 @@
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s ease;
-    margin-bottom: 1rem;
+}
+
+.gacha-button.gacha-10x {
+    background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+    font-size: 1rem;
 }
 
 .gacha-button:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(232, 67, 147, 0.4);
+}
+
+.gacha-button.gacha-10x:hover:not(:disabled) {
+    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
 }
 
 .gacha-button:disabled {

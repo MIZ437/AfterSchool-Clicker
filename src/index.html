@@ -214,10 +214,13 @@
                     <div class="gacha-content">
                         <div class="gacha-info">
                             <p>現在のステージ: <span id="gacha-stage">ステージ1</span></p>
-                            <p>コスト: <span id="gacha-cost">100</span> ポイント</p>
+                            <p>コスト: <span id="gacha-cost">100</span> ポイント / 1回</p>
                             <p>残り: <span id="gacha-remaining">10</span> / <span id="gacha-total">10</span></p>
                         </div>
-                        <button id="gacha-btn" class="gacha-button">ガチャを引く</button>
+                        <div class="gacha-buttons">
+                            <button id="gacha-btn" class="gacha-button">単発ガチャ</button>
+                            <button id="gacha-10x-btn" class="gacha-button gacha-10x">10連ガチャ</button>
+                        </div>
                         <div id="gacha-result" class="gacha-result hidden">
                             <!-- Gacha result will be shown here -->
                         </div>

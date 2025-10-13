@@ -5,7 +5,7 @@ game_quit,button,ゲーム終了,title,タイトル画面
 scenario_line_1,narrative,放課後の教室――,scenario,シナリオ導入1
 scenario_line_2,narrative,いつも優等生の葵(あおい)が、今日はなぜか違って見える。,scenario,シナリオ導入2
 scenario_line_3,dialogue,「やっと二人きりになれたね…」,scenario,シナリオ導入3
-scenario_line_4,narrative,普段の真面目な表情はどこへやら、頬を染めて上目遣いで見つめてくる。,scenario,シナリオ導入4
+scenario_line_4,narrative,普段の真面目な表情はどこへやら、頬を染めてじっと見つめてくる。,scenario,シナリオ導入4
 scenario_line_5,dialogue,「今日の私…いつもと違うでしょ？」,scenario,シナリオ導入5
 scenario_line_6,narrative,葵の表情が、いつもより大胆で誘うような雰囲気になっている。,scenario,シナリオ導入6
 scenario_line_7,dialogue,「本当の私を...見て？」,scenario,シナリオ導入7
@@ -40,3 +40,12 @@ ok,button,OK,settings,設定画面
 cancel,button,キャンセル,settings,設定画面
 delete_confirm_title,dialog,データ削除の確認,settings,確認ダイアログ
 delete_confirm_message,dialog,セーブデータを削除します。この操作は元に戻せません。本当に削除しますか？,settings,確認ダイアログ
+ending1_line_1,narrative,おめでとうございます！,ending1,エンディング1-1
+ending1_line_2,narrative,葵との特別な思い出を全て集めることができました。,ending1,エンディング1-2
+ending1_continue,button,続ける,ending1,エンディング1画面
+ending2_line_1,dialogue,「あなたと過ごした時間…全部大切な宝物よ」,ending2,エンディング2-1
+ending2_line_2,narrative,優等生だった葵が見せてくれた、様々な表情と姿。,ending2,エンディング2-2
+ending2_line_3,dialogue,「これからも…ずっと一緒にいてね？」,ending2,エンディング2-3
+ending2_line_4,narrative,放課後の教室で始まった二人の秘密は、,ending2,エンディング2-4
+ending2_line_5,narrative,かけがえのない思い出となって心に刻まれました。,ending2,エンディング2-5
+ending2_title,button,タイトルへ,ending2,エンディング2画面

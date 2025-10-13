@@ -743,8 +743,14 @@ class GachaSystem {
 
     // Handle when all images are collected
     handleCollectionComplete() {
-        // Show completion message
-        this.showCompletionMessage();
+        console.log('[GachaSystem] All images unlocked - triggering ending');
+
+        // Transition to ending scene after a short delay
+        setTimeout(() => {
+            if (window.sceneManager) {
+                window.sceneManager.showScene('ending1');
+            }
+        }, 1000);
     }
 
     showCompletionMessage() {

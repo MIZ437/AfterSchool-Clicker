@@ -26,6 +26,8 @@ class SceneManager {
         this.registerScene('title', document.getElementById('title-screen'));
         this.registerScene('scenario', document.getElementById('scenario-screen'));
         this.registerScene('tutorial', document.getElementById('tutorial-screen'));
+        this.registerScene('ending1', document.getElementById('ending1-screen'));
+        this.registerScene('ending2', document.getElementById('ending2-screen'));
         this.registerScene('game', document.getElementById('game-screen'));
         this.registerScene('album', document.getElementById('album-screen'));
         this.registerScene('settings', document.getElementById('settings-screen'));
@@ -120,6 +122,31 @@ class SceneManager {
             startMainGameBtn.addEventListener('click', () => {
                 this.firstRun = false;
                 this.showScene('game');
+            });
+        }
+
+        // Ending screen buttons
+        const ending1ContinueBtn = document.getElementById('ending1-continue-btn');
+        const ending2GameBtn = document.getElementById('ending2-game-btn');
+        const ending2TitleBtn = document.getElementById('ending2-title-btn');
+
+        if (ending1ContinueBtn) {
+            ending1ContinueBtn.addEventListener('click', () => {
+                this.showScene('ending2');
+            });
+        }
+
+        if (ending2GameBtn) {
+            ending2GameBtn.addEventListener('click', async () => {
+                await this.handleTitleButtonClick();
+                this.showScene('game');
+            });
+        }
+
+        if (ending2TitleBtn) {
+            ending2TitleBtn.addEventListener('click', async () => {
+                await this.handleTitleButtonClick();
+                this.showScene('title');
             });
         }
 
@@ -718,6 +745,12 @@ class SceneManager {
             case 'tutorial':
                 this.initializeTutorialScene();
                 break;
+            case 'ending1':
+                await this.initializeEnding1Scene();
+                break;
+            case 'ending2':
+                await this.initializeEnding2Scene();
+                break;
             case 'game':
                 this.initializeGameScene();
                 break;
@@ -876,6 +909,107 @@ class SceneManager {
             } else {
                 console.warn(`[initializeTutorialScene] Missing element or text for ${textId}`);
             }
+        }
+    }
+
+    async initializeEnding1Scene() {
+        console.log('[initializeEnding1Scene] Loading ending 1 text from CSV');
+
+        if (!window.dataManager) {
+            console.error('[initializeEnding1Scene] DataManager not available');
+            return;
+        }
+
+        // Ensure data is loaded before retrieving text
+        await window.dataManager.loadAll();
+        console.log('[initializeEnding1Scene] Data loaded, text available:', window.dataManager.getText().length, 'entries');
+
+        // Load ending 1 texts from CSV (2 lines)
+        for (let i = 1; i <= 2; i++) {
+            const textId = `ending1_line_${i}`;
+            const text = window.dataManager.getTextById(textId);
+            const element = document.getElementById(textId);
+
+            if (element && text) {
+                element.textContent = text;
+                console.log(`[initializeEnding1Scene] Loaded ${textId}: ${text}`);
+            } else {
+                console.warn(`[initializeEnding1Scene] Missing element or text for ${textId}`);
+            }
+        }
+
+        // Load button text
+        const continueBtn = document.getElementById('ending1-continue-btn');
+        if (continueBtn) {
+            const btnText = window.dataManager.getTextById('ending1_continue');
+            if (btnText) {
+                continueBtn.textContent = btnText;
+            }
+        }
+    }
+
+    async initializeEnding2Scene() {
+        console.log('[initializeEnding2Scene] Loading ending 2 text from CSV');
+
+        if (!window.dataManager) {
+            console.error('[initializeEnding2Scene] DataManager not available');
+            return;
+        }
+
+        // Ensure data is loaded before retrieving text
+        await window.dataManager.loadAll();
+        console.log('[initializeEnding2Scene] Data loaded, text available:', window.dataManager.getText().length, 'entries');
+
+        // Load ending 2 texts from CSV (5 lines)
+        for (let i = 1; i <= 5; i++) {
+            const textId = `ending2_line_${i}`;
+            const text = window.dataManager.getTextById(textId);
+            const element = document.getElementById(textId);
+
+            if (element && text) {
+                element.textContent = text;
+                console.log(`[initializeEnding2Scene] Loaded ${textId}: ${text}`);
+            } else {
+                console.warn(`[initializeEnding2Scene] Missing element or text for ${textId}`);
+            }
+        }
+
+        // Load button text
+        const titleBtn = document.getElementById('ending2-title-btn');
+        if (titleBtn) {
+            const btnText = window.dataManager.getTextById('ending2_title');
+            if (btnText) {
+                titleBtn.textContent = btnText;
+            }
+        }
+
+        // Load character image
+        const characterImg = document.getElementById('ending-character-img');
+        if (characterImg) {
+            console.log('[initializeEnding2Scene] Character img element found');
+
+            const imageData = window.dataManager.getImage('scenario_character');
+            console.log('[initializeEnding2Scene] Image data from CSV:', imageData);
+
+            if (imageData) {
+                const imagePath = window.dataManager.getAssetPath(imageData.filename);
+                console.log('[initializeEnding2Scene] Constructed image path:', imagePath);
+
+                characterImg.onerror = (e) => {
+                    console.error('[initializeEnding2Scene] Image failed to load:', imagePath);
+                };
+
+                characterImg.onload = () => {
+                    console.log('[initializeEnding2Scene] ✓ Image loaded successfully!');
+                };
+
+                characterImg.src = imagePath;
+                console.log('[initializeEnding2Scene] Image src set to:', characterImg.src);
+            } else {
+                console.warn('[initializeEnding2Scene] scenario_character image not found in CSV');
+            }
+        } else {
+            console.error('[initializeEnding2Scene] Character img element NOT FOUND!');
         }
     }
 
@@ -1079,6 +1213,46 @@ class SceneManager {
                 seSlider.value = settings.seVolume * 100;
                 document.getElementById('se-value').textContent = Math.round(settings.seVolume * 100) + '%';
             }
+        }
+
+        // Setup debug toggle to show/hide floating debug panel
+        const debugToggle = document.getElementById('debug-toggle');
+        const debugStatus = document.getElementById('debug-status');
+
+        if (debugToggle && debugStatus) {
+            // Set initial state
+            const isDebugMode = window.gameState ? window.gameState.isDebugMode() : false;
+            debugToggle.checked = isDebugMode;
+            debugStatus.textContent = isDebugMode ? 'ON' : 'OFF';
+
+            // Show debug panel if debug mode is on
+            if (isDebugMode && window.debugPanelManager) {
+                window.debugPanelManager.showPanel();
+            }
+
+            // Add change event listener
+            debugToggle.addEventListener('change', (e) => {
+                const enabled = e.target.checked;
+                debugStatus.textContent = enabled ? 'ON' : 'OFF';
+
+                if (enabled) {
+                    // Enable debug mode and show panel
+                    if (window.gameState) {
+                        window.gameState.enableDebugMode();
+                    }
+                    if (window.debugPanelManager) {
+                        window.debugPanelManager.showPanel();
+                    }
+                } else {
+                    // Disable debug mode and hide panel
+                    if (window.gameState) {
+                        window.gameState.disableDebugMode();
+                    }
+                    if (window.debugPanelManager) {
+                        window.debugPanelManager.hidePanel();
+                    }
+                }
+            });
         }
 
         console.log('[DEBUG] Settings initialized - isMuted:', isMuted, 'settings:', settings);

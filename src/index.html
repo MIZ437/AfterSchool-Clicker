@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/game.css">
     <link rel="stylesheet" href="styles/effects.css">
+    <link rel="stylesheet" href="styles/debug.css">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -101,6 +102,41 @@
             </div>
             <div class="tutorial-buttons">
                 <button id="start-main-game-btn" class="tutorial-button">ゲーム開始</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ending Screen 1 -->
+    <div id="ending1-screen" class="screen">
+        <div class="scenario-content">
+            <div class="scenario-main">
+                <div class="scenario-text-container">
+                    <p id="ending1_line_1" class="scenario-line ending-line"></p>
+                    <p id="ending1_line_2" class="scenario-line ending-line"></p>
+                </div>
+            </div>
+            <div class="scenario-buttons">
+                <button id="ending1-continue-btn" class="scenario-button">続ける</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ending Screen 2 -->
+    <div id="ending2-screen" class="screen">
+        <div class="scenario-content">
+            <div class="scenario-main">
+                <div class="scenario-text-container">
+                    <p id="ending2_line_1" class="scenario-line ending-line"></p>
+                    <p id="ending2_line_2" class="scenario-line ending-line"></p>
+                    <p id="ending2_line_3" class="scenario-line ending-line"></p>
+                    <p id="ending2_line_4" class="scenario-line ending-line"></p>
+                    <p id="ending2_line_5" class="scenario-line ending-line"></p>
+                </div>
+                <img id="ending-character-img" class="scenario-character" src="" alt="葵">
+            </div>
+            <div class="scenario-buttons">
+                <button id="ending2-game-btn" class="scenario-button">ゲームに戻る</button>
+                <button id="ending2-title-btn" class="scenario-button secondary">タイトルへ</button>
             </div>
         </div>
     </div>
@@ -360,6 +396,70 @@
     <!-- Click effects container (outside game screen for viewport positioning) -->
     <div id="click-effects" class="click-effects"></div>
 
+    <!-- Floating Debug Panel -->
+    <div id="debug-panel" class="debug-panel hidden">
+        <div class="debug-panel-header">
+            <span class="debug-panel-title">🐛 デバッグパネル</span>
+            <div class="debug-panel-controls">
+                <button id="debug-panel-minimize" class="debug-control-btn" title="最小化">_</button>
+                <button id="debug-panel-close" class="debug-control-btn" title="閉じる">×</button>
+            </div>
+        </div>
+        <div class="debug-panel-body">
+            <!-- Infinite Points Mode -->
+            <div class="debug-section">
+                <div class="debug-section-header">ポイント制御</div>
+                <div class="debug-row">
+                    <span class="debug-label">無限ポイント:</span>
+                    <label class="debug-toggle">
+                        <input type="checkbox" id="debug-infinite-points">
+                        <span class="debug-toggle-slider"></span>
+                    </label>
+                    <span id="debug-infinite-status" class="debug-status">OFF</span>
+                </div>
+            </div>
+
+            <!-- Stage Unlock Controls -->
+            <div class="debug-section">
+                <div class="debug-section-header">ステージ解放</div>
+                <div class="debug-button-grid">
+                    <button class="debug-btn" data-action="unlock-stage" data-stage="2">ステージ2解放</button>
+                    <button class="debug-btn" data-action="unlock-stage" data-stage="3">ステージ3解放</button>
+                    <button class="debug-btn" data-action="unlock-stage" data-stage="4">ステージ4解放</button>
+                    <button class="debug-btn" data-action="unlock-all-stages">全ステージ解放</button>
+                </div>
+            </div>
+
+            <!-- Image Unlock Controls -->
+            <div class="debug-section">
+                <div class="debug-section-header">画像解放</div>
+                <div class="debug-button-grid">
+                    <button class="debug-btn" data-action="unlock-images" data-stage="1">ステージ1全解放</button>
+                    <button class="debug-btn" data-action="unlock-images" data-stage="2">ステージ2全解放</button>
+                    <button class="debug-btn" data-action="unlock-images" data-stage="3">ステージ3全解放</button>
+                    <button class="debug-btn" data-action="unlock-images" data-stage="4">ステージ4全解放</button>
+                    <button class="debug-btn" data-action="unlock-all-images">全画像解放</button>
+                </div>
+            </div>
+
+            <!-- Data Management Controls -->
+            <div class="debug-section">
+                <div class="debug-section-header">データ管理</div>
+                <div class="debug-button-grid">
+                    <button class="debug-btn danger" data-action="delete-all-data">全データ削除</button>
+                </div>
+            </div>
+
+            <!-- Special Functions -->
+            <div class="debug-section">
+                <div class="debug-section-header">特殊機能</div>
+                <div class="debug-button-grid">
+                    <button class="debug-btn special" data-action="trigger-ending">エンディング起動</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Shop Modal -->
     <div id="shop-modal" class="shop-modal hidden">
         <div class="shop-modal-content">
@@ -412,6 +512,7 @@
     <script src="js/audioManager.js"></script>
     <script src="js/effectSystem.js"></script>
     <script src="js/luckyEffectManager.js"></script>
+    <script src="js/debugPanel.js"></script>
     <script src="js/main.js"></script>
 
     <!-- Simple Shop Functions -->

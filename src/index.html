@@ -364,8 +364,14 @@
     <div id="shop-modal" class="shop-modal hidden">
         <div class="shop-modal-content">
             <div class="shop-modal-header">
-                <h3 id="shop-modal-title">ショップ</h3>
-                <button id="shop-modal-close" class="shop-modal-close-btn">×</button>
+                <div class="shop-modal-header-top">
+                    <h3 id="shop-modal-title">ショップ</h3>
+                    <button id="shop-modal-close" class="shop-modal-close-btn">×</button>
+                </div>
+                <div class="shop-modal-points">
+                    <div class="shop-modal-points-label">ポイント</div>
+                    <div id="shop-modal-points-value" class="shop-modal-points-value">0</div>
+                </div>
             </div>
 
             <div class="shop-modal-body">
@@ -750,6 +756,7 @@
             const modalTitle = document.getElementById('shop-modal-title');
             const clickItems = document.getElementById('click-items');
             const cpsItems = document.getElementById('cps-items');
+            const pointsValue = document.getElementById('shop-modal-points-value');
 
             // タイトルを設定
             if (type === 'click') {
@@ -762,6 +769,12 @@
                 cpsItems.style.display = 'block';
             }
 
+            // ポイント表示を更新
+            if (pointsValue && window.gameState) {
+                const points = window.gameState.get('gameProgress.currentPoints');
+                pointsValue.textContent = Math.floor(points).toLocaleString();
+            }
+
             // モーダルを表示
             modal.classList.remove('hidden');
 
@@ -769,11 +782,28 @@
             if (window.shopSystem) {
                 window.shopSystem.updateAllItemsAffordability();
             }
+
+            // ポイント表示を定期的に更新
+            if (window.shopModalPointsInterval) {
+                clearInterval(window.shopModalPointsInterval);
+            }
+            window.shopModalPointsInterval = setInterval(() => {
+                if (pointsValue && window.gameState) {
+                    const points = window.gameState.get('gameProgress.currentPoints');
+                    pointsValue.textContent = Math.floor(points).toLocaleString();
+                }
+            }, 100);
         }
 
         function closeShopModal() {
             const modal = document.getElementById('shop-modal');
             modal.classList.add('hidden');
+
+            // ポイント表示の更新を停止
+            if (window.shopModalPointsInterval) {
+                clearInterval(window.shopModalPointsInterval);
+                window.shopModalPointsInterval = null;
+            }
         }
 
         // グローバルに公開

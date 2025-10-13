@@ -7,7 +7,7 @@ class LuckyEffectManager {
         this.cooldownTime = 300000; // 5 minutes in milliseconds
         this.requiredClicks = 500;
         this.effectSize = 100; // 100x100px
-        this.moveSpeed = 8; // pixels per frame (very fast speed)
+        this.moveSpeed = 6.8; // pixels per frame (85% of original speed)
 
         console.log('[LuckyEffect] Manager initialized');
     }

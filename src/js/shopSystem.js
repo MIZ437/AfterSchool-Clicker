@@ -39,34 +39,46 @@ class ShopSystem {
         this.setupShopTabs();
 
         // Wait for data manager to load
-        if (window.dataManager) {
-            console.log('ShopSystem: DataManager found, loading data...');
-            await window.dataManager.loadAll();
-            this.loadItems();
-            this.renderShop();
-            this.setupEventListeners();
+        if (!window.dataManager) {
+            console.warn('ShopSystem: DataManager not found, waiting...');
+            // Wait for dataManager to be initialized
+            let attempts = 0;
+            while (!window.dataManager && attempts < 30) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
 
-            // Initial affordability check after everything is loaded
-            setTimeout(() => {
-                this.updateAllItemsAffordability();
-
-                // Check if multiplier is already set and update effect displays
-                const currentMultiplier = window.currentMultiplier || 1;
-                console.log('ShopSystem: Initial multiplier check:', currentMultiplier);
-                if (currentMultiplier > 1) {
-                    console.log('ShopSystem: Multiplier detected during initialization, updating effects...');
-                    this.updateItemEffectDisplays();
-                }
-            }, 100);
-
-            // Force update after a longer delay to ensure GameState is fully initialized
-            setTimeout(() => {
-                console.log('ShopSystem: Force updating affordability after GameState initialization');
-                this.updateAllItemsAffordability();
-            }, 500);
-        } else {
-            console.error('ShopSystem: DataManager not found!');
+            if (!window.dataManager) {
+                console.error('ShopSystem: DataManager not available after waiting!');
+                return;
+            }
+            console.log('ShopSystem: DataManager found after waiting');
         }
+
+        console.log('ShopSystem: DataManager found, loading data...');
+        await window.dataManager.loadAll();
+        await this.loadItems();
+        this.renderShop();
+        this.setupEventListeners();
+
+        // Initial affordability check after everything is loaded
+        setTimeout(() => {
+            this.updateAllItemsAffordability();
+
+            // Check if multiplier is already set and update effect displays
+            const currentMultiplier = window.currentMultiplier || 1;
+            console.log('ShopSystem: Initial multiplier check:', currentMultiplier);
+            if (currentMultiplier > 1) {
+                console.log('ShopSystem: Multiplier detected during initialization, updating effects...');
+                this.updateItemEffectDisplays();
+            }
+        }, 100);
+
+        // Force update after a longer delay to ensure GameState is fully initialized
+        setTimeout(() => {
+            console.log('ShopSystem: Force updating affordability after GameState initialization');
+            this.updateAllItemsAffordability();
+        }, 500);
     }
 
     async loadItems() {
@@ -261,47 +273,80 @@ class ShopSystem {
         itemDiv.className = `shop-item ${canAfford ? '' : 'disabled'}`;
         itemDiv.dataset.itemId = item.id;
 
-        // Create effect description with multiplier consideration
+        // Get current multiplier for display
         const multiplier = window.currentMultiplier || 1;
         const adjustedValue = value * multiplier;
+        const adjustedCost = cost * multiplier;
 
-        const effectText = item.effect === 'click'
-            ? `1クリック：+${adjustedValue}ポイント`
-            : `毎秒：+${adjustedValue}ポイント`;
+        // 基本効果表示 (単価ベース)
+        const baseEffectText = item.effect === 'click'
+            ? `+${value}pt/クリック`
+            : `+${value}pt/秒`;
+
+        // Check if debug mode is active
+        const debugMode = window.gameState && window.gameState.isDebugMode();
+        const ownedText = debugMode ? '∞' : `${owned}個所持`;
+
+        // Check if can afford with multiplier
+        const currentPoints = window.gameState ? window.gameState.get('gameProgress.currentPoints') : 0;
+        const canAffordMultiplied = debugMode || currentPoints >= adjustedCost;
+
+        // ボタンテキストと合計効果表示
+        let buttonText = '';
+        let totalEffectText = '';
+
+        if (multiplier > 1) {
+            buttonText = `${multiplier}個購入 | ${this.formatNumber(adjustedCost)}pt`;
+            totalEffectText = `<span class="total-effect">(合計 +${adjustedValue}pt)</span>`;
+        } else {
+            buttonText = `購入 | ${this.formatNumber(adjustedCost)}pt`;
+            totalEffectText = '';
+        }
 
         itemDiv.innerHTML = `
-            <div class="item-header">
-                <div class="item-info">
-                    <div class="item-name">${item.name}</div>
-                    <div class="item-effect">${effectText}</div>
-                </div>
-                <div class="item-cost">
-                    <span class="cost-amount">${this.formatNumber(cost)}</span>
-                    <span class="cost-unit">ポイント</span>
-                </div>
+            <div class="item-compact-row">
+                <span class="item-name">${item.name}</span>
+                <span class="item-effect">${baseEffectText}</span>
+                <span class="item-owned">(${ownedText})</span>
             </div>
-            <div class="item-description">${item.desc}</div>
-            ${owned > 0 ? `<div class="item-owned">所持数: ${owned}個</div>` : ''}
-            <div class="item-action">
-                <button class="purchase-btn ${canAfford ? '' : 'disabled'}">
-                    ${canAfford ? '購入' : 'ポイント不足'}
+            <div class="item-action-row">
+                <button class="purchase-btn ${canAffordMultiplied ? '' : 'disabled'}" data-quantity="${multiplier}">
+                    ${buttonText}
                 </button>
+                ${totalEffectText}
             </div>
         `;
 
         return itemDiv;
     }
 
+    // Calculate max affordable quantity for a specific item
+    calculateMaxAffordableForItem(cost) {
+        if (!window.gameState) return 0;
+
+        const debugMode = window.gameState.isDebugMode();
+        if (debugMode) return 9999;
+
+        const currentPoints = window.gameState.get('gameProgress.currentPoints');
+        if (cost === 0) return 0;
+
+        return Math.floor(currentPoints / cost);
+    }
+
     // Attach purchase event handler to the item element
     attachPurchaseHandler(itemDiv, item) {
         const purchaseBtn = itemDiv.querySelector('.purchase-btn');
+
         if (purchaseBtn) {
             console.log(`ShopSystem: Adding click handler for ${item.id}, button found:`, !!purchaseBtn);
             purchaseBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 console.log(`ShopSystem: Purchase button clicked for ${item.id}, disabled:`, purchaseBtn.classList.contains('disabled'));
                 if (!purchaseBtn.classList.contains('disabled')) {
-                    this.purchaseItem(item);
+                    // Use current multiplier from global state
+                    const multiplier = window.currentMultiplier || 1;
+                    console.log(`ShopSystem: Purchasing ${item.id} with multiplier:`, multiplier);
+                    this.purchaseItem(item, multiplier);
                 }
             });
         } else {
@@ -309,23 +354,26 @@ class ShopSystem {
         }
     }
 
-    purchaseItem(item) {
+    purchaseItem(item, quantity = 1) {
         const cost = parseInt(item.cost);
         const effect = item.effect;
         const value = parseInt(item.value);
+        const totalCost = cost * quantity;
 
-        // Check if player can afford the item
-        if (!window.gameState.canAfford(cost)) {
+        // Check if player can afford the items
+        if (!window.gameState.canAfford(totalCost)) {
             this.showPurchaseResult(false, 'ポイントが不足しています');
             return;
         }
 
         // Spend points
-        const success = window.gameState.spendPoints(cost);
+        const success = window.gameState.spendPoints(totalCost);
 
         if (success) {
-            // Add item to purchases and apply effect
-            window.gameState.purchaseItem(item.id, effect, value);
+            // Add items to purchases and apply effects (quantity times)
+            for (let i = 0; i < quantity; i++) {
+                window.gameState.purchaseItem(item.id, effect, value);
+            }
 
             // Play purchase sound
             if (window.audioManager) {
@@ -333,7 +381,10 @@ class ShopSystem {
             }
 
             // Show success message
-            this.showPurchaseResult(true, `${item.name}を購入しました！`);
+            const message = quantity === 1
+                ? `${item.name}を購入しました！`
+                : `${item.name}を${quantity}個購入しました！`;
+            this.showPurchaseResult(true, message);
 
             // Update shop display
             this.updateItemDisplay(item.id);
@@ -349,7 +400,7 @@ class ShopSystem {
                 this.updatePPSDisplay();
             }
 
-            console.log(`Purchased ${item.name} for ${cost} points`);
+            console.log(`Purchased ${quantity}x ${item.name} for ${totalCost} points`);
         } else {
             this.showPurchaseResult(false, '購入に失敗しました');
         }
@@ -372,8 +423,14 @@ class ShopSystem {
         }
 
         const cost = parseInt(item.cost);
+        const value = parseInt(item.value);
         let owned = 0;
         let canAfford = false;
+
+        // Get current multiplier
+        const multiplier = window.currentMultiplier || 1;
+        const adjustedCost = cost * multiplier;
+        const adjustedValue = value * multiplier;
 
         try {
             owned = window.gameState.get(`purchases.items.${itemId}`) || 0;
@@ -383,7 +440,7 @@ class ShopSystem {
             if (debugMode) {
                 canAfford = true; // Debug mode: everything is affordable
             } else {
-                canAfford = window.gameState.canAfford(cost);
+                canAfford = window.gameState.canAfford(adjustedCost);
             }
         } catch (error) {
             console.error(`ShopSystem: Error accessing GameState for item ${itemId}:`, error);
@@ -393,29 +450,58 @@ class ShopSystem {
         // Update affordability
         itemElement.className = `shop-item ${canAfford ? '' : 'disabled'}`;
 
-        // Update purchase button
-        const purchaseBtn = itemElement.querySelector('.purchase-btn');
-        if (purchaseBtn) {
-            purchaseBtn.className = `purchase-btn ${canAfford ? '' : 'disabled'}`;
-            purchaseBtn.textContent = canAfford ? '購入' : 'ポイント不足';
+        // Update effect display (基本効果)
+        const effectElement = itemElement.querySelector('.item-effect');
+        if (effectElement) {
+            const baseEffectText = item.effect === 'click'
+                ? `+${value}pt/クリック`
+                : `+${value}pt/秒`;
+            effectElement.textContent = baseEffectText;
         }
 
         // Update owned count
+        const debugMode = window.gameState && window.gameState.isDebugMode();
+        const ownedText = debugMode ? '∞' : `${owned}個所持`;
         const ownedElement = itemElement.querySelector('.item-owned');
-        if (owned > 0) {
-            if (ownedElement) {
-                ownedElement.textContent = `所持数: ${owned}個`;
-            } else {
-                const ownedDiv = document.createElement('div');
-                ownedDiv.className = 'item-owned';
-                ownedDiv.textContent = `所持数: ${owned}個`;
+        if (ownedElement) {
+            ownedElement.textContent = `(${ownedText})`;
+        }
 
-                // Insert before the action div
-                const actionDiv = itemElement.querySelector('.item-action');
-                if (actionDiv) {
-                    itemElement.insertBefore(ownedDiv, actionDiv);
+        // Update purchase button and total effect
+        const purchaseBtn = itemElement.querySelector('.purchase-btn');
+        if (purchaseBtn) {
+            purchaseBtn.className = `purchase-btn ${canAfford ? '' : 'disabled'}`;
+            purchaseBtn.dataset.quantity = multiplier;
+
+            // Button text
+            let buttonText = '';
+            if (multiplier > 1) {
+                buttonText = `${multiplier}個購入 | ${this.formatNumber(adjustedCost)}pt`;
+            } else {
+                buttonText = `購入 | ${this.formatNumber(adjustedCost)}pt`;
+            }
+            purchaseBtn.textContent = buttonText;
+        }
+
+        // Update or create total effect display
+        const actionRow = itemElement.querySelector('.item-action-row');
+        if (actionRow) {
+            let totalEffectElement = actionRow.querySelector('.total-effect');
+
+            if (multiplier > 1) {
+                const totalEffectText = `(合計 +${adjustedValue}pt)`;
+                if (totalEffectElement) {
+                    totalEffectElement.textContent = totalEffectText;
                 } else {
-                    itemElement.appendChild(ownedDiv);
+                    const span = document.createElement('span');
+                    span.className = 'total-effect';
+                    span.textContent = totalEffectText;
+                    actionRow.appendChild(span);
+                }
+            } else {
+                // Remove total effect if multiplier is 1
+                if (totalEffectElement) {
+                    totalEffectElement.remove();
                 }
             }
         }

@@ -1,22 +1,22 @@
 id,filename,category,loop,volume,scene,description
-title_bgm,bgm/title_theme.mp3,bgm,true,0.8,title,タイトル画面BGM
-button_click,se/click.mp3,se,false,0.8,title,ボタンクリック音
-tutorial_bgm,,bgm,true,0.6,tutorial,チュートリアルBGM（無音）
-game_bgm_stage1,bgm/stage1_theme.mp3,bgm,true,0.4,game,ステージ1 BGM
-game_bgm_stage2,bgm/stage2_theme.mp3,bgm,true,0.3,game,ステージ2 BGM
-game_bgm_stage3,bgm/stage3_theme.mp3,bgm,true,0.3,game,ステージ3 BGM
-game_bgm_stage4,bgm/stage4_theme.mp3,bgm,true,0.3,game,ステージ4 BGM
-click_sound,se/click.mp3,se,false,0.8,game,クリック効果音
-purchase_sound,se/purchase.mp3,se,false,0.2,game,購入効果音
-gacha_sound,se/fanfare.mp3,se,false,0.8,game,ガチャ演出音
-lucky_spawn_sound,se/click.mp3,se,false,0.8,game,ラッキーエフェクト出現音
-stage_unlock_sound,se/fanfare.mp3,se,false,0.5,game,ステージ解放音
-stage_switch_sound,se/click.mp3,se,false,0.6,game,ステージ切り替え音
-album_bgm,,bgm,true,0.5,album,アルバム画面BGM（無音）
-page_turn_sound,se/click.mp3,se,false,0.6,album,ページめくり音
-image_select_sound,se/click.mp3,se,false,0.7,album,画像選択音
-video_start_sound,se/click.mp3,se,false,0.8,album,動画再生開始音
-settings_bgm,,bgm,true,0.4,settings,設定画面BGM（無音）
-slider_sound,se/click.mp3,se,false,0.5,settings,スライダー操作音
-confirm_sound,se/click.mp3,se,false,0.7,settings,決定音
-warning_sound,se/click.mp3,se,false,0.8,settings,警告音（データ削除時）
+title_bgm,bgm/title_theme.mp3,bgm,true,1.0,title,タイトル画面BGM
+button_click,se/click.mp3,se,false,1.0,title,ボタンクリック音
+tutorial_bgm,,bgm,true,1.0,tutorial,チュートリアルBGM（無音）
+game_bgm_stage1,bgm/stage1_theme.mp3,bgm,true,0.5,game,ステージ1 BGM
+game_bgm_stage2,bgm/stage2_theme.mp3,bgm,true,0.5,game,ステージ2 BGM
+game_bgm_stage3,bgm/stage3_theme.mp3,bgm,true,0.5,game,ステージ3 BGM
+game_bgm_stage4,bgm/stage4_theme.mp3,bgm,true,0.5,game,ステージ4 BGM
+click_sound,se/click.mp3,se,false,1.0,game,クリック効果音
+purchase_sound,se/purchase.mp3,se,false,0.5,game,購入効果音
+gacha_sound,se/fanfare.mp3,se,false,1.0,game,ガチャ演出音
+lucky_spawn_sound,se/click.mp3,se,false,1.0,game,ラッキーエフェクト出現音
+stage_unlock_sound,se/fanfare.mp3,se,false,1.0,game,ステージ解放音
+stage_switch_sound,se/click.mp3,se,false,1.0,game,ステージ切り替え音
+album_bgm,,bgm,true,1.0,album,アルバム画面BGM（無音）
+page_turn_sound,se/click.mp3,se,false,1.0,album,ページめくり音
+image_select_sound,se/click.mp3,se,false,1.0,album,画像選択音
+video_start_sound,se/click.mp3,se,false,1.0,album,動画再生開始音
+settings_bgm,,bgm,true,1.0,settings,設定画面BGM（無音）
+slider_sound,se/click.mp3,se,false,1.0,settings,スライダー操作音
+confirm_sound,se/click.mp3,se,false,1.0,settings,決定音
+warning_sound,se/click.mp3,se,false,1.0,settings,警告音（データ削除時）

@@ -2,8 +2,8 @@
 class AudioManager {
     constructor() {
         console.log('AudioManager constructor called');
-        this.bgmVolume = 0.5;
-        this.seVolume = 0.5;
+        this.bgmVolume = 0.2;
+        this.seVolume = 0.2;
         this.currentBGM = null;
         this.currentBGMId = null;
         this.audioContext = null;
@@ -758,8 +758,8 @@ class AudioManager {
     }
 
     unmuteAll() {
-        this.setBGMVolume(0.5);
-        this.setSEVolume(0.5);
+        this.setBGMVolume(0.2);
+        this.setSEVolume(0.2);
     }
 
     // Scene-specific audio management
@@ -788,8 +788,8 @@ class AudioManager {
         if (window.gameState) {
             const settings = window.gameState.get('settings');
             if (settings) {
-                this.bgmVolume = settings.bgmVolume !== undefined ? settings.bgmVolume : 0.5;
-                this.seVolume = settings.seVolume !== undefined ? settings.seVolume : 0.5;
+                this.bgmVolume = settings.bgmVolume !== undefined ? settings.bgmVolume : 0.2;
+                this.seVolume = settings.seVolume !== undefined ? settings.seVolume : 0.2;
             }
         }
     }

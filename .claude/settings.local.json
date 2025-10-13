@@ -12,7 +12,9 @@
       "Bash(git commit:*)",
       "Bash(python:*)",
       "Bash(taskkill:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(dir:*)",
+      "Bash(echo $APPDATA)"
     ],
     "deny": [],
     "ask": []

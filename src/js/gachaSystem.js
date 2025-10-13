@@ -118,6 +118,9 @@ class GachaSystem {
                     this.updateGachaDisplay();
                     this.updatePointsDisplay();
 
+                    // Check if current stage is complete
+                    this.checkStageComplete();
+
                     // Check if collection is complete
                     if (window.gameState.isCollectionComplete()) {
                         this.handleCollectionComplete();
@@ -226,6 +229,9 @@ class GachaSystem {
                 // Update displays
                 this.updateGachaDisplay();
                 this.updatePointsDisplay();
+
+                // Check if current stage is complete
+                this.checkStageComplete();
 
                 // Check if collection is complete
                 if (window.gameState.isCollectionComplete()) {
@@ -699,6 +705,40 @@ class GachaSystem {
             const currentPoints = window.gameState.get('gameProgress.currentPoints');
             currentPointsElement.textContent = this.formatNumber(currentPoints);
         }
+    }
+
+    // Check if current stage is complete
+    checkStageComplete() {
+        const progress = window.gameState.getCollectionProgress(this.currentStage);
+
+        // If stage just completed
+        if (progress.collected === progress.total && progress.total > 0) {
+            this.showStageCompleteNotification(this.currentStage);
+        }
+    }
+
+    // Show stage completion notification (similar to stage unlock)
+    showStageCompleteNotification(stageId) {
+        const notification = document.getElementById('stage-unlock-notification');
+        if (!notification) return;
+
+        const textElement = notification.querySelector('.notification-text');
+        if (!textElement) return;
+
+        textElement.textContent = `ステージ${stageId}のガチャをコンプリートしました！`;
+
+        // Play fanfare sound
+        if (window.audioManager) {
+            window.audioManager.playSE('stage_unlock_sound');
+        }
+
+        // Show notification
+        notification.classList.add('show');
+
+        // Hide after 3 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+        }, 3000);
     }
 
     // Handle when all images are collected

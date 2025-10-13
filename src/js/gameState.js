@@ -24,8 +24,8 @@ class GameState {
                 items: {}
             },
             settings: {
-                bgmVolume: 0.7,
-                seVolume: 0.8,
+                bgmVolume: 0.2,
+                seVolume: 0.2,
                 autoSaveEnabled: true,
                 autoSaveInterval: 60, // seconds
                 debugMode: false
@@ -468,8 +468,8 @@ class GameState {
                 items: {}
             },
             settings: {
-                bgmVolume: 0.7,
-                seVolume: 0.8,
+                bgmVolume: 0.2,
+                seVolume: 0.2,
                 autoSaveEnabled: true,
                 autoSaveInterval: 60, // seconds
                 debugMode: false

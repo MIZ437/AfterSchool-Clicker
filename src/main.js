@@ -262,8 +262,8 @@ class AfterSchoolClickerMain {
                 items: {}
             },
             settings: {
-                bgmVolume: 0.7,
-                seVolume: 0.8
+                bgmVolume: 0.2,
+                seVolume: 0.2
             },
             lastSaved: new Date().toISOString()
         };

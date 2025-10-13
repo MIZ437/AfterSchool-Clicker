@@ -172,7 +172,7 @@
                             <button class="shop-tab" data-shop-tab="auto">自動ポイントUP</button>
                         </div>
 
-                        <!-- Purchase Multiplier Selection -->
+                        <!-- Purchase Multiplier -->
                         <div class="purchase-multiplier">
                             <span class="multiplier-label">購入倍率:</span>
                             <div class="multiplier-buttons">
@@ -180,6 +180,7 @@
                                 <button class="multiplier-btn" data-multiplier="5">×5</button>
                                 <button class="multiplier-btn" data-multiplier="10">×10</button>
                                 <button class="multiplier-btn" data-multiplier="100">×100</button>
+                                <button class="multiplier-btn" id="max-multiplier-btn" data-multiplier="max">MAX</button>
                             </div>
                         </div>
 
@@ -187,19 +188,15 @@
                         <div class="shop-items-container">
                             <!-- Click Items Tab -->
                             <div id="shop-click-tab" class="shop-tab-content active">
-                                <div class="shop-items-simple">
-                                    <div id="click-items-simple">
-                                        <!-- Click items will be dynamically loaded from CSV -->
-                                    </div>
+                                <div id="click-items">
+                                    <!-- Click items will be dynamically loaded from shopSystem.js -->
                                 </div>
                             </div>
 
                             <!-- Auto Points Items Tab -->
                             <div id="shop-auto-tab" class="shop-tab-content">
-                                <div class="shop-items-simple">
-                                    <div id="cps-items-simple">
-                                        <!-- CPS items will be dynamically loaded from CSV -->
-                                    </div>
+                                <div id="cps-items">
+                                    <!-- CPS items will be dynamically loaded from shopSystem.js -->
                                 </div>
                             </div>
                         </div>
@@ -291,13 +288,13 @@
                     <h3>音量設定</h3>
                     <div class="setting-item">
                         <label for="bgm-volume">BGM音量</label>
-                        <input type="range" id="bgm-volume" min="0" max="100" value="50">
-                        <span id="bgm-value" class="volume-value">50%</span>
+                        <input type="range" id="bgm-volume" min="0" max="100" value="20">
+                        <span id="bgm-value" class="volume-value">20%</span>
                     </div>
                     <div class="setting-item">
                         <label for="se-volume">SE音量</label>
-                        <input type="range" id="se-volume" min="0" max="100" value="50">
-                        <span id="se-value" class="volume-value">50%</span>
+                        <input type="range" id="se-volume" min="0" max="100" value="20">
+                        <span id="se-value" class="volume-value">20%</span>
                     </div>
                 </div>
 
@@ -380,99 +377,6 @@
 
     <!-- Simple Shop Functions -->
     <script>
-        function buyItem(itemId, cost, effect, value, quantity = 1) {
-            console.log('購入試行:', { itemId, cost, effect, value, quantity });
-
-            if (!window.gameState) {
-                console.error('GameState not found!');
-                return;
-            }
-
-            // デバッグモード確認
-            const isDebugMode = window.gameState.isDebugMode();
-            console.log('Debug mode:', isDebugMode);
-
-            const totalCost = cost * quantity;
-            const totalValue = value * quantity;
-
-            // ポイント確認（デバッグモードでない場合のみ）
-            if (!isDebugMode) {
-                const currentPoints = window.gameState.get('gameProgress.currentPoints');
-                console.log('現在のポイント:', currentPoints, '必要:', totalCost);
-
-                if (currentPoints < totalCost) {
-                    // ポイント不足時は何もしない
-                    return;
-                }
-            }
-
-            // 購入処理（数量分）
-            const success = window.gameState.spendPoints(totalCost);
-            if (success) {
-                // 数量分の効果を適用
-                for (let i = 0; i < quantity; i++) {
-                    window.gameState.purchaseItem(itemId, effect, value);
-                }
-
-                // チャリーン効果音を再生
-                if (window.audioManager) {
-                    window.audioManager.playSE('purchase_sound');
-                }
-
-                // 表示更新
-                updatePointsDisplay();
-                updateClickValueDisplay();
-                updatePPSDisplay();
-                updateCurrentStats();
-            }
-        }
-
-        function updatePointsDisplay() {
-            const pointsElement = document.getElementById('current-points');
-            if (pointsElement && window.gameState) {
-                const points = window.gameState.get('gameProgress.currentPoints');
-                pointsElement.textContent = Math.floor(points).toLocaleString();
-
-                // 購入ボタンの状態を更新
-                updateButtonStates();
-            }
-        }
-
-        function updateButtonStates() {
-            if (!window.gameState) return;
-
-            const isDebugMode = window.gameState.isDebugMode();
-            const currentPoints = window.gameState.get('gameProgress.currentPoints');
-            const buyButtons = document.querySelectorAll('.buy-btn');
-
-            buyButtons.forEach(button => {
-                const baseCost = parseInt(button.dataset.cost);
-                const multiplier = window.currentMultiplier || 1;
-                const totalCost = baseCost * multiplier;
-
-                // すべてのクラスをリセット
-                button.classList.remove('disabled', 'debug-enabled');
-
-                if (isDebugMode) {
-                    // デバッグモードの場合
-                    button.classList.add('debug-enabled');
-                    button.textContent = 'DEBUG';
-                } else {
-                    // 常にコストを表示
-                    const formattedCost = formatCost(totalCost);
-                    button.textContent = formattedCost;
-
-                    // ポイント不足の場合はdisabledクラスを追加
-                    if (totalCost && currentPoints < totalCost) {
-                        button.classList.add('disabled');
-                    }
-                }
-            });
-        }
-
-        function formatCost(cost) {
-            return cost.toLocaleString() + 'pt';
-        }
 
         // ステージ解放通知システム
         function showStageUnlockNotification(stageNumber) {
@@ -738,6 +642,14 @@
             }
         }
 
+        function updatePointsDisplay() {
+            const pointsElement = document.getElementById('current-points');
+            if (pointsElement && window.gameState) {
+                const points = window.gameState.get('gameProgress.currentPoints');
+                pointsElement.textContent = Math.floor(points).toLocaleString();
+            }
+        }
+
         // タブ切り替え機能
         function setupShopTabs() {
             const shopTabs = document.querySelectorAll('.shop-tab');
@@ -764,255 +676,105 @@
             });
         }
 
-        // CSVからアイテムを動的に読み込み
-        async function loadItemsFromCSV() {
-
-            if (!window.dataManager) {
-                console.error('DataManager not available, loading fallback items');
-                loadFallbackItems();
-                return;
-            }
-
-            // データマネージャーからアイテムを取得
-            const clickItems = window.dataManager.getClickItems();
-            const cpsItems = window.dataManager.getCPSItems();
-
-
-            // アイテムが取得できない場合はフォールバック
-            if (!clickItems || !cpsItems || clickItems.length === 0 || cpsItems.length === 0) {
-                console.warn('CSV items not loaded, using fallback');
-                loadFallbackItems();
-                return;
-            }
-
-            // クリックアイテムを表示
-            const clickContainer = document.getElementById('click-items-simple');
-            if (clickContainer) {
-                clickContainer.innerHTML = '';
-                clickItems.forEach(item => {
-                    const itemElement = createItemElement(item);
-                    clickContainer.appendChild(itemElement);
-                });
-            }
-
-            // CPSアイテムを表示
-            const cpsContainer = document.getElementById('cps-items-simple');
-            if (cpsContainer) {
-                cpsContainer.innerHTML = '';
-                cpsItems.forEach(item => {
-                    const itemElement = createItemElement(item);
-                    cpsContainer.appendChild(itemElement);
-                });
-            }
-
-            // ボタン状態を更新
-            updateButtonStates();
-        }
-
-        // フォールバック用の静的アイテム読み込み
-        function loadFallbackItems() {
-
-            // 更新されたコストでフォールバックアイテムを定義
-            const fallbackClickItems = [
-                { id: 'ITM_CLICK_1', name: 'CLICK_1', cost: 50, effect: 'click', value: 1 },
-                { id: 'ITM_CLICK_2', name: 'CLICK_2', cost: 2000, effect: 'click', value: 5 },
-                { id: 'ITM_CLICK_3', name: 'CLICK_3', cost: 25000, effect: 'click', value: 20 },
-                { id: 'ITM_CLICK_4', name: 'CLICK_4', cost: 300000, effect: 'click', value: 75 },
-                { id: 'ITM_CLICK_5', name: 'CLICK_5', cost: 3000000, effect: 'click', value: 300 }
-            ];
-
-            const fallbackCpsItems = [
-                { id: 'ITM_CPS_1', name: 'CPS_1', cost: 500, effect: 'cps', value: 1 },
-                { id: 'ITM_CPS_2', name: 'CPS_2', cost: 5000, effect: 'cps', value: 5 },
-                { id: 'ITM_CPS_3', name: 'CPS_3', cost: 50000, effect: 'cps', value: 20 },
-                { id: 'ITM_CPS_4', name: 'CPS_4', cost: 500000, effect: 'cps', value: 75 },
-                { id: 'ITM_CPS_5', name: 'CPS_5', cost: 5000000, effect: 'cps', value: 300 }
-            ];
-
-            // クリックアイテムを表示
-            const clickContainer = document.getElementById('click-items-simple');
-            if (clickContainer) {
-                clickContainer.innerHTML = '';
-                fallbackClickItems.forEach(item => {
-                    const itemElement = createItemElement(item);
-                    clickContainer.appendChild(itemElement);
-                });
-            }
-
-            // CPSアイテムを表示
-            const cpsContainer = document.getElementById('cps-items-simple');
-            if (cpsContainer) {
-                cpsContainer.innerHTML = '';
-                fallbackCpsItems.forEach(item => {
-                    const itemElement = createItemElement(item);
-                    cpsContainer.appendChild(itemElement);
-                });
-            }
-
-            // ボタン状態を更新
-            updateButtonStates();
-        }
-
-        function createItemElement(item) {
-            const shopItem = document.createElement('div');
-            shopItem.className = 'shop-item';
-            shopItem.dataset.itemId = item.id;
-
-            // Consider current multiplier for effect display
-            const multiplier = window.currentMultiplier || 1;
-            const adjustedValue = item.value * multiplier;
-
-            const effectText = item.effect === 'click'
-                ? `1クリック：+${adjustedValue}ポイント`
-                : `毎秒：+${adjustedValue}ポイント`;
-
-            shopItem.innerHTML = `
-                <div class="item-name">${item.name}</div>
-                <div class="item-desc">${effectText}</div>
-                <button class="buy-btn" data-item-id="${item.id}" data-cost="${item.cost}" data-effect="${item.effect}" data-value="${item.value}">
-                    ${formatCost(parseInt(item.cost))}
-                </button>
-            `;
-
-            return shopItem;
-        }
-
-        // index.html内のアイテムの効果表記を更新
-        function updateItemEffectDisplaysInHTML() {
-            console.log('[DEBUG] Updating HTML item effect displays...');
-            const multiplier = window.currentMultiplier || 1;
-
-            // Update click items
-            const clickContainer = document.getElementById('click-items-simple');
-            if (clickContainer) {
-                const clickItems = clickContainer.querySelectorAll('.shop-item');
-                console.log('[DEBUG] Found', clickItems.length, 'click items in HTML to update');
-
-                clickItems.forEach(itemElement => {
-                    const itemId = itemElement.dataset.itemId;
-                    if (!itemId) return;
-
-                    // Find the original item data
-                    const clickItemsData = window.dataManager ? window.dataManager.getItems().filter(item => item.effect === 'click') : [];
-                    const fallbackClickItems = [
-                        { id: 'ITM_CLICK_1', name: 'CLICK_1', cost: 50, effect: 'click', value: 1 },
-                        { id: 'ITM_CLICK_2', name: 'CLICK_2', cost: 2000, effect: 'click', value: 5 },
-                        { id: 'ITM_CLICK_3', name: 'CLICK_3', cost: 25000, effect: 'click', value: 20 },
-                        { id: 'ITM_CLICK_4', name: 'CLICK_4', cost: 300000, effect: 'click', value: 75 }
-                    ];
-
-                    const item = clickItemsData.find(i => i.id === itemId) || fallbackClickItems.find(i => i.id === itemId);
-                    if (!item) return;
-
-                    const value = parseInt(item.value);
-                    const adjustedValue = value * multiplier;
-
-                    const effectText = `1クリック：+${adjustedValue}ポイント`;
-
-                    const effectElement = itemElement.querySelector('.item-desc');
-                    if (effectElement) {
-                        effectElement.textContent = effectText;
-                        console.log('[DEBUG] Updated effect for', itemId, 'to:', effectText);
-                    }
-                });
-            }
-
-            // Update CPS items
-            const cpsContainer = document.getElementById('cps-items-simple');
-            if (cpsContainer) {
-                const cpsItems = cpsContainer.querySelectorAll('.shop-item');
-                console.log('[DEBUG] Found', cpsItems.length, 'CPS items in HTML to update');
-
-                cpsItems.forEach(itemElement => {
-                    const itemId = itemElement.dataset.itemId;
-                    if (!itemId) return;
-
-                    // Find the original item data
-                    const cpsItemsData = window.dataManager ? window.dataManager.getItems().filter(item => item.effect === 'cps') : [];
-                    const fallbackCPSItems = [
-                        { id: 'ITM_CPS_1', name: 'AUTO_1', cost: 500, effect: 'cps', value: 1 },
-                        { id: 'ITM_CPS_2', name: 'AUTO_2', cost: 5000, effect: 'cps', value: 5 },
-                        { id: 'ITM_CPS_3', name: 'AUTO_3', cost: 50000, effect: 'cps', value: 25 },
-                        { id: 'ITM_CPS_4', name: 'AUTO_4', cost: 500000, effect: 'cps', value: 100 }
-                    ];
-
-                    const item = cpsItemsData.find(i => i.id === itemId) || fallbackCPSItems.find(i => i.id === itemId);
-                    if (!item) return;
-
-                    const value = parseInt(item.value);
-                    const adjustedValue = value * multiplier;
-
-                    const effectText = `毎秒：+${adjustedValue}ポイント`;
-
-                    const effectElement = itemElement.querySelector('.item-desc');
-                    if (effectElement) {
-                        effectElement.textContent = effectText;
-                        console.log('[DEBUG] Updated effect for', itemId, 'to:', effectText);
-                    }
-                });
-            }
-        }
 
         // 購入倍率管理
         let currentMultiplier = 1;
         window.currentMultiplier = 1;
+
+        // Calculate max affordable quantity for cheapest item
+        function calculateMaxAffordable() {
+            if (!window.gameState || !window.shopSystem) return 0;
+
+            const currentPoints = window.gameState.get('gameProgress.currentPoints');
+            const isDebugMode = window.gameState.isDebugMode();
+
+            if (isDebugMode) return 9999; // Debug mode: show large number
+
+            // Get all items from shopSystem
+            const allItems = [...window.shopSystem.items.click, ...window.shopSystem.items.cps];
+            if (allItems.length === 0) return 0;
+
+            // Find cheapest item cost
+            let cheapestCost = Infinity;
+            allItems.forEach(item => {
+                const cost = parseInt(item.cost);
+                if (cost < cheapestCost) {
+                    cheapestCost = cost;
+                }
+            });
+
+            if (cheapestCost === Infinity || cheapestCost === 0) return 0;
+
+            // Calculate max affordable
+            return Math.floor(currentPoints / cheapestCost);
+        }
+
+        // Update MAX button display
+        function updateMaxButton() {
+            const maxCount = calculateMaxAffordable();
+            const maxCountSpan = document.getElementById('max-count');
+            const maxBtn = document.getElementById('max-multiplier-btn');
+
+            if (maxCountSpan) {
+                maxCountSpan.textContent = maxCount;
+            }
+
+            // Disable MAX button if maxCount is 0
+            if (maxBtn) {
+                if (maxCount === 0) {
+                    maxBtn.disabled = true;
+                    maxBtn.style.opacity = '0.5';
+                    maxBtn.style.cursor = 'not-allowed';
+                } else {
+                    maxBtn.disabled = false;
+                    maxBtn.style.opacity = '1';
+                    maxBtn.style.cursor = 'pointer';
+                }
+            }
+        }
 
         // 購入倍率ボタンのイベントハンドラー
         function setupMultiplierButtons() {
             const multiplierButtons = document.querySelectorAll('.multiplier-btn');
             multiplierButtons.forEach(btn => {
                 btn.addEventListener('click', () => {
+                    const multiplierValue = btn.dataset.multiplier;
+
+                    // Handle MAX button specially
+                    if (multiplierValue === 'max') {
+                        const maxCount = calculateMaxAffordable();
+                        if (maxCount === 0) return; // Can't afford anything
+
+                        // Set multiplier to max affordable
+                        currentMultiplier = maxCount;
+                        window.currentMultiplier = maxCount;
+                    } else {
+                        // Normal multiplier button
+                        currentMultiplier = parseInt(multiplierValue);
+                        window.currentMultiplier = currentMultiplier;
+                    }
+
                     // アクティブ状態を更新
                     multiplierButtons.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
 
-                    // 倍率を更新
-                    currentMultiplier = parseInt(btn.dataset.multiplier);
-                    window.currentMultiplier = currentMultiplier;
                     console.log('[DEBUG] Multiplier changed to:', currentMultiplier);
                     console.log('[DEBUG] window.shopSystem available:', !!window.shopSystem);
 
-                    updateAllItemCosts();
-
-                    // ShopSystemの効果表記も更新
+                    // ShopSystemの表示を更新
                     if (window.shopSystem) {
-                        console.log('[DEBUG] Calling updateItemEffectDisplays...');
-                        window.shopSystem.updateItemEffectDisplays();
+                        console.log('[DEBUG] Updating shopSystem displays for multiplier change...');
+                        window.shopSystem.updateAllItemsAffordability();
                     } else {
-                        console.warn('[DEBUG] window.shopSystem not available for effect update');
+                        console.warn('[DEBUG] window.shopSystem not available for update');
                     }
 
-                    // index.html内のアイテムも更新
-                    updateItemEffectDisplaysInHTML();
+                    // MAXボタンの状態も更新
+                    updateMaxButton();
                 });
             });
         }
 
-        // 購入ボタンのイベントハンドラー
-        function setupPurchaseButtons() {
-            document.addEventListener('click', (e) => {
-                if (e.target.classList.contains('buy-btn')) {
-                    const btn = e.target;
-                    const itemId = btn.dataset.itemId;
-                    const cost = parseInt(btn.dataset.cost);
-                    const effect = btn.dataset.effect;
-                    const value = parseInt(btn.dataset.value);
-
-                    buyItem(itemId, cost, effect, value, currentMultiplier);
-                }
-            });
-        }
-
-        // 全アイテムのコスト表示を更新
-        function updateAllItemCosts() {
-            const buyButtons = document.querySelectorAll('.buy-btn');
-            buyButtons.forEach(btn => {
-                const baseCost = parseInt(btn.dataset.cost);
-                const totalCost = baseCost * currentMultiplier;
-                btn.textContent = formatCost(totalCost);
-            });
-            updateButtonStates();
-        }
 
         // Manual function to test stage button updates
         window.testStageButtons = function() {
@@ -1027,7 +789,6 @@
 
             // 購入関連のイベントハンドラーを設定
             setupMultiplierButtons();
-            setupPurchaseButtons();
 
             // ステージボタンを設定
             setupStageButtons();
@@ -1042,33 +803,13 @@
                 updateStageButtons();
             }, 1000);
 
-            // CSVからアイテムを読み込み（少し遅らせる）
-            setTimeout(async () => {
-                await loadItemsFromCSV();
-                updateButtonStates();
-                updateCurrentStats();
-            }, 2000);
-
-            // さらにretryメカニズムを追加
-            let retryCount = 0;
-            const retryLoadItems = () => {
-                if (retryCount < 5) {
-                    setTimeout(async () => {
-                        const clickContainer = document.getElementById('click-items-simple');
-                        if (clickContainer && clickContainer.children.length === 0) {
-                            await loadItemsFromCSV();
-                        }
-                        retryCount++;
-                    }, 1000 + (retryCount * 1000));
-                }
-            };
-            retryLoadItems();
 
             // ポイント表示の定期更新
             setInterval(() => {
                 updatePointsDisplay();
                 updatePPSDisplay();
                 updateCurrentStats();
+                updateMaxButton(); // Update MAX button count
             }, 1000);
         });
     </script>

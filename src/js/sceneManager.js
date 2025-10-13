@@ -988,7 +988,7 @@ class SceneManager {
         if (characterImg) {
             console.log('[initializeEnding2Scene] Character img element found');
 
-            const imageData = window.dataManager.getImage('scenario_character');
+            const imageData = window.dataManager.getImage('ending_character');
             console.log('[initializeEnding2Scene] Image data from CSV:', imageData);
 
             if (imageData) {

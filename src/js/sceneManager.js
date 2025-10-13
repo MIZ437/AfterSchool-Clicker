@@ -713,7 +713,7 @@ class SceneManager {
                 this.initializeTitleScene();
                 break;
             case 'scenario':
-                this.initializeScenarioScene();
+                await this.initializeScenarioScene();
                 break;
             case 'tutorial':
                 this.initializeTutorialScene();
@@ -784,13 +784,17 @@ class SceneManager {
         this.startTitleImageRotation();
     }
 
-    initializeScenarioScene() {
+    async initializeScenarioScene() {
         console.log('[initializeScenarioScene] Loading scenario text from CSV');
 
         if (!window.dataManager) {
             console.error('[initializeScenarioScene] DataManager not available');
             return;
         }
+
+        // Ensure data is loaded before retrieving text
+        await window.dataManager.loadAll();
+        console.log('[initializeScenarioScene] Data loaded, text available:', window.dataManager.getText().length, 'entries');
 
         // Load scenario texts from CSV
         for (let i = 1; i <= 7; i++) {

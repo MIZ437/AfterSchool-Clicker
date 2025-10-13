@@ -783,6 +783,9 @@
                 window.shopSystem.updateAllItemsAffordability();
             }
 
+            // MAXボタンの状態を更新
+            updateMaxButton();
+
             // ポイント表示を定期的に更新
             if (window.shopModalPointsInterval) {
                 clearInterval(window.shopModalPointsInterval);
@@ -792,6 +795,8 @@
                     const points = window.gameState.get('gameProgress.currentPoints');
                     pointsValue.textContent = Math.floor(points).toLocaleString();
                 }
+                // MAXボタンの状態も定期的に更新
+                updateMaxButton();
             }, 100);
         }
 

@@ -454,6 +454,14 @@ class ShopSystem {
         // Check debug mode
         const debugMode = window.gameState.isDebugMode();
 
+        // Get owned count first
+        try {
+            owned = window.gameState.get(`purchases.items.${itemId}`) || 0;
+        } catch (error) {
+            console.error(`ShopSystem: Error accessing GameState for item ${itemId}:`, error);
+            return;
+        }
+
         // Calculate values based on multiplier type
         if (multiplier === 'max') {
             // MAX mode: calculate max affordable for this item
@@ -466,21 +474,12 @@ class ShopSystem {
             // Normal multiplier
             adjustedCost = cost * multiplier;
             adjustedValue = value * multiplier;
-        }
-
-        try {
-            owned = window.gameState.get(`purchases.items.${itemId}`) || 0;
-
-            // Check affordability
+            // Check affordability for normal multiplier
             if (debugMode) {
-                canAfford = true; // Debug mode: everything is affordable
-            } else if (multiplier !== 'max') {
-                // Only check if not already calculated in MAX mode
+                canAfford = true;
+            } else {
                 canAfford = window.gameState.canAfford(adjustedCost);
             }
-        } catch (error) {
-            console.error(`ShopSystem: Error accessing GameState for item ${itemId}:`, error);
-            return;
         }
 
         // Update affordability
@@ -654,11 +653,6 @@ class ShopSystem {
     }
 
     formatNumber(num) {
-        if (num >= 1000000) {
-            return (num / 1000000).toFixed(1) + 'M';
-        } else if (num >= 1000) {
-            return (num / 1000).toFixed(1) + 'K';
-        }
         return Math.floor(num).toLocaleString();
     }
 

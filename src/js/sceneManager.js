@@ -735,6 +735,17 @@ class SceneManager {
             this.stopTitleImageRotation();
         }
 
+        // Disable click system for ending screens
+        if (window.clickSystem) {
+            if (sceneName === 'ending1' || sceneName === 'ending2') {
+                window.clickSystem.setEnabled(false);
+                console.log('[DEBUG] Click system disabled for ending screen:', sceneName);
+            } else if (sceneName === 'game') {
+                window.clickSystem.setEnabled(true);
+                console.log('[DEBUG] Click system enabled for game screen');
+            }
+        }
+
         switch (sceneName) {
             case 'title':
                 this.initializeTitleScene();

@@ -274,22 +274,34 @@ class ShopSystem {
         itemDiv.dataset.itemId = item.id;
 
         // Get current multiplier for display
-        const multiplier = window.currentMultiplier || 1;
-        const adjustedValue = value * multiplier;
-        const adjustedCost = cost * multiplier;
+        let multiplier = window.currentMultiplier || 1;
+        let adjustedValue, adjustedCost, canAffordMultiplied;
+
+        // Check if debug mode is active
+        const debugMode = window.gameState && window.gameState.isDebugMode();
+
+        // Calculate values based on multiplier type
+        if (multiplier === 'max') {
+            // MAX mode: calculate max affordable for this item
+            const maxCount = this.calculateMaxAffordableForItem(cost);
+            adjustedValue = value * maxCount;
+            adjustedCost = cost * maxCount;
+            canAffordMultiplied = debugMode || maxCount > 0;
+            multiplier = maxCount; // For display purposes
+        } else {
+            // Normal multiplier
+            adjustedValue = value * multiplier;
+            adjustedCost = cost * multiplier;
+            const currentPoints = window.gameState ? window.gameState.get('gameProgress.currentPoints') : 0;
+            canAffordMultiplied = debugMode || currentPoints >= adjustedCost;
+        }
 
         // 基本効果表示 (単価ベース)
         const baseEffectText = item.effect === 'click'
             ? `+${value}pt/クリック`
             : `+${value}pt/秒`;
 
-        // Check if debug mode is active
-        const debugMode = window.gameState && window.gameState.isDebugMode();
         const ownedText = debugMode ? '∞' : `${owned}個所持`;
-
-        // Check if can afford with multiplier
-        const currentPoints = window.gameState ? window.gameState.get('gameProgress.currentPoints') : 0;
-        const canAffordMultiplied = debugMode || currentPoints >= adjustedCost;
 
         // ボタンテキストと合計効果表示
         let buttonText = '';
@@ -344,7 +356,15 @@ class ShopSystem {
                 console.log(`ShopSystem: Purchase button clicked for ${item.id}, disabled:`, purchaseBtn.classList.contains('disabled'));
                 if (!purchaseBtn.classList.contains('disabled')) {
                     // Use current multiplier from global state
-                    const multiplier = window.currentMultiplier || 1;
+                    let multiplier = window.currentMultiplier || 1;
+
+                    // If MAX mode, calculate max affordable for THIS specific item
+                    if (multiplier === 'max') {
+                        const cost = parseInt(item.cost);
+                        multiplier = this.calculateMaxAffordableForItem(cost);
+                        console.log(`ShopSystem: MAX mode - calculated ${multiplier} for item ${item.id} (cost: ${cost})`);
+                    }
+
                     console.log(`ShopSystem: Purchasing ${item.id} with multiplier:`, multiplier);
                     this.purchaseItem(item, multiplier);
                 }
@@ -428,18 +448,34 @@ class ShopSystem {
         let canAfford = false;
 
         // Get current multiplier
-        const multiplier = window.currentMultiplier || 1;
-        const adjustedCost = cost * multiplier;
-        const adjustedValue = value * multiplier;
+        let multiplier = window.currentMultiplier || 1;
+        let adjustedCost, adjustedValue;
+
+        // Check debug mode
+        const debugMode = window.gameState.isDebugMode();
+
+        // Calculate values based on multiplier type
+        if (multiplier === 'max') {
+            // MAX mode: calculate max affordable for this item
+            const maxCount = this.calculateMaxAffordableForItem(cost);
+            adjustedCost = cost * maxCount;
+            adjustedValue = value * maxCount;
+            canAfford = debugMode || maxCount > 0;
+            multiplier = maxCount; // For display purposes
+        } else {
+            // Normal multiplier
+            adjustedCost = cost * multiplier;
+            adjustedValue = value * multiplier;
+        }
 
         try {
             owned = window.gameState.get(`purchases.items.${itemId}`) || 0;
 
-            // Check debug mode for affordability
-            const debugMode = window.gameState.isDebugMode();
+            // Check affordability
             if (debugMode) {
                 canAfford = true; // Debug mode: everything is affordable
-            } else {
+            } else if (multiplier !== 'max') {
+                // Only check if not already calculated in MAX mode
                 canAfford = window.gameState.canAfford(adjustedCost);
             }
         } catch (error) {
@@ -460,7 +496,6 @@ class ShopSystem {
         }
 
         // Update owned count
-        const debugMode = window.gameState && window.gameState.isDebugMode();
         const ownedText = debugMode ? '∞' : `${owned}個所持`;
         const ownedElement = itemElement.querySelector('.item-owned');
         if (ownedElement) {

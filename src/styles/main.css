@@ -279,6 +279,168 @@ body {
     transform: translateY(0);
 }
 
+/* Scenario Screen */
+#scenario-screen {
+    background: rgba(0, 0, 0, 0.95);
+}
+
+.scenario-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    gap: 2rem;
+    position: relative;
+}
+
+.scenario-main {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4rem;
+    width: 100%;
+    max-width: 1400px;
+    flex: 1;
+    padding: 0 3rem;
+}
+
+.scenario-text-container {
+    flex: 0 0 auto;
+    max-width: 550px;
+    min-width: 400px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    justify-content: center;
+}
+
+.scenario-character {
+    flex-shrink: 0;
+    width: auto;
+    height: 65vh;
+    max-height: 500px;
+    max-width: 400px;
+    object-fit: contain;
+    opacity: 0;
+    animation: fadeInCharacter 1.0s ease forwards;
+    animation-play-state: paused;
+}
+
+#scenario-screen.active .scenario-character {
+    animation-play-state: running;
+}
+
+@keyframes fadeInCharacter {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.scenario-line {
+    font-size: 1.5rem;
+    color: #ffffff;
+    line-height: 1.8;
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+    animation: fadeInText 0.4s ease forwards;
+    animation-play-state: paused;
+    text-align: left;
+    white-space: nowrap;
+    word-break: keep-all;
+}
+
+#scenario-screen.active .scenario-line {
+    animation-play-state: running;
+}
+
+.scenario-line:nth-child(1) { animation-delay: 0.5s; }
+.scenario-line:nth-child(2) { animation-delay: 2.0s; }
+.scenario-line:nth-child(3) { animation-delay: 3.5s; }
+.scenario-line:nth-child(4) { animation-delay: 5.0s; }
+.scenario-line:nth-child(5) { animation-delay: 6.5s; }
+.scenario-line:nth-child(6) { animation-delay: 8.0s; }
+.scenario-line:nth-child(7) { animation-delay: 9.5s; }
+
+@keyframes fadeInText {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.scenario-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    padding-bottom: 2rem;
+}
+
+.scenario-button {
+    padding: 14px 50px;
+    font-size: 1.15rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 184, 148, 0.4);
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards 11s;
+    animation-play-state: paused;
+}
+
+.scenario-button.secondary {
+    background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);
+    box-shadow: 0 4px 15px rgba(99, 110, 114, 0.4);
+    opacity: 1;
+    animation: fadeIn 0.5s ease forwards 1s;
+}
+
+#scenario-screen.active .scenario-button {
+    animation-play-state: running;
+}
+
+.scenario-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 184, 148, 0.6);
+}
+
+.scenario-button.secondary:hover {
+    box-shadow: 0 6px 20px rgba(99, 110, 114, 0.6);
+}
+
+.scenario-button:active {
+    transform: translateY(0);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
 /* Tutorial Screen */
 #tutorial-screen {
     background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);

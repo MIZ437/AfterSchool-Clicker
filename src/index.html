@@ -55,6 +55,28 @@
         </div>
     </div>
 
+    <!-- Scenario Screen -->
+    <div id="scenario-screen" class="screen">
+        <div class="scenario-content">
+            <div class="scenario-main">
+                <div class="scenario-text-container">
+                    <p id="scenario_line_1" class="scenario-line"></p>
+                    <p id="scenario_line_2" class="scenario-line"></p>
+                    <p id="scenario_line_3" class="scenario-line"></p>
+                    <p id="scenario_line_4" class="scenario-line"></p>
+                    <p id="scenario_line_5" class="scenario-line"></p>
+                    <p id="scenario_line_6" class="scenario-line"></p>
+                    <p id="scenario_line_7" class="scenario-line"></p>
+                </div>
+                <img id="scenario-character-img" class="scenario-character" src="" alt="キャラクター">
+            </div>
+            <div class="scenario-buttons">
+                <button id="scenario-skip-btn" class="scenario-button secondary">シナリオをスキップ</button>
+                <button id="scenario-continue-btn" class="scenario-button">続ける</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Tutorial Screen -->
     <div id="tutorial-screen" class="screen">
         <div class="tutorial-content">
@@ -62,19 +84,19 @@
             <div class="tutorial-steps">
                 <div class="tutorial-step">
                     <span class="step-number">1</span>
-                    <p>美少女をクリックしてポイントを獲得しよう！</p>
+                    <p id="tutorial-step-1"></p>
                 </div>
                 <div class="tutorial-step">
                     <span class="step-number">2</span>
-                    <p>ポイントでアイテムを購入して効率アップ！</p>
+                    <p id="tutorial-step-2"></p>
                 </div>
                 <div class="tutorial-step">
                     <span class="step-number">3</span>
-                    <p>ガチャで新しいキャラクターを集めよう！</p>
+                    <p id="tutorial-step-3"></p>
                 </div>
                 <div class="tutorial-step">
                     <span class="step-number">4</span>
-                    <p>ステージを解放してコレクションを充実させよう！</p>
+                    <p id="tutorial-step-4"></p>
                 </div>
             </div>
             <div class="tutorial-buttons">
@@ -139,6 +161,9 @@
             </div>
         </nav>
 
+        <!-- Shop Overlay Backdrop -->
+        <div id="shop-overlay" class="shop-overlay"></div>
+
         <!-- Main Content -->
         <main class="game-content">
             <!-- Heroine Area -->
@@ -165,41 +190,15 @@
                         <h3>ショップ</h3>
                     </div>
 
-                    <div class="shop-container">
-                        <!-- Shop Sub-Tabs (Fixed) -->
-                        <div class="shop-tabs">
-                            <button class="shop-tab active" data-shop-tab="click">クリックポイントUP</button>
-                            <button class="shop-tab" data-shop-tab="auto">自動ポイントUP</button>
-                        </div>
-
-                        <!-- Purchase Multiplier -->
-                        <div class="purchase-multiplier">
-                            <span class="multiplier-label">購入倍率:</span>
-                            <div class="multiplier-buttons">
-                                <button class="multiplier-btn active" data-multiplier="1">×1</button>
-                                <button class="multiplier-btn" data-multiplier="5">×5</button>
-                                <button class="multiplier-btn" data-multiplier="10">×10</button>
-                                <button class="multiplier-btn" data-multiplier="100">×100</button>
-                                <button class="multiplier-btn" id="max-multiplier-btn" data-multiplier="max">MAX</button>
-                            </div>
-                        </div>
-
-                        <!-- Shop Items Container (Scrollable) -->
-                        <div class="shop-items-container">
-                            <!-- Click Items Tab -->
-                            <div id="shop-click-tab" class="shop-tab-content active">
-                                <div id="click-items">
-                                    <!-- Click items will be dynamically loaded from shopSystem.js -->
-                                </div>
-                            </div>
-
-                            <!-- Auto Points Items Tab -->
-                            <div id="shop-auto-tab" class="shop-tab-content">
-                                <div id="cps-items">
-                                    <!-- CPS items will be dynamically loaded from shopSystem.js -->
-                                </div>
-                            </div>
-                        </div>
+                    <div class="shop-buttons-container">
+                        <button id="open-click-shop-btn" class="shop-category-btn">
+                            <span class="shop-btn-icon">👆</span>
+                            <span class="shop-btn-text">クリックポイントUP</span>
+                        </button>
+                        <button id="open-cps-shop-btn" class="shop-category-btn">
+                            <span class="shop-btn-icon">⚡</span>
+                            <span class="shop-btn-text">自動ポイントUP</span>
+                        </button>
                     </div>
                 </div>
 
@@ -360,6 +359,40 @@
 
     <!-- Click effects container (outside game screen for viewport positioning) -->
     <div id="click-effects" class="click-effects"></div>
+
+    <!-- Shop Modal -->
+    <div id="shop-modal" class="shop-modal hidden">
+        <div class="shop-modal-content">
+            <div class="shop-modal-header">
+                <h3 id="shop-modal-title">ショップ</h3>
+                <button id="shop-modal-close" class="shop-modal-close-btn">×</button>
+            </div>
+
+            <div class="shop-modal-body">
+                <!-- Purchase Multiplier -->
+                <div class="purchase-multiplier">
+                    <span class="multiplier-label">購入倍率:</span>
+                    <div class="multiplier-buttons">
+                        <button class="multiplier-btn active" data-multiplier="1">×1</button>
+                        <button class="multiplier-btn" data-multiplier="5">×5</button>
+                        <button class="multiplier-btn" data-multiplier="10">×10</button>
+                        <button class="multiplier-btn" data-multiplier="100">×100</button>
+                        <button class="multiplier-btn" id="max-multiplier-btn" data-multiplier="max">MAX</button>
+                    </div>
+                </div>
+
+                <!-- Shop Items Container (Scrollable) -->
+                <div class="shop-modal-items-container">
+                    <div id="click-items">
+                        <!-- Click items will be dynamically loaded from shopSystem.js -->
+                    </div>
+                    <div id="cps-items" style="display: none;">
+                        <!-- CPS items will be dynamically loaded from shopSystem.js -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- JavaScript Modules -->
     <script src="js/gameState.js"></script>
@@ -650,31 +683,8 @@
             }
         }
 
-        // タブ切り替え機能
-        function setupShopTabs() {
-            const shopTabs = document.querySelectorAll('.shop-tab');
-            const shopTabContents = document.querySelectorAll('.shop-tab-content');
-
-            shopTabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const targetTab = tab.dataset.shopTab;
-
-                    // Remove active class from all tabs and content
-                    shopTabs.forEach(t => t.classList.remove('active'));
-                    shopTabContents.forEach(content => content.classList.remove('active'));
-
-                    // Add active class to clicked tab
-                    tab.classList.add('active');
-
-                    // Show corresponding content
-                    const targetContent = document.getElementById(`shop-${targetTab}-tab`);
-                    if (targetContent) {
-                        targetContent.classList.add('active');
-                    }
-
-                });
-            });
-        }
+        // タブ切り替え機能 - shopSystem.jsで処理されるため、ここでは定義のみ
+        // setupShopTabs is now handled by shopSystem.js
 
 
         // 購入倍率管理
@@ -723,15 +733,52 @@
             if (maxBtn) {
                 if (maxCount === 0) {
                     maxBtn.disabled = true;
-                    maxBtn.style.opacity = '0.5';
-                    maxBtn.style.cursor = 'not-allowed';
+                    maxBtn.classList.remove('active');
                 } else {
                     maxBtn.disabled = false;
-                    maxBtn.style.opacity = '1';
-                    maxBtn.style.cursor = 'pointer';
+                    // Only add active class if current multiplier is 'max'
+                    if (window.currentMultiplier === 'max') {
+                        maxBtn.classList.add('active');
+                    }
                 }
             }
         }
+
+        // ショップモーダル関連
+        function openShopModal(type) {
+            const modal = document.getElementById('shop-modal');
+            const modalTitle = document.getElementById('shop-modal-title');
+            const clickItems = document.getElementById('click-items');
+            const cpsItems = document.getElementById('cps-items');
+
+            // タイトルを設定
+            if (type === 'click') {
+                modalTitle.textContent = 'クリックポイントUP';
+                clickItems.style.display = 'block';
+                cpsItems.style.display = 'none';
+            } else if (type === 'cps') {
+                modalTitle.textContent = '自動ポイントUP';
+                clickItems.style.display = 'none';
+                cpsItems.style.display = 'block';
+            }
+
+            // モーダルを表示
+            modal.classList.remove('hidden');
+
+            // shopSystemにアイテムをレンダリングさせる
+            if (window.shopSystem) {
+                window.shopSystem.updateAllItemsAffordability();
+            }
+        }
+
+        function closeShopModal() {
+            const modal = document.getElementById('shop-modal');
+            modal.classList.add('hidden');
+        }
+
+        // グローバルに公開
+        window.openShopModal = openShopModal;
+        window.closeShopModal = closeShopModal;
 
         // 購入倍率ボタンのイベントハンドラー
         function setupMultiplierButtons() {
@@ -742,12 +789,9 @@
 
                     // Handle MAX button specially
                     if (multiplierValue === 'max') {
-                        const maxCount = calculateMaxAffordable();
-                        if (maxCount === 0) return; // Can't afford anything
-
-                        // Set multiplier to max affordable
-                        currentMultiplier = maxCount;
-                        window.currentMultiplier = maxCount;
+                        // Set multiplier to 'max' string - will be calculated per-item
+                        currentMultiplier = 'max';
+                        window.currentMultiplier = 'max';
                     } else {
                         // Normal multiplier button
                         currentMultiplier = parseInt(multiplierValue);
@@ -784,14 +828,47 @@
         // 初期化
         document.addEventListener('DOMContentLoaded', () => {
 
-            // ショップタブ機能を設定
-            setupShopTabs();
+            // ショップタブ機能は shopSystem.js で設定されます
+            // setupShopTabs() is now handled by shopSystem.js
 
             // 購入関連のイベントハンドラーを設定
             setupMultiplierButtons();
 
             // ステージボタンを設定
             setupStageButtons();
+
+            // ショップモーダルのイベントリスナーを設定
+            const openClickShopBtn = document.getElementById('open-click-shop-btn');
+            const openCpsShopBtn = document.getElementById('open-cps-shop-btn');
+            const shopModalCloseBtn = document.getElementById('shop-modal-close');
+            const shopModal = document.getElementById('shop-modal');
+
+            if (openClickShopBtn) {
+                openClickShopBtn.addEventListener('click', () => {
+                    openShopModal('click');
+                });
+            }
+
+            if (openCpsShopBtn) {
+                openCpsShopBtn.addEventListener('click', () => {
+                    openShopModal('cps');
+                });
+            }
+
+            if (shopModalCloseBtn) {
+                shopModalCloseBtn.addEventListener('click', () => {
+                    closeShopModal();
+                });
+            }
+
+            // モーダル背景クリックで閉じる
+            if (shopModal) {
+                shopModal.addEventListener('click', (e) => {
+                    if (e.target === shopModal) {
+                        closeShopModal();
+                    }
+                });
+            }
 
             // ステージボタンの状態を初期化（少し遅らせて実行）
             setTimeout(() => {

@@ -2,11 +2,19 @@ id,category,japanese,scene,context
 game_start,button,ゲーム開始,title,タイトル画面
 settings,button,設定,title,タイトル画面
 game_quit,button,ゲーム終了,title,タイトル画面
+scenario_line_1,narrative,放課後の教室――,scenario,シナリオ導入1
+scenario_line_2,narrative,いつも優等生の葵(あおい)が、今日はなぜか違って見える。,scenario,シナリオ導入2
+scenario_line_3,dialogue,「やっと二人きりになれたね…」,scenario,シナリオ導入3
+scenario_line_4,narrative,普段の真面目な表情はどこへやら、頬を染めて上目遣いで見つめてくる。,scenario,シナリオ導入4
+scenario_line_5,dialogue,「今日の私…いつもと違うでしょ？」,scenario,シナリオ導入5
+scenario_line_6,narrative,葵の表情が、いつもより大胆で誘うような雰囲気になっている。,scenario,シナリオ導入6
+scenario_line_7,dialogue,「本当の私を...見て？」,scenario,シナリオ導入7
+scenario_continue,button,続ける,scenario,シナリオ画面
 tutorial_title,title,ゲームの遊び方,tutorial,チュートリアル画面
-tutorial_step1,instruction,1. 美少女をクリックしてポイントを獲得しよう！,tutorial,チュートリアル説明1
-tutorial_step2,instruction,2. ポイントでアイテムを購入して効率アップ！,tutorial,チュートリアル説明2
-tutorial_step3,instruction,3. ガチャで新しいキャラクターを集めよう！,tutorial,チュートリアル説明3
-tutorial_step4,instruction,4. ステージを解放してコレクションを充実させよう！,tutorial,チュートリアル説明4
+tutorial_step1,instruction,葵をクリックしてポイントを獲得しよう！,tutorial,チュートリアル説明1
+tutorial_step2,instruction,ポイントでアイテムを購入して効率アップ！,tutorial,チュートリアル説明2
+tutorial_step3,instruction,ガチャで新しい画像を集めよう！,tutorial,チュートリアル説明3
+tutorial_step4,instruction,ステージを解放してコレクションを充実させよう！,tutorial,チュートリアル説明4
 skip,button,スキップ,tutorial,チュートリアル画面
 current_points,label,ポイント:,game,ゲーム画面ヘッダー
 points_per_second,label,PPS:,game,ゲーム画面ヘッダー

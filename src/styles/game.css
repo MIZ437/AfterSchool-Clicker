@@ -349,6 +349,16 @@
     border-color: #e84393;
 }
 
+.multiplier-btn:disabled,
+.multiplier-btn.active:disabled {
+    background: #b2bec3 !important;
+    color: #636e72 !important;
+    border-color: #ddd !important;
+    cursor: not-allowed !important;
+    opacity: 0.5 !important;
+    pointer-events: none !important;
+}
+
 .shop-tab {
     flex: 1;
     padding: 0.8rem 1rem;
@@ -1246,4 +1256,158 @@ input:checked + .toggle-slider:before {
         opacity: 0;
         transform: translate(-50%, -80%) scale(0.8);
     }
+}
+
+/* Shop Category Buttons */
+.shop-buttons-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0;
+}
+
+.shop-category-btn {
+    background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
+    color: white;
+    border: none;
+    border-radius: 15px;
+    padding: 1.2rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    box-shadow: 0 4px 15px rgba(232, 67, 147, 0.3);
+}
+
+.shop-category-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(232, 67, 147, 0.4);
+}
+
+.shop-category-btn:active {
+    transform: translateY(0);
+}
+
+.shop-btn-icon {
+    font-size: 1.5rem;
+}
+
+.shop-btn-text {
+    font-size: 1rem;
+}
+
+/* Shop Modal */
+.shop-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+}
+
+.shop-modal.hidden {
+    display: none;
+}
+
+.shop-modal-content {
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.shop-modal-header {
+    background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
+    color: white;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.shop-modal-header h3 {
+    margin: 0;
+    font-size: 1.3rem;
+}
+
+.shop-modal-close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 2rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.shop-modal-close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.shop-modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.shop-modal-items-container {
+    margin-top: 1rem;
+}
+
+/* Adjust purchase multiplier for modal */
+.shop-modal .purchase-multiplier {
+    margin-bottom: 1.5rem;
+}
+
+/* Adjust shop items for modal */
+.shop-modal .shop-item {
+    background: rgba(116, 185, 255, 0.1);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 0.8rem;
+}
+
+.shop-modal .shop-item:hover:not(.disabled) {
+    background: rgba(116, 185, 255, 0.2);
+    border-color: #74b9ff;
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(116, 185, 255, 0.3);
 }

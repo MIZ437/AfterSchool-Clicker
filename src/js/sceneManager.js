@@ -24,6 +24,7 @@ class SceneManager {
         // Register all scenes
         this.registerScene('loading', document.getElementById('loading-screen'));
         this.registerScene('title', document.getElementById('title-screen'));
+        this.registerScene('scenario', document.getElementById('scenario-screen'));
         this.registerScene('tutorial', document.getElementById('tutorial-screen'));
         this.registerScene('game', document.getElementById('game-screen'));
         this.registerScene('album', document.getElementById('album-screen'));
@@ -93,6 +94,22 @@ class SceneManager {
             quitBtn.addEventListener('click', async () => {
                 await this.handleTitleButtonClick();
                 this.quitGame();
+            });
+        }
+
+        // Scenario screen buttons
+        const scenarioSkipBtn = document.getElementById('scenario-skip-btn');
+        const scenarioContinueBtn = document.getElementById('scenario-continue-btn');
+
+        if (scenarioSkipBtn) {
+            scenarioSkipBtn.addEventListener('click', () => {
+                this.showScene('tutorial');
+            });
+        }
+
+        if (scenarioContinueBtn) {
+            scenarioContinueBtn.addEventListener('click', () => {
+                this.showScene('tutorial');
             });
         }
 
@@ -641,7 +658,7 @@ class SceneManager {
 
     handleGameStart() {
         if (this.firstRun) {
-            this.showScene('tutorial');
+            this.showScene('scenario');
         } else {
             this.showScene('game');
         }
@@ -694,6 +711,12 @@ class SceneManager {
         switch (sceneName) {
             case 'title':
                 this.initializeTitleScene();
+                break;
+            case 'scenario':
+                this.initializeScenarioScene();
+                break;
+            case 'tutorial':
+                this.initializeTutorialScene();
                 break;
             case 'game':
                 this.initializeGameScene();
@@ -759,6 +782,97 @@ class SceneManager {
 
         // Start title character image rotation
         this.startTitleImageRotation();
+    }
+
+    initializeScenarioScene() {
+        console.log('[initializeScenarioScene] Loading scenario text from CSV');
+
+        if (!window.dataManager) {
+            console.error('[initializeScenarioScene] DataManager not available');
+            return;
+        }
+
+        // Load scenario texts from CSV
+        for (let i = 1; i <= 7; i++) {
+            const textId = `scenario_line_${i}`;
+            const text = window.dataManager.getTextById(textId);
+            const element = document.getElementById(textId);
+
+            if (element && text) {
+                element.textContent = text;
+                console.log(`[initializeScenarioScene] Loaded ${textId}: ${text}`);
+            } else {
+                console.warn(`[initializeScenarioScene] Missing element or text for ${textId}`);
+            }
+        }
+
+        // Load button text
+        const continueBtn = document.getElementById('scenario-continue-btn');
+        if (continueBtn) {
+            const btnText = window.dataManager.getTextById('scenario_continue');
+            if (btnText) {
+                continueBtn.textContent = btnText;
+            }
+        }
+
+        // Load character image from CSV
+        const characterImg = document.getElementById('scenario-character-img');
+        if (characterImg) {
+            console.log('[initializeScenarioScene] Character img element found');
+
+            const imageData = window.dataManager.getImage('scenario_character');
+            console.log('[initializeScenarioScene] Image data from CSV:', imageData);
+
+            if (imageData) {
+                const imagePath = window.dataManager.getAssetPath(imageData.filename);
+                console.log('[initializeScenarioScene] Constructed image path:', imagePath);
+                console.log('[initializeScenarioScene] Image data filename:', imageData.filename);
+
+                // Add error handler before setting src
+                characterImg.onerror = (e) => {
+                    console.error('[initializeScenarioScene] Image failed to load!');
+                    console.error('[initializeScenarioScene] Failed path:', imagePath);
+                    console.error('[initializeScenarioScene] Error event:', e);
+                };
+
+                // Add load handler to confirm success
+                characterImg.onload = () => {
+                    console.log('[initializeScenarioScene] ✓ Image loaded successfully!');
+                    console.log('[initializeScenarioScene] ✓ Image dimensions:', characterImg.naturalWidth, 'x', characterImg.naturalHeight);
+                };
+
+                characterImg.src = imagePath;
+                console.log('[initializeScenarioScene] Image src set to:', characterImg.src);
+            } else {
+                console.warn('[initializeScenarioScene] scenario_character image not found in CSV');
+                console.warn('[initializeScenarioScene] Available images:', window.dataManager ? window.dataManager.images.size : 'DataManager not available');
+            }
+        } else {
+            console.error('[initializeScenarioScene] Character img element NOT FOUND!');
+        }
+    }
+
+    initializeTutorialScene() {
+        console.log('[initializeTutorialScene] Loading tutorial text from CSV');
+
+        if (!window.dataManager) {
+            console.error('[initializeTutorialScene] DataManager not available');
+            return;
+        }
+
+        // Load tutorial step texts from CSV
+        for (let i = 1; i <= 4; i++) {
+            const textId = `tutorial_step${i}`;
+            const text = window.dataManager.getTextById(textId);
+            const element = document.getElementById(`tutorial-step-${i}`);
+
+            if (element && text) {
+                element.textContent = text;
+                console.log(`[initializeTutorialScene] Loaded ${textId}: ${text}`);
+            } else {
+                console.warn(`[initializeTutorialScene] Missing element or text for ${textId}`);
+            }
+        }
     }
 
     startTitleImageRotation() {

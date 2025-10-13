@@ -1310,12 +1310,12 @@ input:checked + .toggle-slider:before {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.3);
+    background: transparent;
     display: flex;
     align-items: stretch;
     justify-content: flex-end;
     z-index: 2000;
-    backdrop-filter: blur(3px);
+    pointer-events: none;
 }
 
 .shop-modal.hidden {
@@ -1333,6 +1333,11 @@ input:checked + .toggle-slider:before {
     flex-direction: column;
     overflow: hidden;
     animation: modalSlideInRight 0.08s ease-out;
+    pointer-events: auto;
+}
+
+.shop-modal-content * {
+    pointer-events: auto;
 }
 
 @keyframes modalSlideInRight {

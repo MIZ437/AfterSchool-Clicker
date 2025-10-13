@@ -997,11 +997,24 @@
                 });
             }
 
-            // モーダル背景クリックで閉じる
+            // モーダル外側クリックで閉じる（クリックエリア以外）
             if (shopModal) {
-                shopModal.addEventListener('click', (e) => {
-                    if (e.target === shopModal) {
-                        closeShopModal();
+                document.addEventListener('click', (e) => {
+                    // Check if modal is currently open
+                    if (!shopModal.classList.contains('hidden')) {
+                        const modalContent = document.querySelector('.shop-modal-content');
+                        const clickArea = document.getElementById('current-heroine');
+                        const openClickShopBtn = document.getElementById('open-click-shop-btn');
+                        const openCpsShopBtn = document.getElementById('open-cps-shop-btn');
+
+                        // Check if click is on shop category buttons or their children
+                        const isShopButton = (openClickShopBtn && openClickShopBtn.contains(e.target)) ||
+                                            (openCpsShopBtn && openCpsShopBtn.contains(e.target));
+
+                        // Close if clicking outside modal content AND not on click area AND not on shop buttons
+                        if (!modalContent.contains(e.target) && !clickArea.contains(e.target) && !isShopButton) {
+                            closeShopModal();
+                        }
                     }
                 });
             }

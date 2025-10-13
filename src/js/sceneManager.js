@@ -956,6 +956,12 @@ class SceneManager {
             if (btnText) {
                 continueBtn.textContent = btnText;
             }
+
+            // Add animationend listener to enable pointer-events after fade-in
+            continueBtn.addEventListener('animationend', () => {
+                continueBtn.style.pointerEvents = 'auto';
+                console.log('[initializeEnding1Scene] Button pointer-events enabled after animation');
+            }, { once: true });
         }
     }
 
@@ -985,13 +991,29 @@ class SceneManager {
             }
         }
 
-        // Load button text
+        // Load button text and setup animation listeners
+        const gameBtn = document.getElementById('ending2-game-btn');
         const titleBtn = document.getElementById('ending2-title-btn');
+
+        if (gameBtn) {
+            // Add animationend listener to enable pointer-events after fade-in
+            gameBtn.addEventListener('animationend', () => {
+                gameBtn.style.pointerEvents = 'auto';
+                console.log('[initializeEnding2Scene] Game button pointer-events enabled after animation');
+            }, { once: true });
+        }
+
         if (titleBtn) {
             const btnText = window.dataManager.getTextById('ending2_title');
             if (btnText) {
                 titleBtn.textContent = btnText;
             }
+
+            // Add animationend listener to enable pointer-events after fade-in
+            titleBtn.addEventListener('animationend', () => {
+                titleBtn.style.pointerEvents = 'auto';
+                console.log('[initializeEnding2Scene] Title button pointer-events enabled after animation');
+            }, { once: true });
         }
 
         // Load character image

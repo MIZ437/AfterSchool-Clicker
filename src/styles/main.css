@@ -138,10 +138,15 @@ body {
     text-align: center;
 }
 
-.loading-content h1 {
-    font-size: 3rem;
+.loading-logo {
     margin-bottom: 2rem;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.loading-logo-image {
+    width: 600px;
+    max-width: 80%;
+    height: auto;
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
 }
 
 .loading-spinner {

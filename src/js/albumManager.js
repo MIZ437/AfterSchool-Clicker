@@ -3,6 +3,7 @@ class AlbumManager {
     constructor() {
         this.currentStageTab = 1;
         this.isVideoMode = false;
+        this.currentTab = { type: 'stage', value: 1 }; // Track current tab state
         this.setupAlbum();
     }
 
@@ -28,12 +29,15 @@ class AlbumManager {
                 const type = tab.dataset.albumType;
 
                 if (type === 'scenario') {
+                    this.currentTab = { type: 'scenario' };
                     this.showScenarios();
                     this.updateActiveTab(tab);
                 } else if (type === 'ending') {
+                    this.currentTab = { type: 'ending' };
                     this.showEndings();
                     this.updateActiveTab(tab);
                 } else if (stage) {
+                    this.currentTab = { type: 'stage', value: parseInt(stage) };
                     this.showStage(parseInt(stage));
                     this.updateActiveTab(tab);
                 }
@@ -102,7 +106,7 @@ class AlbumManager {
             const isViewed = viewedScenarios.includes(scenarioId);
 
             const button = this.createContentButton(
-                'ゲーム説明',
+                'シナリオ',
                 isViewed,
                 () => this.playScenario()
             );
@@ -160,14 +164,16 @@ class AlbumManager {
 
     playScenario() {
         if (window.sceneManager) {
-            window.sceneManager.showScene('scenario');
+            // Pass fromAlbum flag to indicate this is from album
+            window.sceneManager.showScene('scenario', 'fade', true);
         }
     }
 
     playEnding(endingId) {
         if (window.sceneManager) {
             // Always use ending2 (true ending) as the single ending
-            window.sceneManager.showScene('ending2');
+            // Pass fromAlbum flag to indicate this is from album
+            window.sceneManager.showScene('ending2', 'fade', true);
         }
     }
 
@@ -319,7 +325,35 @@ class AlbumManager {
     }
 
     renderAlbum() {
-        this.showStage(1);
+        // Restore the last viewed tab state
+        if (this.currentTab.type === 'scenario') {
+            this.restoreScenarioTab();
+        } else if (this.currentTab.type === 'ending') {
+            this.restoreEndingTab();
+        } else if (this.currentTab.type === 'stage') {
+            this.showStage(this.currentTab.value || 1);
+        } else {
+            // Default to stage 1
+            this.showStage(1);
+        }
+    }
+
+    restoreScenarioTab() {
+        // Find and activate scenario tab
+        const scenarioTab = document.querySelector('.album-tab[data-album-type="scenario"]');
+        if (scenarioTab) {
+            this.updateActiveTab(scenarioTab);
+        }
+        this.showScenarios();
+    }
+
+    restoreEndingTab() {
+        // Find and activate ending tab
+        const endingTab = document.querySelector('.album-tab[data-album-type="ending"]');
+        if (endingTab) {
+            this.updateActiveTab(endingTab);
+        }
+        this.showEndings();
     }
 }
 

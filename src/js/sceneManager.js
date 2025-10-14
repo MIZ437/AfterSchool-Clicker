@@ -102,6 +102,7 @@ class SceneManager {
         // Scenario screen buttons
         const scenarioSkipBtn = document.getElementById('scenario-skip-btn');
         const scenarioContinueBtn = document.getElementById('scenario-continue-btn');
+        const scenarioBackToAlbumBtn = document.getElementById('scenario-back-to-album-btn');
 
         if (scenarioSkipBtn) {
             scenarioSkipBtn.addEventListener('click', () => {
@@ -123,6 +124,12 @@ class SceneManager {
             });
         }
 
+        if (scenarioBackToAlbumBtn) {
+            scenarioBackToAlbumBtn.addEventListener('click', () => {
+                this.showScene('album');
+            });
+        }
+
         // Tutorial screen buttons
         const startMainGameBtn = document.getElementById('start-main-game-btn');
 
@@ -137,6 +144,7 @@ class SceneManager {
         const ending1ContinueBtn = document.getElementById('ending1-continue-btn');
         const ending2GameBtn = document.getElementById('ending2-game-btn');
         const ending2TitleBtn = document.getElementById('ending2-title-btn');
+        const ending2BackToAlbumBtn = document.getElementById('ending2-back-to-album-btn');
 
         if (ending1ContinueBtn) {
             ending1ContinueBtn.addEventListener('click', () => {
@@ -155,6 +163,12 @@ class SceneManager {
             ending2TitleBtn.addEventListener('click', async () => {
                 await this.handleTitleButtonClick();
                 this.showScene('title');
+            });
+        }
+
+        if (ending2BackToAlbumBtn) {
+            ending2BackToAlbumBtn.addEventListener('click', () => {
+                this.showScene('album');
             });
         }
 
@@ -699,7 +713,7 @@ class SceneManager {
         }
     }
 
-    async showScene(sceneName, transition = 'fade') {
+    async showScene(sceneName, transition = 'fade', fromAlbum = false) {
         if (this.isTransitioning || !this.scenes.has(sceneName)) {
             return;
         }
@@ -711,9 +725,12 @@ class SceneManager {
 
         // Instant transition to prevent flickering
         if (newSceneElement) {
-            // Record previous scene when transitioning to settings
+            // Record previous scene when transitioning to settings or when fromAlbum flag is set
             if (sceneName === 'settings') {
                 this.previousScene = this.currentScene;
+            } else if (fromAlbum && (sceneName === 'scenario' || sceneName === 'ending2')) {
+                // Mark that we're coming from album for scenario/ending
+                this.previousScene = 'album';
             }
 
             // Hide current scene immediately
@@ -741,6 +758,7 @@ class SceneManager {
             const ending1Btn = document.getElementById('ending1-continue-btn');
             const ending2GameBtn = document.getElementById('ending2-game-btn');
             const ending2TitleBtn = document.getElementById('ending2-title-btn');
+            const ending2BackToAlbumBtn = document.getElementById('ending2-back-to-album-btn');
 
             if (ending1Btn) {
                 ending1Btn.style.pointerEvents = '';
@@ -754,6 +772,10 @@ class SceneManager {
                 ending2TitleBtn.style.pointerEvents = '';
                 console.log('[onSceneEnter] Reset ending2 title button pointer-events');
             }
+            if (ending2BackToAlbumBtn) {
+                ending2BackToAlbumBtn.style.pointerEvents = '';
+                console.log('[onSceneEnter] Reset ending2 back to album button pointer-events');
+            }
         }
 
         // Handle BGM transitions between scenes
@@ -764,11 +786,11 @@ class SceneManager {
             this.stopTitleImageRotation();
         }
 
-        // Disable click system for ending screens
+        // Disable click system for scenario and ending screens
         if (window.clickSystem) {
-            if (sceneName === 'ending1' || sceneName === 'ending2') {
+            if (sceneName === 'scenario' || sceneName === 'ending1' || sceneName === 'ending2') {
                 window.clickSystem.setEnabled(false);
-                console.log('[DEBUG] Click system disabled for ending screen:', sceneName);
+                console.log('[DEBUG] Click system disabled for screen:', sceneName);
             } else if (sceneName === 'game') {
                 window.clickSystem.setEnabled(true);
                 console.log('[DEBUG] Click system enabled for game screen');
@@ -869,6 +891,50 @@ class SceneManager {
         await window.dataManager.loadAll();
         console.log('[initializeScenarioScene] Data loaded, text available:', window.dataManager.getText().length, 'entries');
 
+        // Check if coming from album
+        const isFromAlbum = this.previousScene === 'album';
+
+        // Show/hide buttons based on source
+        const skipBtn = document.getElementById('scenario-skip-btn');
+        const continueBtn = document.getElementById('scenario-continue-btn');
+        const backToAlbumBtn = document.getElementById('scenario-back-to-album-btn');
+
+        if (isFromAlbum) {
+            // From album: show only back to album button
+            if (skipBtn) skipBtn.style.display = 'none';
+            if (continueBtn) continueBtn.style.display = 'none';
+            if (backToAlbumBtn) {
+                backToAlbumBtn.style.display = 'block';
+
+                // Enable button immediately without waiting for animation
+                backToAlbumBtn.style.pointerEvents = 'auto';
+                backToAlbumBtn.style.animation = 'none';
+
+                // Force reflow to restart animation
+                void backToAlbumBtn.offsetWidth;
+                backToAlbumBtn.style.animation = '';
+
+                // Remove any existing event listeners by cloning and replacing
+                const newBackToAlbumBtn = backToAlbumBtn.cloneNode(true);
+                backToAlbumBtn.parentNode.replaceChild(newBackToAlbumBtn, backToAlbumBtn);
+
+                // Enable button immediately
+                newBackToAlbumBtn.style.pointerEvents = 'auto';
+
+                // Add click event listener to the new button
+                newBackToAlbumBtn.addEventListener('click', () => {
+                    this.showScene('album');
+                });
+
+                console.log('[initializeScenarioScene] Back to album button enabled immediately');
+            }
+        } else {
+            // Normal game flow: show skip and continue buttons
+            if (skipBtn) skipBtn.style.display = 'inline-block';
+            if (continueBtn) continueBtn.style.display = 'inline-block';
+            if (backToAlbumBtn) backToAlbumBtn.style.display = 'none';
+        }
+
         // Load scenario texts from CSV
         for (let i = 1; i <= 7; i++) {
             const textId = `scenario_line_${i}`;
@@ -884,7 +950,6 @@ class SceneManager {
         }
 
         // Load button text
-        const continueBtn = document.getElementById('scenario-continue-btn');
         if (continueBtn) {
             const btnText = window.dataManager.getTextById('scenario_continue');
             if (btnText) {
@@ -1042,11 +1107,28 @@ class SceneManager {
             }
         }
 
-        // Load button text and setup animation listeners
+        // Check if coming from album
+        const isFromAlbum = this.previousScene === 'album';
+
+        // Show/hide buttons based on source
         const gameBtn = document.getElementById('ending2-game-btn');
         const titleBtn = document.getElementById('ending2-title-btn');
+        const backToAlbumBtn = document.getElementById('ending2-back-to-album-btn');
 
-        if (gameBtn) {
+        if (isFromAlbum) {
+            // From album: show only back to album button
+            if (gameBtn) gameBtn.style.display = 'none';
+            if (titleBtn) titleBtn.style.display = 'none';
+            if (backToAlbumBtn) backToAlbumBtn.style.display = 'block';
+        } else {
+            // Normal game flow: show game and title buttons
+            if (gameBtn) gameBtn.style.display = 'inline-block';
+            if (titleBtn) titleBtn.style.display = 'inline-block';
+            if (backToAlbumBtn) backToAlbumBtn.style.display = 'none';
+        }
+
+        // Load button text and setup animation listeners for game button
+        if (gameBtn && !isFromAlbum) {
             // Reset pointer-events to none and clear animation
             gameBtn.style.pointerEvents = 'none';
             gameBtn.style.animation = 'none';
@@ -1072,7 +1154,8 @@ class SceneManager {
             }, { once: true });
         }
 
-        if (titleBtn) {
+        // Setup title button
+        if (titleBtn && !isFromAlbum) {
             const btnText = window.dataManager.getTextById('ending2_title');
             if (btnText) {
                 titleBtn.textContent = btnText;
@@ -1101,6 +1184,31 @@ class SceneManager {
                 newTitleBtn.style.pointerEvents = 'auto';
                 console.log('[initializeEnding2Scene] Title button pointer-events enabled after animation');
             }, { once: true });
+        }
+
+        // Setup back to album button
+        if (backToAlbumBtn && isFromAlbum) {
+            // Enable button immediately without waiting for animation
+            backToAlbumBtn.style.pointerEvents = 'auto';
+            backToAlbumBtn.style.animation = 'none';
+
+            // Force reflow to restart animation
+            void backToAlbumBtn.offsetWidth;
+            backToAlbumBtn.style.animation = '';
+
+            // Remove any existing event listeners by cloning and replacing
+            const newBackToAlbumBtn = backToAlbumBtn.cloneNode(true);
+            backToAlbumBtn.parentNode.replaceChild(newBackToAlbumBtn, backToAlbumBtn);
+
+            // Enable button immediately
+            newBackToAlbumBtn.style.pointerEvents = 'auto';
+
+            // Add click event listener to the new button
+            newBackToAlbumBtn.addEventListener('click', () => {
+                this.showScene('album');
+            });
+
+            console.log('[initializeEnding2Scene] Back to album button enabled immediately');
         }
 
         // Load character image

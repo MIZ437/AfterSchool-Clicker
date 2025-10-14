@@ -435,6 +435,14 @@ body {
     transform: translateY(0);
 }
 
+/* Override animation for back-to-album button */
+#scenario-back-to-album-btn,
+#ending2-back-to-album-btn {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    animation: none !important;
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;

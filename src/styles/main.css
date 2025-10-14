@@ -514,6 +514,7 @@ body {
     color: white;
     box-shadow: 0 4px 15px rgba(0, 184, 148, 0.4);
     opacity: 0;
+    pointer-events: none;
     animation-play-state: paused;
 }
 

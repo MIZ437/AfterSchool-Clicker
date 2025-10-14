@@ -727,6 +727,27 @@ class SceneManager {
     }
 
     async onSceneEnter(sceneName) {
+        // Reset ending button pointer-events when leaving ending screens
+        if (this.currentScene === 'ending1' || this.currentScene === 'ending2') {
+            // Reset all ending button pointer-events to allow CSS to control them
+            const ending1Btn = document.getElementById('ending1-continue-btn');
+            const ending2GameBtn = document.getElementById('ending2-game-btn');
+            const ending2TitleBtn = document.getElementById('ending2-title-btn');
+
+            if (ending1Btn) {
+                ending1Btn.style.pointerEvents = '';
+                console.log('[onSceneEnter] Reset ending1 button pointer-events');
+            }
+            if (ending2GameBtn) {
+                ending2GameBtn.style.pointerEvents = '';
+                console.log('[onSceneEnter] Reset ending2 game button pointer-events');
+            }
+            if (ending2TitleBtn) {
+                ending2TitleBtn.style.pointerEvents = '';
+                console.log('[onSceneEnter] Reset ending2 title button pointer-events');
+            }
+        }
+
         // Handle BGM transitions between scenes
         await this.handleSceneBGM(sceneName);
 
@@ -956,6 +977,29 @@ class SceneManager {
             if (btnText) {
                 continueBtn.textContent = btnText;
             }
+
+            // Reset pointer-events to none and clear animation
+            continueBtn.style.pointerEvents = 'none';
+            continueBtn.style.animation = 'none';
+
+            // Force reflow to restart animation
+            void continueBtn.offsetWidth;
+            continueBtn.style.animation = '';
+
+            // Remove any existing event listeners by cloning and replacing the button
+            const newBtn = continueBtn.cloneNode(true);
+            continueBtn.parentNode.replaceChild(newBtn, continueBtn);
+
+            // Add click event listener to the new button
+            newBtn.addEventListener('click', () => {
+                this.showScene('ending2');
+            });
+
+            // Add animationend listener to the new button
+            newBtn.addEventListener('animationend', () => {
+                newBtn.style.pointerEvents = 'auto';
+                console.log('[initializeEnding1Scene] Button pointer-events enabled after animation');
+            }, { once: true });
         }
     }
 
@@ -985,13 +1029,65 @@ class SceneManager {
             }
         }
 
-        // Load button text
+        // Load button text and setup animation listeners
+        const gameBtn = document.getElementById('ending2-game-btn');
         const titleBtn = document.getElementById('ending2-title-btn');
+
+        if (gameBtn) {
+            // Reset pointer-events to none and clear animation
+            gameBtn.style.pointerEvents = 'none';
+            gameBtn.style.animation = 'none';
+
+            // Force reflow to restart animation
+            void gameBtn.offsetWidth;
+            gameBtn.style.animation = '';
+
+            // Remove any existing event listeners by cloning and replacing
+            const newGameBtn = gameBtn.cloneNode(true);
+            gameBtn.parentNode.replaceChild(newGameBtn, gameBtn);
+
+            // Add click event listener to the new button
+            newGameBtn.addEventListener('click', async () => {
+                await this.handleTitleButtonClick();
+                this.showScene('game');
+            });
+
+            // Add animationend listener to the new button
+            newGameBtn.addEventListener('animationend', () => {
+                newGameBtn.style.pointerEvents = 'auto';
+                console.log('[initializeEnding2Scene] Game button pointer-events enabled after animation');
+            }, { once: true });
+        }
+
         if (titleBtn) {
             const btnText = window.dataManager.getTextById('ending2_title');
             if (btnText) {
                 titleBtn.textContent = btnText;
             }
+
+            // Reset pointer-events to none and clear animation
+            titleBtn.style.pointerEvents = 'none';
+            titleBtn.style.animation = 'none';
+
+            // Force reflow to restart animation
+            void titleBtn.offsetWidth;
+            titleBtn.style.animation = '';
+
+            // Remove any existing event listeners by cloning and replacing
+            const newTitleBtn = titleBtn.cloneNode(true);
+            titleBtn.parentNode.replaceChild(newTitleBtn, titleBtn);
+
+            // Add click event listener to the new button
+            newTitleBtn.addEventListener('click', async () => {
+                await this.handleTitleButtonClick();
+                this.showScene('title');
+            });
+
+            // Add animationend listener to the new button
+            newTitleBtn.addEventListener('animationend', () => {
+                newTitleBtn.style.pointerEvents = 'auto';
+                console.log('[initializeEnding2Scene] Title button pointer-events enabled after animation');
+            }, { once: true });
         }
 
         // Load character image

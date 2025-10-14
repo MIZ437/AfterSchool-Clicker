@@ -105,12 +105,20 @@ class SceneManager {
 
         if (scenarioSkipBtn) {
             scenarioSkipBtn.addEventListener('click', () => {
+                // Mark scenario as viewed even when skipped
+                if (window.gameState) {
+                    window.gameState.markContentViewed('scenarios', 'scenario');
+                }
                 this.showScene('tutorial');
             });
         }
 
         if (scenarioContinueBtn) {
             scenarioContinueBtn.addEventListener('click', () => {
+                // Mark scenario as viewed
+                if (window.gameState) {
+                    window.gameState.markContentViewed('scenarios', 'scenario');
+                }
                 this.showScene('tutorial');
             });
         }
@@ -1005,6 +1013,11 @@ class SceneManager {
 
     async initializeEnding2Scene() {
         console.log('[initializeEnding2Scene] Loading ending 2 text from CSV');
+
+        // Mark ending as viewed
+        if (window.gameState) {
+            window.gameState.markContentViewed('endings', 'ending');
+        }
 
         if (!window.dataManager) {
             console.error('[initializeEnding2Scene] DataManager not available');

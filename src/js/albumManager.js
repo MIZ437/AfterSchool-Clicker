@@ -25,7 +25,15 @@ class AlbumManager {
         albumTabs.forEach(tab => {
             tab.addEventListener('click', () => {
                 const stage = tab.dataset.albumStage;
-                if (stage !== 'videos') {
+                const type = tab.dataset.albumType;
+
+                if (type === 'scenario') {
+                    this.showScenarios();
+                    this.updateActiveTab(tab);
+                } else if (type === 'ending') {
+                    this.showEndings();
+                    this.updateActiveTab(tab);
+                } else if (stage) {
                     this.showStage(parseInt(stage));
                     this.updateActiveTab(tab);
                 }
@@ -54,15 +62,119 @@ class AlbumManager {
     showStage(stageId) {
         this.currentStageTab = stageId;
         this.isVideoMode = false;
+
+        // Hide other content
+        this.hideAllContent();
+
+        // Show image grid
+        const imageGrid = document.getElementById('album-images');
+        if (imageGrid) {
+            imageGrid.style.display = 'grid';
+        }
+
         this.renderStageImages(stageId);
         this.updateCollectionCounter();
+    }
+
+    hideAllContent() {
+        const imageGrid = document.getElementById('album-images');
+        const scenarioList = document.getElementById('album-scenarios');
+        const endingList = document.getElementById('album-endings');
+
+        if (imageGrid) imageGrid.style.display = 'none';
+        if (scenarioList) scenarioList.style.display = 'none';
+        if (endingList) endingList.style.display = 'none';
+    }
+
+    showScenarios() {
+        this.hideAllContent();
+
+        const scenarioList = document.getElementById('album-scenarios');
+        if (scenarioList) {
+            scenarioList.style.display = 'flex';
+            scenarioList.innerHTML = '';
+
+            // Get viewed scenarios from gameState
+            const viewedScenarios = window.gameState?.get('viewedContent.scenarios') || [];
+
+            // Create button for the initial scenario
+            const scenarioId = 'scenario';
+            const isViewed = viewedScenarios.includes(scenarioId);
+
+            const button = this.createContentButton(
+                'ゲーム説明',
+                isViewed,
+                () => this.playScenario()
+            );
+
+            scenarioList.appendChild(button);
+        }
+    }
+
+    showEndings() {
+        this.hideAllContent();
+
+        const endingList = document.getElementById('album-endings');
+        if (endingList) {
+            endingList.style.display = 'flex';
+            endingList.innerHTML = '';
+
+            // Get viewed endings from gameState
+            const viewedEndings = window.gameState?.get('viewedContent.endings') || [];
+
+            // Create button for single ending
+            const endingId = 'ending';
+            const isViewed = viewedEndings.includes(endingId);
+
+            const button = this.createContentButton(
+                'エンディング',
+                isViewed,
+                () => this.playEnding(endingId)
+            );
+
+            endingList.appendChild(button);
+        }
+    }
+
+    createContentButton(label, isUnlocked, onClick) {
+        const button = document.createElement('button');
+        button.className = `content-button ${isUnlocked ? '' : 'locked'}`;
+
+        if (isUnlocked) {
+            button.innerHTML = `
+                <span class="content-icon">▶</span>
+                <span class="content-label">${label}</span>
+            `;
+            button.addEventListener('click', onClick);
+        } else {
+            button.innerHTML = `
+                <span class="content-icon">🔒</span>
+                <span class="content-label">${label}</span>
+                <span class="content-hint">未視聴</span>
+            `;
+            button.disabled = true;
+        }
+
+        return button;
+    }
+
+    playScenario() {
+        if (window.sceneManager) {
+            window.sceneManager.showScene('scenario');
+        }
+    }
+
+    playEnding(endingId) {
+        if (window.sceneManager) {
+            // Always use ending2 (true ending) as the single ending
+            window.sceneManager.showScene('ending2');
+        }
     }
 
     renderStageImages(stageId) {
         const imageGrid = document.getElementById('album-images');
 
         if (imageGrid) {
-            imageGrid.classList.remove('hidden');
             imageGrid.innerHTML = '';
         }
 

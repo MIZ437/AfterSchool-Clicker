@@ -20,6 +20,10 @@ class GameState {
                 },
                 currentDisplayImage: "heroine_1_01"
             },
+            viewedContent: {
+                scenarios: [],
+                endings: []
+            },
             purchases: {
                 items: {}
             },
@@ -156,6 +160,21 @@ class GameState {
             // Set as current display image when unlocked via gacha
             this.set('collection.currentDisplayImage', heroineId);
 
+            return true;
+        }
+
+        return false;
+    }
+
+    // Mark content (scenario or ending) as viewed
+    markContentViewed(type, id) {
+        const path = `viewedContent.${type}`;
+        const viewed = this.get(path) || [];
+
+        if (!viewed.includes(id)) {
+            const newViewed = [...viewed, id];
+            this.set(path, newViewed);
+            console.log(`[markContentViewed] Marked ${type} '${id}' as viewed`);
             return true;
         }
 
@@ -463,6 +482,10 @@ class GameState {
                     stage4: []
                 },
                 currentDisplayImage: "heroine_1_01"
+            },
+            viewedContent: {
+                scenarios: [],
+                endings: []
             },
             purchases: {
                 items: {}

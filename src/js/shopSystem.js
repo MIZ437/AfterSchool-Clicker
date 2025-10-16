@@ -318,15 +318,20 @@ class ShopSystem {
             ? `+${value}pt/クリック`
             : `+${value}pt/秒`;
 
-        const ownedText = debugMode ? '∞' : `${owned}個所持`;
+        const ownedText = debugMode ? '∞' : `${this.formatNumber(owned)}個所持`;
 
         // ボタンテキストと合計効果表示
         let buttonText = '';
         let totalEffectText = '';
 
         if (multiplier > 1) {
-            buttonText = `${multiplier}個購入 | ${this.formatNumber(adjustedCost)}pt`;
-            totalEffectText = `<span class="total-effect">(合計 +${adjustedValue}pt)</span>`;
+            buttonText = `${this.formatNumber(multiplier)}個購入 | ${this.formatNumber(adjustedCost)}pt`;
+            totalEffectText = `<span class="total-effect">(合計 +${this.formatNumber(adjustedValue)}pt)</span>`;
+        } else if (multiplier === 0) {
+            // MAX mode but can't afford any - show minimum cost needed
+            const nextCost = window.gameState.calculateItemCost(baseCost, owned, itemMultiplier);
+            buttonText = `${this.formatNumber(nextCost)}pt～`;
+            totalEffectText = '';
         } else {
             buttonText = `購入 | ${this.formatNumber(adjustedCost)}pt`;
             totalEffectText = '';
@@ -559,7 +564,7 @@ class ShopSystem {
         }
 
         // Update owned count
-        const ownedText = debugMode ? '∞' : `${owned}個所持`;
+        const ownedText = debugMode ? '∞' : `${this.formatNumber(owned)}個所持`;
         const ownedElement = itemElement.querySelector('.item-owned');
         if (ownedElement) {
             ownedElement.textContent = `(${ownedText})`;
@@ -574,7 +579,11 @@ class ShopSystem {
             // Button text
             let buttonText = '';
             if (multiplier > 1) {
-                buttonText = `${multiplier}個購入 | ${this.formatNumber(adjustedCost)}pt`;
+                buttonText = `${this.formatNumber(multiplier)}個購入 | ${this.formatNumber(adjustedCost)}pt`;
+            } else if (multiplier === 0) {
+                // MAX mode but can't afford any - show minimum cost needed
+                const nextCost = window.gameState.calculateItemCost(baseCost, owned, itemMultiplier);
+                buttonText = `${this.formatNumber(nextCost)}pt～`;
             } else {
                 buttonText = `購入 | ${this.formatNumber(adjustedCost)}pt`;
             }
@@ -587,7 +596,7 @@ class ShopSystem {
             let totalEffectElement = actionRow.querySelector('.total-effect');
 
             if (multiplier > 1) {
-                const totalEffectText = `(合計 +${adjustedValue}pt)`;
+                const totalEffectText = `(合計 +${this.formatNumber(adjustedValue)}pt)`;
                 if (totalEffectElement) {
                     totalEffectElement.textContent = totalEffectText;
                 } else {
@@ -597,7 +606,7 @@ class ShopSystem {
                     actionRow.appendChild(span);
                 }
             } else {
-                // Remove total effect if multiplier is 1
+                // Remove total effect if multiplier is 1 or 0
                 if (totalEffectElement) {
                     totalEffectElement.remove();
                 }

@@ -904,34 +904,58 @@ class SceneManager {
             if (skipBtn) skipBtn.style.display = 'none';
             if (continueBtn) continueBtn.style.display = 'none';
             if (backToAlbumBtn) {
+                // Show button
                 backToAlbumBtn.style.display = 'block';
 
-                // Enable button immediately without waiting for animation
-                backToAlbumBtn.style.pointerEvents = 'auto';
-                backToAlbumBtn.style.animation = 'none';
+                // Force immediate interactivity with maximum priority
+                backToAlbumBtn.style.setProperty('animation', 'none', 'important');
+                backToAlbumBtn.style.setProperty('pointer-events', 'auto', 'important');
+                backToAlbumBtn.style.setProperty('opacity', '1', 'important');
 
-                // Force reflow to restart animation
-                void backToAlbumBtn.offsetWidth;
-                backToAlbumBtn.style.animation = '';
-
-                // Remove any existing event listeners by cloning and replacing
-                const newBackToAlbumBtn = backToAlbumBtn.cloneNode(true);
-                backToAlbumBtn.parentNode.replaceChild(newBackToAlbumBtn, backToAlbumBtn);
-
-                // Enable button immediately
-                newBackToAlbumBtn.style.pointerEvents = 'auto';
-
-                // Add click event listener to the new button
-                newBackToAlbumBtn.addEventListener('click', () => {
-                    this.showScene('album');
-                });
-
-                console.log('[initializeScenarioScene] Back to album button enabled immediately');
+                console.log('[initializeScenarioScene] Back to album button enabled immediately (no cloning)');
             }
         } else {
             // Normal game flow: show skip and continue buttons
-            if (skipBtn) skipBtn.style.display = 'inline-block';
-            if (continueBtn) continueBtn.style.display = 'inline-block';
+            if (skipBtn) {
+                skipBtn.style.display = 'inline-block';
+
+                // Reset animation and disable pointer-events initially
+                skipBtn.style.pointerEvents = 'none';
+                skipBtn.style.animation = 'none';
+
+                // Force reflow to restart animation
+                void skipBtn.offsetWidth;
+                skipBtn.style.animation = '';
+
+                // Enable button after animation completes
+                const handleSkipAnimationEnd = () => {
+                    skipBtn.style.pointerEvents = 'auto';
+                    console.log('[initializeScenarioScene] Skip button enabled after animation');
+                    skipBtn.removeEventListener('animationend', handleSkipAnimationEnd);
+                };
+                skipBtn.addEventListener('animationend', handleSkipAnimationEnd);
+            }
+
+            if (continueBtn) {
+                continueBtn.style.display = 'inline-block';
+
+                // Reset animation and disable pointer-events initially
+                continueBtn.style.pointerEvents = 'none';
+                continueBtn.style.animation = 'none';
+
+                // Force reflow to restart animation
+                void continueBtn.offsetWidth;
+                continueBtn.style.animation = '';
+
+                // Enable button after animation completes
+                const handleContinueAnimationEnd = () => {
+                    continueBtn.style.pointerEvents = 'auto';
+                    console.log('[initializeScenarioScene] Continue button enabled after animation');
+                    continueBtn.removeEventListener('animationend', handleContinueAnimationEnd);
+                };
+                continueBtn.addEventListener('animationend', handleContinueAnimationEnd);
+            }
+
             if (backToAlbumBtn) backToAlbumBtn.style.display = 'none';
         }
 

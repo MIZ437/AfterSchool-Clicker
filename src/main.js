@@ -55,7 +55,7 @@ class AfterSchoolClickerMain {
                 backgroundThrottling: false
             },
             title: 'AfterSchool Clicker',
-            icon: path.join(__dirname, '../assets/images/ui/title_logo.png'),
+            icon: path.join(__dirname, '../assets/images/ui/app_icon.png'),
             show: false, // Will show after maximizing in ready-to-show event
             center: true,
             resizable: true,

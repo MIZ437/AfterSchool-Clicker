@@ -1212,27 +1212,15 @@ class SceneManager {
 
         // Setup back to album button
         if (backToAlbumBtn && isFromAlbum) {
-            // Enable button immediately without waiting for animation
-            backToAlbumBtn.style.pointerEvents = 'auto';
-            backToAlbumBtn.style.animation = 'none';
+            // Show button
+            backToAlbumBtn.style.display = 'block';
 
-            // Force reflow to restart animation
-            void backToAlbumBtn.offsetWidth;
-            backToAlbumBtn.style.animation = '';
+            // Force immediate interactivity with maximum priority (same as scenario)
+            backToAlbumBtn.style.setProperty('animation', 'none', 'important');
+            backToAlbumBtn.style.setProperty('pointer-events', 'auto', 'important');
+            backToAlbumBtn.style.setProperty('opacity', '1', 'important');
 
-            // Remove any existing event listeners by cloning and replacing
-            const newBackToAlbumBtn = backToAlbumBtn.cloneNode(true);
-            backToAlbumBtn.parentNode.replaceChild(newBackToAlbumBtn, backToAlbumBtn);
-
-            // Enable button immediately
-            newBackToAlbumBtn.style.pointerEvents = 'auto';
-
-            // Add click event listener to the new button
-            newBackToAlbumBtn.addEventListener('click', () => {
-                this.showScene('album');
-            });
-
-            console.log('[initializeEnding2Scene] Back to album button enabled immediately');
+            console.log('[initializeEnding2Scene] Back to album button enabled immediately (no cloning)');
         }
 
         // Load character image

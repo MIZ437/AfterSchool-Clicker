@@ -14,7 +14,10 @@
       "Bash(taskkill:*)",
       "Bash(git fetch:*)",
       "Bash(dir:*)",
-      "Bash(echo $APPDATA)"
+      "Bash(echo $APPDATA)",
+      "Bash(git pull:*)",
+      "Bash(del nul)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []

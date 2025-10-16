@@ -61,3 +61,18 @@ temp/
 # Cache files
 .npm
 .eslintcache
+
+# Temporary work files
+*.ps1
+画像/
+*.tmp
+debug_*.js
+
+# Image files in root (keep only in assets/)
+/*.png
+/*.jpg
+/*.jpeg
+/*.gif
+
+# Claude settings (local only)
+.claude/settings.local.json

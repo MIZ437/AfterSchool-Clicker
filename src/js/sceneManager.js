@@ -1764,6 +1764,10 @@ class SceneManager {
                         console.log('SceneManager: Restored audio settings - BGM:', savedBGMVolume, 'SE:', savedSEVolume);
                     }
 
+                    // Reset firstRun flag to show scenario on next game start
+                    this.firstRun = true;
+                    console.log('SceneManager: Reset firstRun flag to true for scenario replay');
+
                     // After deletion, return to title screen but keep BGM muted
                     this.showScene('title');
                     this.previousScene = null; // Clear previous scene tracking

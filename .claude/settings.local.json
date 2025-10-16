@@ -17,7 +17,9 @@
       "Bash(echo $APPDATA)",
       "Bash(git pull:*)",
       "Bash(del nul)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(del \"assets\\images\\nul\")",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

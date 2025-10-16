@@ -229,15 +229,20 @@ class ShopSystem {
 
     // Calculate item state (ownership, affordability, etc.)
     calculateItemState(item) {
-        const cost = parseInt(item.cost);
+        const baseCost = parseInt(item.cost);
         const value = parseInt(item.value);
+        const multiplier = parseFloat(item.multiplier) || 1.15;
         let owned = 0;
         let currentPoints = 0;
         let canAfford = false;
+        let cost = baseCost;
 
         try {
             owned = window.gameState.get(`purchases.items.${item.id}`) || 0;
             currentPoints = window.gameState.get('gameProgress.currentPoints') || 0;
+
+            // Calculate progressive cost based on ownership
+            cost = window.gameState.getItemCost(item.id, baseCost, multiplier);
 
             // Check debug mode for affordability
             const debugMode = window.gameState.isDebugMode();
@@ -256,7 +261,10 @@ class ShopSystem {
         }
 
         console.log(`ShopSystem: Creating item ${item.id}:`, {
+            baseCost,
             cost,
+            owned,
+            multiplier,
             currentPoints,
             canAfford,
             gameStateExists: !!window.gameState
@@ -268,6 +276,8 @@ class ShopSystem {
     // Build the HTML element for an item
     buildItemElement(item, itemState) {
         const { cost, value, owned, canAfford } = itemState;
+        const baseCost = parseInt(item.cost);
+        const itemMultiplier = parseFloat(item.multiplier) || 1.15;
 
         const itemDiv = document.createElement('div');
         itemDiv.className = `shop-item ${canAfford ? '' : 'disabled'}`;
@@ -282,16 +292,23 @@ class ShopSystem {
 
         // Calculate values based on multiplier type
         if (multiplier === 'max') {
-            // MAX mode: calculate max affordable for this item
-            const maxCount = this.calculateMaxAffordableForItem(cost);
+            // MAX mode: calculate max affordable for this item with progressive pricing
+            const maxCount = this.calculateMaxAffordableForItemProgressive(item.id, baseCost, itemMultiplier, owned);
             adjustedValue = value * maxCount;
-            adjustedCost = cost * maxCount;
+            // Calculate total cost with progressive pricing
+            adjustedCost = 0;
+            for (let i = 0; i < maxCount; i++) {
+                adjustedCost += window.gameState.calculateItemCost(baseCost, owned + i, itemMultiplier);
+            }
             canAffordMultiplied = debugMode || maxCount > 0;
             multiplier = maxCount; // For display purposes
         } else {
-            // Normal multiplier
+            // Normal multiplier with progressive pricing
             adjustedValue = value * multiplier;
-            adjustedCost = cost * multiplier;
+            adjustedCost = 0;
+            for (let i = 0; i < multiplier; i++) {
+                adjustedCost += window.gameState.calculateItemCost(baseCost, owned + i, itemMultiplier);
+            }
             const currentPoints = window.gameState ? window.gameState.get('gameProgress.currentPoints') : 0;
             canAffordMultiplied = debugMode || currentPoints >= adjustedCost;
         }
@@ -332,7 +349,7 @@ class ShopSystem {
         return itemDiv;
     }
 
-    // Calculate max affordable quantity for a specific item
+    // Calculate max affordable quantity for a specific item (simple, non-progressive)
     calculateMaxAffordableForItem(cost) {
         if (!window.gameState) return 0;
 
@@ -343,6 +360,32 @@ class ShopSystem {
         if (cost === 0) return 0;
 
         return Math.floor(currentPoints / cost);
+    }
+
+    // Calculate max affordable quantity with progressive pricing
+    calculateMaxAffordableForItemProgressive(itemId, baseCost, multiplier, currentOwned) {
+        if (!window.gameState) return 0;
+
+        const debugMode = window.gameState.isDebugMode();
+        if (debugMode) return 9999;
+
+        const currentPoints = window.gameState.get('gameProgress.currentPoints');
+        if (baseCost === 0) return 0;
+
+        let totalCost = 0;
+        let count = 0;
+
+        // Keep adding items until we can't afford the next one
+        while (count < 1000) { // Safety limit
+            const nextItemCost = window.gameState.calculateItemCost(baseCost, currentOwned + count, multiplier);
+            if (totalCost + nextItemCost > currentPoints) {
+                break;
+            }
+            totalCost += nextItemCost;
+            count++;
+        }
+
+        return count;
     }
 
     // Attach purchase event handler to the item element
@@ -358,11 +401,13 @@ class ShopSystem {
                     // Use current multiplier from global state
                     let multiplier = window.currentMultiplier || 1;
 
-                    // If MAX mode, calculate max affordable for THIS specific item
+                    // If MAX mode, calculate max affordable for THIS specific item with progressive pricing
                     if (multiplier === 'max') {
-                        const cost = parseInt(item.cost);
-                        multiplier = this.calculateMaxAffordableForItem(cost);
-                        console.log(`ShopSystem: MAX mode - calculated ${multiplier} for item ${item.id} (cost: ${cost})`);
+                        const baseCost = parseInt(item.cost);
+                        const itemMultiplier = parseFloat(item.multiplier) || 1.15;
+                        const owned = window.gameState.get(`purchases.items.${item.id}`) || 0;
+                        multiplier = this.calculateMaxAffordableForItemProgressive(item.id, baseCost, itemMultiplier, owned);
+                        console.log(`ShopSystem: MAX mode - calculated ${multiplier} for item ${item.id} (baseCost: ${baseCost}, owned: ${owned})`);
                     }
 
                     console.log(`ShopSystem: Purchasing ${item.id} with multiplier:`, multiplier);
@@ -375,10 +420,18 @@ class ShopSystem {
     }
 
     purchaseItem(item, quantity = 1) {
-        const cost = parseInt(item.cost);
+        const baseCost = parseInt(item.cost);
+        const multiplier = parseFloat(item.multiplier) || 1.15;
         const effect = item.effect;
         const value = parseInt(item.value);
-        const totalCost = cost * quantity;
+
+        // Calculate total cost with progressive pricing
+        let totalCost = 0;
+        const owned = window.gameState.get(`purchases.items.${item.id}`) || 0;
+        for (let i = 0; i < quantity; i++) {
+            const itemCost = window.gameState.calculateItemCost(baseCost, owned + i, multiplier);
+            totalCost += itemCost;
+        }
 
         // Check if player can afford the items
         if (!window.gameState.canAfford(totalCost)) {
@@ -420,7 +473,7 @@ class ShopSystem {
                 this.updatePPSDisplay();
             }
 
-            console.log(`Purchased ${quantity}x ${item.name} for ${totalCost} points`);
+            console.log(`Purchased ${quantity}x ${item.name} for ${totalCost} points (progressive pricing)`);
         } else {
             this.showPurchaseResult(false, '購入に失敗しました');
         }
@@ -442,7 +495,8 @@ class ShopSystem {
             return;
         }
 
-        const cost = parseInt(item.cost);
+        const baseCost = parseInt(item.cost);
+        const itemMultiplier = parseFloat(item.multiplier) || 1.15;
         const value = parseInt(item.value);
         let owned = 0;
         let canAfford = false;
@@ -462,17 +516,27 @@ class ShopSystem {
             return;
         }
 
+        // Get current cost based on progressive pricing
+        const cost = window.gameState.getItemCost(itemId, baseCost, itemMultiplier);
+
         // Calculate values based on multiplier type
         if (multiplier === 'max') {
-            // MAX mode: calculate max affordable for this item
-            const maxCount = this.calculateMaxAffordableForItem(cost);
-            adjustedCost = cost * maxCount;
+            // MAX mode: calculate max affordable for this item with progressive pricing
+            const maxCount = this.calculateMaxAffordableForItemProgressive(itemId, baseCost, itemMultiplier, owned);
+            // Calculate total cost for buying maxCount items with progressive pricing
+            adjustedCost = 0;
+            for (let i = 0; i < maxCount; i++) {
+                adjustedCost += window.gameState.calculateItemCost(baseCost, owned + i, itemMultiplier);
+            }
             adjustedValue = value * maxCount;
             canAfford = debugMode || maxCount > 0;
             multiplier = maxCount; // For display purposes
         } else {
-            // Normal multiplier
-            adjustedCost = cost * multiplier;
+            // Normal multiplier with progressive pricing
+            adjustedCost = 0;
+            for (let i = 0; i < multiplier; i++) {
+                adjustedCost += window.gameState.calculateItemCost(baseCost, owned + i, itemMultiplier);
+            }
             adjustedValue = value * multiplier;
             // Check affordability for normal multiplier
             if (debugMode) {

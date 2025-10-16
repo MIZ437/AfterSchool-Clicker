@@ -132,6 +132,20 @@ class GameState {
         return false;
     }
 
+    // Calculate progressive cost for item
+    calculateItemCost(baseCost, purchaseCount, multiplier = 1.15) {
+        if (purchaseCount === 0) {
+            return Math.floor(baseCost);
+        }
+        return Math.floor(baseCost * Math.pow(multiplier, purchaseCount));
+    }
+
+    // Get current cost for an item (considering purchases made)
+    getItemCost(itemId, baseCost, multiplier = 1.15) {
+        const purchaseCount = this.get(`purchases.items.${itemId}`) || 0;
+        return this.calculateItemCost(baseCost, purchaseCount, multiplier);
+    }
+
     // Add item purchase
     purchaseItem(itemId, effect, value) {
         // Track purchase count

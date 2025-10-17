@@ -8,7 +8,7 @@
 }
 
 html {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #000000;
     overflow: hidden;
 }
 
@@ -17,7 +17,7 @@ body {
     font-size: 14px;
     line-height: 1.4;
     color: #333;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #000000;
     overflow: hidden;
     user-select: none;
     -webkit-user-select: none;
@@ -130,7 +130,7 @@ body {
 
 /* Loading Screen */
 #loading-screen {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #000000;
     color: white;
 }
 
@@ -140,6 +140,7 @@ body {
 
 .loading-logo {
     margin-bottom: 2rem;
+    display: none; /* Hide logo to prevent flash */
 }
 
 .loading-logo-image {

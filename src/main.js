@@ -60,7 +60,7 @@ class AfterSchoolClickerMain {
             center: true,
             resizable: true,
             autoHideMenuBar: true,
-            backgroundColor: '#667eea', // Gradient start color to prevent white flash
+            backgroundColor: '#000000', // Black to prevent flash during startup
             titleBarStyle: 'default'
         });
 

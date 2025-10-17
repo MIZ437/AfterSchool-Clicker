@@ -1354,7 +1354,7 @@ input:checked + .toggle-slider:before {
 .shop-modal-header {
     background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
     color: white;
-    padding: 1.5rem;
+    padding: 1.5rem 1.5rem 0 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -1411,6 +1411,50 @@ input:checked + .toggle-slider:before {
 .shop-modal-close-btn:hover {
     background: rgba(255, 255, 255, 0.3);
     transform: rotate(90deg);
+}
+
+/* Shop Modal Tabs */
+.shop-modal-tabs {
+    display: flex;
+    gap: 0.5rem;
+    padding-bottom: 1rem;
+}
+
+.shop-modal-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.8rem 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: bold;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(5px);
+}
+
+.shop-modal-tab:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.shop-modal-tab.active {
+    background: rgba(255, 255, 255, 0.95);
+    color: #e84393;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.shop-tab-icon {
+    font-size: 1.2rem;
+}
+
+.shop-tab-text {
+    font-size: 0.9rem;
 }
 
 .shop-modal-body {

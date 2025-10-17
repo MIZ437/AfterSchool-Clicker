@@ -484,6 +484,17 @@
                     <div class="shop-modal-points-label">ポイント</div>
                     <div id="shop-modal-points-value" class="shop-modal-points-value">0</div>
                 </div>
+                <!-- Shop Tabs -->
+                <div class="shop-modal-tabs">
+                    <button class="shop-modal-tab active" data-shop-type="click">
+                        <span class="shop-tab-icon">👆</span>
+                        <span class="shop-tab-text">クリックUP</span>
+                    </button>
+                    <button class="shop-modal-tab" data-shop-type="cps">
+                        <span class="shop-tab-icon">⚡</span>
+                        <span class="shop-tab-text">自動獲得UP</span>
+                    </button>
+                </div>
             </div>
 
             <div class="shop-modal-body">
@@ -848,17 +859,12 @@
                 maxCountSpan.textContent = maxCount;
             }
 
-            // Disable MAX button if maxCount is 0
+            // MAXボタンは常に有効（個々の購入ボタンでポイント不足を判定）
             if (maxBtn) {
-                if (maxCount === 0) {
-                    maxBtn.disabled = true;
-                    maxBtn.classList.remove('active');
-                } else {
-                    maxBtn.disabled = false;
-                    // Only add active class if current multiplier is 'max'
-                    if (window.currentMultiplier === 'max') {
-                        maxBtn.classList.add('active');
-                    }
+                maxBtn.disabled = false;
+                // Only add active class if current multiplier is 'max'
+                if (window.currentMultiplier === 'max') {
+                    maxBtn.classList.add('active');
                 }
             }
         }
@@ -870,14 +876,23 @@
             const clickItems = document.getElementById('click-items');
             const cpsItems = document.getElementById('cps-items');
             const pointsValue = document.getElementById('shop-modal-points-value');
+            const shopTabs = document.querySelectorAll('.shop-modal-tab');
 
-            // タイトルを設定
+            // タブの状態を設定
+            shopTabs.forEach(tab => {
+                const tabType = tab.dataset.shopType;
+                if (tabType === type) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+
+            // アイテムの表示を切り替え
             if (type === 'click') {
-                modalTitle.textContent = 'クリックポイントUP';
                 clickItems.style.display = 'block';
                 cpsItems.style.display = 'none';
             } else if (type === 'cps') {
-                modalTitle.textContent = '自動ポイントUP';
                 clickItems.style.display = 'none';
                 cpsItems.style.display = 'block';
             }
@@ -990,6 +1005,7 @@
             const openCpsShopBtn = document.getElementById('open-cps-shop-btn');
             const shopModalCloseBtn = document.getElementById('shop-modal-close');
             const shopModal = document.getElementById('shop-modal');
+            const shopModalTabs = document.querySelectorAll('.shop-modal-tab');
 
             if (openClickShopBtn) {
                 openClickShopBtn.addEventListener('click', () => {
@@ -1002,6 +1018,14 @@
                     openShopModal('cps');
                 });
             }
+
+            // ショップモーダル内のタブ切り替え
+            shopModalTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const shopType = tab.dataset.shopType;
+                    openShopModal(shopType);
+                });
+            });
 
             if (shopModalCloseBtn) {
                 shopModalCloseBtn.addEventListener('click', () => {

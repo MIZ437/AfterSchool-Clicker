@@ -217,52 +217,11 @@
                 </div>
             </div>
 
-            <!-- Side Panel -->
-            <aside class="side-panel">
-                <div class="panel-tabs">
-                    <button class="panel-tab active" data-panel="shop">ショップ</button>
-                    <button class="panel-tab" data-panel="gacha">ガチャ</button>
-                </div>
-
-                <!-- Shop Panel -->
-                <div id="shop-panel" class="panel-content active">
-                    <div class="panel-header">
-                        <h3>ショップ</h3>
-                    </div>
-
-                    <div class="shop-buttons-container">
-                        <button id="open-click-shop-btn" class="shop-category-btn">
-                            <span class="shop-btn-icon">👆</span>
-                            <span class="shop-btn-text">クリックポイントUP</span>
-                        </button>
-                        <button id="open-cps-shop-btn" class="shop-category-btn">
-                            <span class="shop-btn-icon">⚡</span>
-                            <span class="shop-btn-text">自動ポイントUP</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Gacha Panel -->
-                <div id="gacha-panel" class="panel-content">
-                    <div class="panel-header">
-                        <h3>ガチャ</h3>
-                    </div>
-                    <div class="gacha-content">
-                        <div class="gacha-info">
-                            <p>現在のステージ: <span id="gacha-stage">ステージ1</span></p>
-                            <p>コスト: <span id="gacha-cost">100</span> ポイント / 1回</p>
-                            <p>残り: <span id="gacha-remaining">10</span> / <span id="gacha-total">10</span></p>
-                        </div>
-                        <div class="gacha-buttons">
-                            <button id="gacha-btn" class="gacha-button">単発ガチャ</button>
-                            <button id="gacha-10x-btn" class="gacha-button gacha-10x">10連ガチャ</button>
-                        </div>
-                        <div id="gacha-result" class="gacha-result hidden">
-                            <!-- Gacha result will be shown here -->
-                        </div>
-                    </div>
-                </div>
-            </aside>
+            <!-- Shop Button Area -->
+            <button id="open-shop-btn" class="shop-area-btn">
+                <span class="shop-area-icon">🏪</span>
+                <span class="shop-area-text">ショップを開く</span>
+            </button>
         </main>
 
         <!-- Current Stats Display -->
@@ -494,6 +453,10 @@
                         <span class="shop-tab-icon">⚡</span>
                         <span class="shop-tab-text">自動獲得UP</span>
                     </button>
+                    <button class="shop-modal-tab" data-shop-type="gacha">
+                        <span class="shop-tab-icon">🎰</span>
+                        <span class="shop-tab-text">ガチャ</span>
+                    </button>
                 </div>
             </div>
 
@@ -517,6 +480,23 @@
                     </div>
                     <div id="cps-items" style="display: none;">
                         <!-- CPS items will be dynamically loaded from shopSystem.js -->
+                    </div>
+                    <div id="gacha-items" style="display: none;">
+                        <!-- Gacha content -->
+                        <div class="gacha-modal-content">
+                            <div class="gacha-info">
+                                <p>現在のステージ: <span id="gacha-stage-modal">ステージ1</span></p>
+                                <p>コスト: <span id="gacha-cost-modal">100</span> ポイント / 1回</p>
+                                <p>残り: <span id="gacha-remaining-modal">10</span> / <span id="gacha-total-modal">10</span></p>
+                            </div>
+                            <div class="gacha-buttons">
+                                <button id="gacha-btn-modal" class="gacha-button">単発ガチャ</button>
+                                <button id="gacha-10x-btn-modal" class="gacha-button gacha-10x">10連ガチャ</button>
+                            </div>
+                            <div id="gacha-result-modal" class="gacha-result hidden">
+                                <!-- Gacha result will be shown here -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -875,6 +855,8 @@
             const modalTitle = document.getElementById('shop-modal-title');
             const clickItems = document.getElementById('click-items');
             const cpsItems = document.getElementById('cps-items');
+            const gachaItems = document.getElementById('gacha-items');
+            const purchaseMultiplier = document.querySelector('.purchase-multiplier');
             const pointsValue = document.getElementById('shop-modal-points-value');
             const shopTabs = document.querySelectorAll('.shop-modal-tab');
 
@@ -892,9 +874,23 @@
             if (type === 'click') {
                 clickItems.style.display = 'block';
                 cpsItems.style.display = 'none';
+                gachaItems.style.display = 'none';
+                purchaseMultiplier.style.display = 'flex';
             } else if (type === 'cps') {
                 clickItems.style.display = 'none';
                 cpsItems.style.display = 'block';
+                gachaItems.style.display = 'none';
+                purchaseMultiplier.style.display = 'flex';
+            } else if (type === 'gacha') {
+                clickItems.style.display = 'none';
+                cpsItems.style.display = 'none';
+                gachaItems.style.display = 'block';
+                purchaseMultiplier.style.display = 'none'; // ガチャ時は購入倍率非表示
+
+                // ガチャ表示を更新
+                if (window.gachaSystem) {
+                    window.gachaSystem.updateGachaDisplay();
+                }
             }
 
             // ポイント表示を更新
@@ -907,12 +903,14 @@
             modal.classList.remove('hidden');
 
             // shopSystemにアイテムをレンダリングさせる
-            if (window.shopSystem) {
+            if (type !== 'gacha' && window.shopSystem) {
                 window.shopSystem.updateAllItemsAffordability();
             }
 
             // MAXボタンの状態を更新
-            updateMaxButton();
+            if (type !== 'gacha') {
+                updateMaxButton();
+            }
 
             // ポイント表示を定期的に更新
             if (window.shopModalPointsInterval) {
@@ -923,8 +921,10 @@
                     const points = window.gameState.get('gameProgress.currentPoints');
                     pointsValue.textContent = Math.floor(points).toLocaleString();
                 }
-                // MAXボタンの状態も定期的に更新
-                updateMaxButton();
+                // MAXボタンの状態も定期的に更新（ガチャ以外）
+                if (type !== 'gacha') {
+                    updateMaxButton();
+                }
             }, 100);
         }
 
@@ -1001,21 +1001,14 @@
             setupStageButtons();
 
             // ショップモーダルのイベントリスナーを設定
-            const openClickShopBtn = document.getElementById('open-click-shop-btn');
-            const openCpsShopBtn = document.getElementById('open-cps-shop-btn');
+            const openShopBtn = document.getElementById('open-shop-btn');
             const shopModalCloseBtn = document.getElementById('shop-modal-close');
             const shopModal = document.getElementById('shop-modal');
             const shopModalTabs = document.querySelectorAll('.shop-modal-tab');
 
-            if (openClickShopBtn) {
-                openClickShopBtn.addEventListener('click', () => {
-                    openShopModal('click');
-                });
-            }
-
-            if (openCpsShopBtn) {
-                openCpsShopBtn.addEventListener('click', () => {
-                    openShopModal('cps');
+            if (openShopBtn) {
+                openShopBtn.addEventListener('click', () => {
+                    openShopModal('click'); // デフォルトでクリックタブを開く
                 });
             }
 
@@ -1040,14 +1033,12 @@
                     if (!shopModal.classList.contains('hidden')) {
                         const modalContent = document.querySelector('.shop-modal-content');
                         const clickArea = document.getElementById('current-heroine');
-                        const openClickShopBtn = document.getElementById('open-click-shop-btn');
-                        const openCpsShopBtn = document.getElementById('open-cps-shop-btn');
+                        const openShopBtn = document.getElementById('open-shop-btn');
 
-                        // Check if click is on shop category buttons or their children
-                        const isShopButton = (openClickShopBtn && openClickShopBtn.contains(e.target)) ||
-                                            (openCpsShopBtn && openCpsShopBtn.contains(e.target));
+                        // Check if click is on shop button or its children
+                        const isShopButton = openShopBtn && openShopBtn.contains(e.target);
 
-                        // Close if clicking outside modal content AND not on click area AND not on shop buttons
+                        // Close if clicking outside modal content AND not on click area AND not on shop button
                         if (!modalContent.contains(e.target) && !clickArea.contains(e.target) && !isShopButton) {
                             closeShopModal();
                         }

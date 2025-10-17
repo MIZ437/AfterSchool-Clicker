@@ -548,7 +548,7 @@ class GachaSystem {
             if (!hasRemaining) {
                 this.gacha10xButton.textContent = 'コンプリート！';
             } else if (!canAfford10x) {
-                this.gacha10xButton.textContent = 'ポイント不足';
+                this.gacha10xButton.textContent = '10連ガチャ：ポイント不足';
             } else {
                 this.gacha10xButton.textContent = `10連ガチャ (${this.formatNumber(cost * 10)}pt)`;
             }

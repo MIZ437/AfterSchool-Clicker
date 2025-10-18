@@ -1,7 +1,28 @@
 # Changelog - AfterSchool Clicker
 
-## 2025-10-17
 
+## 2025-10-18
+
+### Fixed
+- 🐛 **ガチャボタンのグレーアウト機能実装**
+  - ポイント不足時にガチャボタンが視覚的に無効化されるように修正
+  - 無効時: グレー背景 (#b2bec3)、透明度60%、カーソル変更
+  - 有効時: ピンクグラデーション背景、通常カーソル
+  - インラインスタイルで強制的に背景色を設定し、CSS優先度問題を解決
+  - ユーザビリティ向上: ガチャが引けない状態が一目で分かるように
+
+### Technical Details
+- `gachaSystem.js`:
+  - `initializeElements()`: 要素ID修正（`-modal` サフィックス対応）
+  - `setGachaButtonState()`: インライン背景スタイル設定を追加
+  - `set10xGachaButtonState()`: インライン背景スタイル設定を追加
+  - 無効時スタイル: `background: #b2bec3`, `opacity: 0.6`, `cursor: not-allowed`
+  - 有効時スタイル: グラデーション背景、`opacity: 1`, `cursor: pointer`
+
+---
+
+
+## 2025-10-17
 ### Added
 - ✨ **累進価格システム実装**
   - 同じアイテムを購入するたびに価格が上昇する仕組みを実装

@@ -24,13 +24,13 @@ class GachaSystem {
     }
 
     async initializeElements() {
-        this.gachaButton = document.getElementById('gacha-btn');
-        this.gacha10xButton = document.getElementById('gacha-10x-btn');
-        this.gachaStageElement = document.getElementById('gacha-stage');
-        this.gachaCostElement = document.getElementById('gacha-cost');
-        this.gachaRemainingElement = document.getElementById('gacha-remaining');
-        this.gachaTotalElement = document.getElementById('gacha-total');
-        this.gachaResultElement = document.getElementById('gacha-result');
+        this.gachaButton = document.getElementById('gacha-btn-modal');
+        this.gacha10xButton = document.getElementById('gacha-10x-btn-modal');
+        this.gachaStageElement = document.getElementById('gacha-stage-modal');
+        this.gachaCostElement = document.getElementById('gacha-cost-modal');
+        this.gachaRemainingElement = document.getElementById('gacha-remaining-modal');
+        this.gachaTotalElement = document.getElementById('gacha-total-modal');
+        this.gachaResultElement = document.getElementById('gacha-result-modal');
 
         if (this.gachaButton) {
             this.gachaButton.addEventListener('click', () => this.drawGacha());
@@ -558,16 +558,34 @@ class GachaSystem {
     setGachaButtonState(enabled) {
         if (this.gachaButton) {
             this.gachaButton.disabled = !enabled;
-            this.gachaButton.style.cursor = enabled ? 'pointer' : 'not-allowed';
+            if (enabled) {
+                this.gachaButton.style.background = 'linear-gradient(135deg, #fd79a8 0%, #e84393 100%)';
+                this.gachaButton.style.cursor = 'pointer';
+                this.gachaButton.style.opacity = '1';
+            } else {
+                this.gachaButton.style.background = '#b2bec3';
+                this.gachaButton.style.cursor = 'not-allowed';
+                this.gachaButton.style.opacity = '0.6';
+            }
         }
     }
+
 
     set10xGachaButtonState(enabled) {
         if (this.gacha10xButton) {
             this.gacha10xButton.disabled = !enabled;
-            this.gacha10xButton.style.cursor = enabled ? 'pointer' : 'not-allowed';
+            if (enabled) {
+                this.gacha10xButton.style.background = 'linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%)';
+                this.gacha10xButton.style.cursor = 'pointer';
+                this.gacha10xButton.style.opacity = '1';
+            } else {
+                this.gacha10xButton.style.background = '#b2bec3';
+                this.gacha10xButton.style.cursor = 'not-allowed';
+                this.gacha10xButton.style.opacity = '0.6';
+            }
         }
     }
+
 
     shakeGachaButton() {
         if (this.gachaButton) {

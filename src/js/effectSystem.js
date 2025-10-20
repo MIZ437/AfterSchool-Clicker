@@ -455,6 +455,44 @@ class EffectSystem {
     initialize() {
         this.addEffectStyles();
     }
+
+    // ==================== Milestone Effect ====================
+
+    // Show milestone achievement effect
+    showMilestoneEffect(itemName, milestone, bonusPercent) {
+        console.log(`Showing milestone effect: ${itemName} x${milestone}, bonus: ${bonusPercent}%`);
+
+        // Create milestone notification overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'milestone-overlay';
+        overlay.innerHTML = `
+            <div class="milestone-content">
+                <div class="milestone-icon">★</div>
+                <div class="milestone-title">マイルストーン達成！</div>
+                <div class="milestone-item">${itemName}</div>
+                <div class="milestone-count">×${milestone}個</div>
+                <div class="milestone-bonus">ボーナス: +${bonusPercent}%</div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        // Animate in
+        setTimeout(() => {
+            overlay.classList.add('show');
+        }, 10);
+
+        // Remove after animation
+        setTimeout(() => {
+            overlay.classList.remove('show');
+            setTimeout(() => {
+                document.body.removeChild(overlay);
+            }, 500);
+        }, 3000);
+
+        // Screen flash effect
+        this.screenFlash('rgba(255, 215, 0, 0.3)', 500);
+    }
 }
 
 // Initialize effect system

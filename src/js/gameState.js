@@ -27,6 +27,9 @@ class GameState {
             purchases: {
                 items: {}
             },
+            milestones: {
+                achieved: {} // Track achieved milestones per item: {itemId: [10, 25, 50, 100]}
+            },
             settings: {
                 bgmVolume: 0.2,
                 seVolume: 0.2,
@@ -567,6 +570,94 @@ class GameState {
     // Check if debug mode is enabled
     isDebugMode() {
         return this.debugMode;
+    }
+
+    // ==================== Milestone System ====================
+
+    // Define milestone thresholds
+    getMilestoneThresholds() {
+        return [10, 25, 50, 100];
+    }
+
+    // Get milestone bonus multiplier based on item type
+    getMilestoneBonus(itemId, threshold) {
+        const isClickItem = itemId.startsWith('ITM_CLICK');
+
+        // Click items get higher bonuses
+        const bonusTable = {
+            10: isClickItem ? 0.50 : 0.25,  // +50% for click, +25% for CPS
+            25: isClickItem ? 1.00 : 0.50,  // +100% for click, +50% for CPS
+            50: isClickItem ? 2.00 : 1.00,  // +200% for click, +100% for CPS
+            100: isClickItem ? 5.00 : 2.50  // +500% for click, +250% for CPS
+        };
+
+        return bonusTable[threshold] || 0;
+    }
+
+    // Check and award milestone for an item
+    checkMilestone(itemId, purchaseCount) {
+        const thresholds = this.getMilestoneThresholds();
+        const achievedMilestones = this.get(`milestones.achieved.${itemId}`) || [];
+
+        // Find newly achieved milestones
+        const newMilestones = [];
+        for (const threshold of thresholds) {
+            if (purchaseCount >= threshold && !achievedMilestones.includes(threshold)) {
+                newMilestones.push(threshold);
+            }
+        }
+
+        if (newMilestones.length > 0) {
+            // Update achieved milestones
+            const updatedAchieved = [...achievedMilestones, ...newMilestones].sort((a, b) => a - b);
+            this.set(`milestones.achieved.${itemId}`, updatedAchieved);
+
+            // Return the newly achieved milestones for notification
+            return newMilestones;
+        }
+
+        return [];
+    }
+
+    // Get total milestone bonus for an item
+    getTotalMilestoneBonus(itemId) {
+        const achievedMilestones = this.get(`milestones.achieved.${itemId}`) || [];
+        let totalBonus = 0;
+
+        for (const threshold of achievedMilestones) {
+            totalBonus += this.getMilestoneBonus(itemId, threshold);
+        }
+
+        return totalBonus;
+    }
+
+    // Get next milestone info for an item
+    getNextMilestone(itemId) {
+        const purchaseCount = this.get(`purchases.items.${itemId}`) || 0;
+        const achievedMilestones = this.get(`milestones.achieved.${itemId}`) || [];
+        const thresholds = this.getMilestoneThresholds();
+
+        for (const threshold of thresholds) {
+            if (purchaseCount < threshold) {
+                return {
+                    threshold: threshold,
+                    current: purchaseCount,
+                    remaining: threshold - purchaseCount,
+                    bonus: this.getMilestoneBonus(itemId, threshold)
+                };
+            }
+        }
+
+        return null; // All milestones achieved
+    }
+
+    // Calculate effective value with milestone bonuses
+    getEffectiveItemValue(itemId, baseValue) {
+        const purchaseCount = this.get(`purchases.items.${itemId}`) || 0;
+        const totalBonus = this.getTotalMilestoneBonus(itemId);
+
+        // Total value = base value per unit * purchase count * (1 + total bonus)
+        return baseValue * purchaseCount * (1 + totalBonus);
     }
 }
 

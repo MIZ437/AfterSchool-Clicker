@@ -470,6 +470,91 @@
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
 }
 
+/* ==================== Milestone Achievement Overlay ==================== */
+.milestone-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+}
+
+.milestone-overlay.show {
+    opacity: 1;
+}
+
+.milestone-content {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 3rem 4rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    transform: scale(0.8);
+    transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.milestone-overlay.show .milestone-content {
+    transform: scale(1);
+}
+
+.milestone-icon {
+    font-size: 6rem;
+    margin-bottom: 1rem;
+    animation: rotateStar 2s infinite linear;
+}
+
+@keyframes rotateStar {
+    0% {
+        transform: rotate(0deg) scale(1);
+    }
+    50% {
+        transform: rotate(180deg) scale(1.2);
+    }
+    100% {
+        transform: rotate(360deg) scale(1);
+    }
+}
+
+.milestone-title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.milestone-item {
+    font-size: 2rem;
+    color: #ffeaa7;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.milestone-count {
+    font-size: 1.8rem;
+    color: #fff;
+    margin-bottom: 1rem;
+}
+
+.milestone-bonus {
+    font-size: 1.5rem;
+    color: #55efc4;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.5rem 1.5rem;
+    border-radius: 25px;
+    display: inline-block;
+    font-weight: bold;
+}
+
 /* Disable animations for users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
     *,

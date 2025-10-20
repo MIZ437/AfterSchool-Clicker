@@ -313,12 +313,49 @@ class ShopSystem {
             canAffordMultiplied = debugMode || currentPoints >= adjustedCost;
         }
 
-        // 基本効果表示 (単価ベース)
-        const baseEffectText = item.effect === 'click'
-            ? `+${value}pt/クリック`
-            : `+${value}pt/秒`;
+        // マイルストーン情報を取得
+        const nextMilestone = window.gameState ? window.gameState.getNextMilestone(item.id) : null;
+        const totalBonus = window.gameState ? window.gameState.getTotalMilestoneBonus(item.id) : 0;
+
+        // 効果の計算
+        const baseTotal = value * owned; // 基本効果の合計
+        const bonusValue = Math.round(baseTotal * totalBonus); // ボーナス分
+        const effectTotal = baseTotal + bonusValue; // 合計効果
+        const effectUnit = item.effect === 'click' ? 'pt/クリック' : 'pt/秒';
+
+        // 効果表示テキスト生成（コンパクト版）
+        let effectDisplayText = '';
+        if (owned > 0 && totalBonus > 0) {
+            // ボーナスあり: 基本+12pt + ボーナス+6pt = 合計+18pt
+            effectDisplayText = `基本+${baseTotal}${effectUnit} + ボーナス+${bonusValue}${effectUnit} = 合計+${effectTotal}${effectUnit}`;
+        } else if (owned > 0) {
+            // ボーナスなし: 基本+12pt = 合計+12pt
+            effectDisplayText = `合計+${baseTotal}${effectUnit}`;
+        } else {
+            // 未所持: 単価表示
+            effectDisplayText = `+${value}${effectUnit}`;
+        }
 
         const ownedText = debugMode ? '∞' : `${this.formatNumber(owned)}個所持`;
+
+        // マイルストーン進捗バー
+        let milestoneProgressHTML = '';
+        if (nextMilestone) {
+            const progress = (nextMilestone.current / nextMilestone.threshold) * 100;
+            const bonusPercent = Math.round(nextMilestone.bonus * 100);
+            const remaining = nextMilestone.remaining;
+            milestoneProgressHTML = `
+                <div class="milestone-progress">
+                    <div class="milestone-bar">
+                        <div class="milestone-fill" style="width: ${progress}%"></div>
+                    </div>
+                    <div class="milestone-info">
+                        <span class="milestone-text">${nextMilestone.current}/${nextMilestone.threshold}個 (あと${remaining}個)</span>
+                        <span class="milestone-next">次: +${bonusPercent}%</span>
+                    </div>
+                </div>
+            `;
+        }
 
         // ボタンテキストと合計効果表示
         let buttonText = '';
@@ -340,9 +377,10 @@ class ShopSystem {
         itemDiv.innerHTML = `
             <div class="item-compact-row">
                 <span class="item-name">${item.name}</span>
-                <span class="item-effect">${baseEffectText}</span>
                 <span class="item-owned">(${ownedText})</span>
             </div>
+            <div class="item-effect-display">${effectDisplayText}</div>
+            ${milestoneProgressHTML}
             <div class="item-action-row">
                 <button class="purchase-btn ${canAffordMultiplied ? '' : 'disabled'}" data-quantity="${multiplier}">
                     ${buttonText}
@@ -453,6 +491,17 @@ class ShopSystem {
                 window.gameState.purchaseItem(item.id, effect, value);
             }
 
+            // Check for milestone achievements
+            const newPurchaseCount = window.gameState.get(`purchases.items.${item.id}`) || 0;
+            const newMilestones = window.gameState.checkMilestone(item.id, newPurchaseCount);
+
+            // Trigger milestone notification if any achieved
+            if (newMilestones && newMilestones.length > 0) {
+                for (const milestone of newMilestones) {
+                    this.showMilestoneNotification(item, milestone);
+                }
+            }
+
             // Play purchase sound
             if (window.audioManager) {
                 window.audioManager.playSE('purchase_sound');
@@ -554,13 +603,30 @@ class ShopSystem {
         // Update affordability
         itemElement.className = `shop-item ${canAfford ? '' : 'disabled'}`;
 
-        // Update effect display (基本効果)
-        const effectElement = itemElement.querySelector('.item-effect');
+        // Get milestone bonus information
+        const totalBonus = window.gameState ? window.gameState.getTotalMilestoneBonus(itemId) : 0;
+
+        // 効果の計算
+        const baseTotal = value * owned; // 基本効果の合計
+        const bonusValue = Math.round(baseTotal * totalBonus); // ボーナス分
+        const effectTotal = baseTotal + bonusValue; // 合計効果
+        const effectUnit = item.effect === 'click' ? 'pt/クリック' : 'pt/秒';
+
+        // Update effect display (コンパクト版)
+        const effectElement = itemElement.querySelector('.item-effect-display');
         if (effectElement) {
-            const baseEffectText = item.effect === 'click'
-                ? `+${value}pt/クリック`
-                : `+${value}pt/秒`;
-            effectElement.textContent = baseEffectText;
+            let effectDisplayText = '';
+            if (owned > 0 && totalBonus > 0) {
+                // ボーナスあり: 基本+12pt + ボーナス+6pt = 合計+18pt
+                effectDisplayText = `基本+${baseTotal}${effectUnit} + ボーナス+${bonusValue}${effectUnit} = 合計+${effectTotal}${effectUnit}`;
+            } else if (owned > 0) {
+                // ボーナスなし: 基本+12pt = 合計+12pt
+                effectDisplayText = `合計+${baseTotal}${effectUnit}`;
+            } else {
+                // 未所持: 単価表示
+                effectDisplayText = `+${value}${effectUnit}`;
+            }
+            effectElement.textContent = effectDisplayText;
         }
 
         // Update owned count
@@ -611,6 +677,44 @@ class ShopSystem {
                     totalEffectElement.remove();
                 }
             }
+        }
+
+        // Update milestone progress bar
+        const nextMilestone = window.gameState ? window.gameState.getNextMilestone(itemId) : null;
+        let milestoneProgressElement = itemElement.querySelector('.milestone-progress');
+
+        if (nextMilestone) {
+            const progress = (nextMilestone.current / nextMilestone.threshold) * 100;
+            const bonusPercent = Math.round(nextMilestone.bonus * 100);
+            const remaining = nextMilestone.remaining;
+
+            if (milestoneProgressElement) {
+                // Update existing progress bar
+                const fillElement = milestoneProgressElement.querySelector('.milestone-fill');
+                const textElement = milestoneProgressElement.querySelector('.milestone-text');
+                const nextElement = milestoneProgressElement.querySelector('.milestone-next');
+
+                if (fillElement) fillElement.style.width = `${progress}%`;
+                if (textElement) textElement.textContent = `${nextMilestone.current}/${nextMilestone.threshold}個 (あと${remaining}個)`;
+                if (nextElement) nextElement.textContent = `次: +${bonusPercent}%`;
+            } else {
+                // Create progress bar if it doesn't exist
+                const progressHTML = `
+                    <div class="milestone-progress">
+                        <div class="milestone-bar">
+                            <div class="milestone-fill" style="width: ${progress}%"></div>
+                        </div>
+                        <div class="milestone-info">
+                            <span class="milestone-text">${nextMilestone.current}/${nextMilestone.threshold}個 (あと${remaining}個)</span>
+                            <span class="milestone-next">次: +${bonusPercent}%</span>
+                        </div>
+                    </div>
+                `;
+                itemElement.insertAdjacentHTML('beforeend', progressHTML);
+            }
+        } else if (milestoneProgressElement) {
+            // Remove progress bar if no next milestone
+            milestoneProgressElement.remove();
         }
     }
 
@@ -1081,6 +1185,38 @@ class ShopSystem {
         } catch (error) {
             console.error('ShopSystem: Complete reinitialization failed:', error);
             return false;
+        }
+    }
+
+    // ==================== Milestone System ====================
+
+    // Show milestone achievement notification
+    showMilestoneNotification(item, milestone) {
+        console.log(`Milestone achieved: ${item.name} x${milestone}`);
+
+        const bonus = window.gameState.getMilestoneBonus(item.id, milestone);
+        const bonusPercent = Math.round(bonus * 100);
+        const isClickItem = item.id.startsWith('ITM_CLICK');
+
+        const message = `
+            ★マイルストーン達成！★
+            ${item.name} × ${milestone}個
+            ボーナス: +${bonusPercent}%
+        `;
+
+        // Use effectSystem if available for fancy display
+        if (window.effectSystem) {
+            window.effectSystem.showMilestoneEffect(item.name, milestone, bonusPercent);
+        }
+
+        // Also show as a regular message
+        if (window.sceneManager) {
+            window.sceneManager.showMessage(message.trim());
+        }
+
+        // Play special sound
+        if (window.audioManager) {
+            window.audioManager.playSE('stage_unlock_sound'); // Use unlock sound for milestone
         }
     }
 }

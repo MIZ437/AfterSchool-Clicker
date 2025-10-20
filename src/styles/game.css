@@ -426,11 +426,11 @@
 .shop-item {
     background: rgba(116, 185, 255, 0.1);
     border: 2px solid transparent;
-    border-radius: 8px;
-    padding: 0.4rem 0.5rem;
+    border-radius: 5px;
+    padding: 0.15rem 0.25rem;
     cursor: pointer;
     transition: all 0.2s ease;
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.1rem;
 }
 
 .shop-item:hover:not(.disabled) {
@@ -445,52 +445,54 @@
     cursor: not-allowed;
 }
 
-/* First row: Name, Effect, Owned */
+/* First row: Name and Owned */
 .item-compact-row {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    margin-bottom: 0.3rem;
+    justify-content: space-between;
+    gap: 0.3rem;
+    margin-bottom: 0.1rem;
 }
 
 .item-name {
     font-weight: bold;
     color: #2d3436;
-    font-size: 0.9rem;
-    min-width: 70px;
-}
-
-.item-effect {
-    color: #0984e3;
-    font-weight: bold;
-    font-size: 0.8rem;
-    flex: 1;
+    font-size: 0.7rem;
 }
 
 .item-owned {
     color: #00b894;
     font-weight: bold;
-    font-size: 0.75rem;
+    font-size: 0.6rem;
     white-space: nowrap;
+}
+
+/* Effect Display Row */
+.item-effect-display {
+    color: #0984e3;
+    font-weight: bold;
+    font-size: 0.6rem;
+    margin-bottom: 0.15rem;
+    line-height: 1.2;
 }
 
 /* Second row: Button and Total Effect */
 .item-action-row {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.3rem;
 }
 
 .purchase-btn {
     background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
     color: white;
     border: none;
-    border-radius: 15px;
-    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    padding: 0.2rem 0.4rem;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-size: 0.75rem;
+    font-size: 0.6rem;
     white-space: nowrap;
     flex-shrink: 0;
 }
@@ -510,7 +512,64 @@
 .total-effect {
     color: #e84393;
     font-weight: bold;
-    font-size: 0.75rem;
+    font-size: 0.6rem;
+}
+
+/* Milestone Progress */
+.milestone-progress {
+    margin-top: 0.15rem;
+    padding-top: 0.15rem;
+    border-top: 1px solid rgba(116, 185, 255, 0.2);
+}
+
+.milestone-bar {
+    width: 100%;
+    height: 2px;
+    background: rgba(116, 185, 255, 0.2);
+    border-radius: 1px;
+    overflow: hidden;
+    margin-bottom: 0.1rem;
+}
+
+.milestone-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00b894 0%, #00d4a1 100%);
+    border-radius: 1px;
+    transition: width 0.3s ease;
+}
+
+.milestone-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.55rem;
+}
+
+.milestone-text {
+    color: #636e72;
+    font-weight: 600;
+}
+
+.milestone-next {
+    color: #00b894;
+    font-weight: bold;
+    padding: 0.03rem 0.2rem;
+    background: rgba(0, 184, 148, 0.1);
+    border-radius: 4px;
+}
+
+/* Bonus Badge */
+.bonus-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%);
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: bold;
+    padding: 0.08rem 0.25rem;
+    border-radius: 5px;
+    margin-left: 0.2rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 4px rgba(255, 215, 0, 0.4);
 }
 
 /* Simple Shop Layout */

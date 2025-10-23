@@ -1038,8 +1038,14 @@
                         // Check if click is on shop button or its children
                         const isShopButton = openShopBtn && openShopBtn.contains(e.target);
 
-                        // Close if clicking outside modal content AND not on click area AND not on shop button
-                        if (!modalContent.contains(e.target) && !clickArea.contains(e.target) && !isShopButton) {
+                        // Check if any overlay is currently displayed (gacha, milestone, etc.)
+                        // These overlays have z-index >= 9999
+                        const hasActiveOverlay = document.querySelector('.milestone-overlay') ||
+                                                 document.querySelector('[style*="z-index: 9999"]') ||
+                                                 document.querySelector('[style*="z-index:9999"]');
+
+                        // Close if clicking outside modal content AND not on click area AND not on shop button AND no active overlay
+                        if (!modalContent.contains(e.target) && !clickArea.contains(e.target) && !isShopButton && !hasActiveOverlay) {
                             closeShopModal();
                         }
                     }

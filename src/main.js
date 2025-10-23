@@ -269,7 +269,23 @@ class AfterSchoolClickerMain {
             lastSaved: new Date().toISOString()
         };
     }
+
+    getAssetPath(filename) {
+        // Get absolute path to asset file
+        if (app.isPackaged) {
+            // In production (ASAR), use process.resourcesPath
+            return path.join(process.resourcesPath, 'app.asar', 'assets', filename);
+        } else {
+            // In development
+            return path.join(__dirname, '..', 'assets', filename);
+        }
+    }
 }
 
 // Initialize the application
-new AfterSchoolClickerMain();
+const appInstance = new AfterSchoolClickerMain();
+
+// Add asset path handler
+ipcMain.handle('get-asset-path', async (event, filename) => {
+    return appInstance.getAssetPath(filename);
+});

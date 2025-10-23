@@ -49,7 +49,8 @@ class AudioManager {
             }
 
             const audio = new Audio();
-            const fullPath = `../assets/${filename}`;
+            // Use electronAPI to get correct asset path
+            const fullPath = await window.electronAPI.getAssetPath(filename);
             audio.src = fullPath;
             audio.preload = 'auto';
             console.log(`[DEBUG] Loading sound ${id} from path: ${fullPath}`);

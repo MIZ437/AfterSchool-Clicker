@@ -23,7 +23,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
         node: process.versions.node,
         chrome: process.versions.chrome,
         electron: process.versions.electron
-    }
+    },
+
+    // Asset path resolver
+    getAssetPath: (filename) => ipcRenderer.invoke('get-asset-path', filename)
 });
 
 // Additional security: Remove any global Node.js variables that might have leaked

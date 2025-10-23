@@ -273,8 +273,8 @@ class AfterSchoolClickerMain {
     getAssetPath(filename) {
         // Get absolute path to asset file
         if (app.isPackaged) {
-            // In production (ASAR), use process.resourcesPath
-            return path.join(process.resourcesPath, 'app.asar', 'assets', filename);
+            // In production, assets are unpacked from ASAR
+            return path.join(process.resourcesPath, 'app.asar.unpacked', 'assets', filename);
         } else {
             // In development
             return path.join(__dirname, '..', 'assets', filename);

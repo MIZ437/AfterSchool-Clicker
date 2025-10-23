@@ -1,4 +1,4 @@
-// AfterSchool Clicker - Main Game Controller
+﻿// 放課後クリッカー - Main Game Controller
 class AfterSchoolClicker {
     constructor() {
         this.isInitialized = false;
@@ -29,7 +29,7 @@ class AfterSchoolClicker {
 
     async initializeGame() {
         try {
-            console.log('Initializing AfterSchool Clicker...');
+            console.log('Initializing 放課後クリッカー...');
 
             // Initialize core systems
             await this.initializeManagers();

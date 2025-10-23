@@ -1,4 +1,4 @@
-# AfterSchool Clicker 技術設計書
+﻿# 放課後クリッカー 技術設計書
 
 ## 1. プロジェクト概要
 
@@ -29,7 +29,7 @@
 
 ### 2.2 ファイル構成
 ```
-AfterSchool Clicker/
+放課後クリッカー/
 ├── src/
 │   ├── main.js          # Electron メインプロセス
 │   ├── preload.js       # セキュアなIPC通信

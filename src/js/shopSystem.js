@@ -1,4 +1,4 @@
-// AfterSchool Clicker - Shop System
+﻿// 放課後クリッカー - Shop System
 console.log('=== ShopSystem.js loading ===');
 
 class ShopSystem {

@@ -1,4 +1,4 @@
-// AfterSchool Clicker - Album Manager
+﻿// 放課後クリッカー - Album Manager
 class AlbumManager {
     constructor() {
         this.currentStageTab = 1;

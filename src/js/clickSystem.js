@@ -1,4 +1,4 @@
-// AfterSchool Clicker - Click System
+﻿// 放課後クリッカー - Click System
 class ClickSystem {
     constructor() {
         this.clickTarget = null;

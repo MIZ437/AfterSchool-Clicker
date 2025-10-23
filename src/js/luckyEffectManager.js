@@ -1,4 +1,4 @@
-// AfterSchool Clicker - Lucky Effect Manager
+﻿// 放課後クリッカー - Lucky Effect Manager
 class LuckyEffectManager {
     constructor() {
         this.isActive = false;

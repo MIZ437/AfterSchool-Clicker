@@ -1,4 +1,4 @@
-// AfterSchool Clicker - Gacha System
+﻿// 放課後クリッカー - Gacha System
 class GachaSystem {
     constructor() {
         this.gachaButton = null;

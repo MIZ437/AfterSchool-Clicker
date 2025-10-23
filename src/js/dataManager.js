@@ -1,4 +1,4 @@
-// AfterSchool Clicker - Data Manager
+﻿// 放課後クリッカー - Data Manager
 class DataManager {
     constructor() {
         this.data = {

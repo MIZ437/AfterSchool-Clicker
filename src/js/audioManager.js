@@ -1,4 +1,4 @@
-// AfterSchool Clicker - Audio Manager
+﻿// 放課後クリッカー - Audio Manager
 class AudioManager {
     constructor() {
         console.log('AudioManager constructor called');

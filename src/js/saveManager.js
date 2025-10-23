@@ -1,4 +1,4 @@
-// AfterSchool Clicker - Save/Load Manager
+﻿// 放課後クリッカー - Save/Load Manager
 class SaveManager {
     constructor() {
         this.isAutoSaveEnabled = true;

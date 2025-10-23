@@ -1,4 +1,4 @@
-# Changelog - AfterSchool Clicker
+﻿# Changelog - 放課後クリッカー
 
 
 ## 2025-10-18

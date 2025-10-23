@@ -1,4 +1,4 @@
-// AfterSchool Clicker - Effect System
+﻿// 放課後クリッカー - Effect System
 class EffectSystem {
     constructor() {
         this.effectsContainer = null;

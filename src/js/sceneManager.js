@@ -1,4 +1,4 @@
-// AfterSchool Clicker - Scene Manager
+﻿// 放課後クリッカー - Scene Manager
 class SceneManager {
     constructor() {
         this.currentScene = 'loading';

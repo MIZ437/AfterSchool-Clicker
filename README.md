@@ -1,4 +1,4 @@
-# AfterSchool Clicker
+﻿# 放課後クリッカー
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/MIZ437/AfterSchool-Clicker)
 ![GitHub license](https://img.shields.io/github/license/MIZ437/AfterSchool-Clicker)
@@ -160,4 +160,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-🎮 **Enjoy collecting beautiful heroines in AfterSchool Clicker!** 🎮
+🎮 **Enjoy collecting beautiful heroines in 放課後クリッカー!** 🎮

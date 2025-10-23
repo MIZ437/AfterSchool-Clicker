@@ -1,4 +1,4 @@
-// AfterSchool Clicker - Game State Management
+﻿// 放課後クリッカー - Game State Management
 class GameState {
     constructor() {
         this.state = {

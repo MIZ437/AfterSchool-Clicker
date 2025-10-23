@@ -1,7 +1,7 @@
 {
   "name": "afterschool-clicker",
   "version": "1.0.0",
-  "description": "AfterSchool Clicker - A heroine-themed incremental clicker game",
+  "description": "放課後クリッカー - A heroine-themed incremental clicker game",
   "main": "src/main.js",
   "author": "MIZ437 <ashimizu437@gmail.com>",
   "license": "MIT",
@@ -26,7 +26,7 @@
   },
   "build": {
     "appId": "com.miz437.afterschool-clicker",
-    "productName": "AfterSchool Clicker",
+    "productName": "放課後クリッカー",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -39,7 +39,9 @@
     "compression": "maximum",
     "win": {
       "target": "nsis",
-      "icon": "build/icon.ico"
+      "icon": "build/icon.ico",
+      "sign": null,
+      "signingHashAlgorithms": ["sha256"]
     },
     "mac": {
       "target": "dmg",

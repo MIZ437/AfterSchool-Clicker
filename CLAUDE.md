@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-"AfterSchool Clicker" is a heroine-themed incremental/clicker game built with Electron. The game features anime-style heroine imagery, progressive stage unlocking, gacha collection mechanics, and reward videos. All user-facing content is in Japanese, while internal code can use English.
+"放課後クリッカー" (AfterSchool Clicker) is a heroine-themed incremental/clicker game built with Electron. The game features anime-style heroine imagery, progressive stage unlocking, gacha collection mechanics, and reward videos. All user-facing content is in Japanese, while internal code can use English.
 
 **Platform**: Electron desktop application with ASAR packaging for file protection
 
@@ -15,7 +15,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Stage Progression**: 4 sequential stages (教室→図書館→屋上→体育館) with unlock costs
 - **Gacha Collection**: Point-based image collection system (no duplicates, 9 images for stage 1)
 - **Album System**: Gallery for viewing collected images and reward videos, organized by stage
-- **Shop System**: Upgrades for click efficiency and automatic point generation
+- **Shop System**:
+  - Tabbed interface (クリック系/自動獲得系) for organized item browsing
+  - Progressive pricing system with exponential cost scaling
+  - MAX purchase mode with minimum cost display and thousand separators
+  - Milestone bonus system (10/25/50/100 purchase thresholds with percentage bonuses)
+  - Number formatting with comma separators for all numeric displays
 
 ### Technical Stack
 - **Main Process**: `src/main.js` - Electron backend with secure IPC, file system access, save data management
@@ -29,9 +34,22 @@ src/
 ├── main.js          # Electron main process
 ├── preload.js       # Secure IPC bridge
 ├── index.html       # Complete game UI
-└── styles/
-    ├── main.css     # Title screen, common styles
-    └── game.css     # Game screen, album, settings
+├── styles/
+│   ├── main.css     # Title screen, common styles, scene management
+│   └── game.css     # Game screen, album, settings
+└── js/
+    ├── main.js                 # Application initialization
+    ├── saveManager.js          # Save/load game state
+    ├── dataManager.js          # CSV data loading
+    ├── audioManager.js         # BGM and SE management
+    ├── gameState.js            # Core game state and progression
+    ├── clickSystem.js          # Click mechanics
+    ├── shopSystem.js           # Shop, purchases, milestone bonuses
+    ├── gachaSystem.js          # Gacha mechanics and collection
+    ├── albumManager.js         # Album gallery
+    ├── sceneManager.js         # Scene transitions
+    ├── effectSystem.js         # Visual effects
+    └── luckyEffectManager.js   # Lucky click effects
 
 assets/
 ├── data/            # CSV configuration files
@@ -108,6 +126,12 @@ The game should start successfully and display all CSV data loading confirmation
 - Implement visual feedback for all user interactions (click effects, animations)
 - Ensure progression balance matches stage unlock requirements in `design.md`
 - Stage themes: 教室 (classroom) → 図書館 (library) → 屋上 (rooftop) → 体育館 (gymnasium)
+- **Milestone Bonus System**:
+  - Triggers at 10/25/50/100 purchases per item
+  - Click items: +50%/+100%/+200%/+500% bonuses
+  - Auto-generate items: +25%/+50%/+100%/+250% bonuses
+  - Overlay celebration with bonus details on achievement
+  - Progress tracking stored in gameState
 
 ### Asset Integration
 - **Images**: Referenced via CSV ID system, not hardcoded paths
@@ -127,3 +151,27 @@ The game should start successfully and display all CSV data loading confirmation
 - Asset compression enabled for smaller package size
 - Cross-platform icon configuration required for proper installation
 - NSIS installer allows user-selectable install directory
+
+## Important Technical Notes
+
+### Scene Management
+- **Critical**: Scenes use `display: none` for inactive states to completely prevent interaction
+- All scenes must have their `.active` class removed synchronously before showing new scene
+- Layout recalculation forced with `void document.body.offsetHeight` to ensure CSS updates apply
+- Never rely on `opacity: 0` or `pointer-events: none` alone - these can cause click-through bugs
+
+### Modal System
+- Shop modal prevents closing when overlays (gacha, milestone) are active
+- Check for active overlays before allowing modal close on outside clicks
+- Modal closes automatically when collection completes and triggers ending sequence
+- Z-index layering: Base UI (1000) → Shop Modal (9998) → Overlays (9999)
+
+### Number Formatting
+- All numeric displays use `toLocaleString('ja-JP')` for comma separators
+- Applied to: point displays, costs, effects, countdown timers
+- Ensure consistency across shop items, header stats, and tooltips
+
+### Debug Mode
+- Debug mode and debug panel have been completely removed for production
+- No debug toggle in settings screen
+- Debug CSS and JS files deleted from codebase

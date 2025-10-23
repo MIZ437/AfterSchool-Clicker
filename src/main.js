@@ -54,7 +54,7 @@ class AfterSchoolClickerMain {
                 preload: path.join(__dirname, 'preload.js'),
                 backgroundThrottling: false
             },
-            title: 'AfterSchool Clicker',
+            title: '放課後クリッカー',
             icon: path.join(__dirname, '../assets/images/ui/app_icon.png'),
             show: false, // Will show after maximizing in ready-to-show event
             center: true,

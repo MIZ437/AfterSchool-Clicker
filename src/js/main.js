@@ -110,6 +110,8 @@ class AfterSchoolClicker {
         if (typeof ShopSystem !== 'undefined') {
             console.log('Initializing ShopSystem after data load...');
             window.shopSystem = new ShopSystem();
+            await window.shopSystem.initialize();
+            console.log('ShopSystem initialization complete');
         } else {
             console.error('ShopSystem class not found!');
         }

@@ -11,17 +11,32 @@ class ShopSystem {
             cps: []
         };
         this.listeners = []; // Track listeners for cleanup
+        this.initialized = false;
+        this.initPromise = null;
 
-        this.setupShop();
+        // Don't call setupShop here - it will be called explicitly by main.js
     }
 
-    setupShop() {
-        // Wait for DOM and data to be ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => this.initializeElements());
-        } else {
-            this.initializeElements();
+    async initialize() {
+        if (this.initPromise) {
+            return this.initPromise;
         }
+
+        this.initPromise = this._initialize();
+        return this.initPromise;
+    }
+
+    async _initialize() {
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            await new Promise(resolve => {
+                document.addEventListener('DOMContentLoaded', resolve, { once: true });
+            });
+        }
+
+        await this.initializeElements();
+        this.initialized = true;
+        console.log('ShopSystem: Initialization complete');
     }
 
     async initializeElements() {

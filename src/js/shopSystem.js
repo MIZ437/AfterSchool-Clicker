@@ -327,13 +327,13 @@ class ShopSystem {
         let effectDisplayText = '';
         if (owned > 0 && totalBonus > 0) {
             // ボーナスあり: 基本+12pt + ボーナス+6pt = 合計+18pt
-            effectDisplayText = `基本+${baseTotal}${effectUnit} + ボーナス+${bonusValue}${effectUnit} = 合計+${effectTotal}${effectUnit}`;
+            effectDisplayText = `基本+${this.formatNumber(baseTotal)}${effectUnit} + ボーナス+${this.formatNumber(bonusValue)}${effectUnit} = 合計+${this.formatNumber(effectTotal)}${effectUnit}`;
         } else if (owned > 0) {
             // ボーナスなし: 基本+12pt = 合計+12pt
-            effectDisplayText = `合計+${baseTotal}${effectUnit}`;
+            effectDisplayText = `合計+${this.formatNumber(baseTotal)}${effectUnit}`;
         } else {
             // 未所持: 単価表示
-            effectDisplayText = `+${value}${effectUnit}`;
+            effectDisplayText = `+${this.formatNumber(value)}${effectUnit}`;
         }
 
         const ownedText = debugMode ? '∞' : `${this.formatNumber(owned)}個所持`;
@@ -618,13 +618,13 @@ class ShopSystem {
             let effectDisplayText = '';
             if (owned > 0 && totalBonus > 0) {
                 // ボーナスあり: 基本+12pt + ボーナス+6pt = 合計+18pt
-                effectDisplayText = `基本+${baseTotal}${effectUnit} + ボーナス+${bonusValue}${effectUnit} = 合計+${effectTotal}${effectUnit}`;
+                effectDisplayText = `基本+${this.formatNumber(baseTotal)}${effectUnit} + ボーナス+${this.formatNumber(bonusValue)}${effectUnit} = 合計+${this.formatNumber(effectTotal)}${effectUnit}`;
             } else if (owned > 0) {
                 // ボーナスなし: 基本+12pt = 合計+12pt
-                effectDisplayText = `合計+${baseTotal}${effectUnit}`;
+                effectDisplayText = `合計+${this.formatNumber(baseTotal)}${effectUnit}`;
             } else {
                 // 未所持: 単価表示
-                effectDisplayText = `+${value}${effectUnit}`;
+                effectDisplayText = `+${this.formatNumber(value)}${effectUnit}`;
             }
             effectElement.textContent = effectDisplayText;
         }

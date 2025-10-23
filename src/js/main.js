@@ -106,6 +106,14 @@ class AfterSchoolClicker {
             await window.dataManager.loadAll();
         }
 
+        // Initialize ShopSystem AFTER data is loaded
+        if (typeof ShopSystem !== 'undefined') {
+            console.log('Initializing ShopSystem after data load...');
+            window.shopSystem = new ShopSystem();
+        } else {
+            console.error('ShopSystem class not found!');
+        }
+
         // Load save data
         if (window.saveManager) {
             await window.saveManager.loadGame();

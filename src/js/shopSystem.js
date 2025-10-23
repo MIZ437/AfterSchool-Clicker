@@ -1222,9 +1222,7 @@ class ShopSystem {
 }
 
 // Initialize shop system when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('ShopSystem: DOMContentLoaded fired, creating ShopSystem');
-    window.shopSystem = new ShopSystem();
-});
+// ShopSystem will be initialized by main.js after data is loaded
+// This ensures items.csv is loaded before ShopSystem tries to use it
 
 console.log('ShopSystem: Script loaded, DOM state:', document.readyState);

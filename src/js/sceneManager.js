@@ -733,10 +733,15 @@ class SceneManager {
                 this.previousScene = 'album';
             }
 
-            // Hide ALL scenes to ensure no overlap
-            this.scenes.forEach((sceneElement) => {
-                sceneElement.classList.remove('active');
-            });
+            // Hide ALL scenes first to ensure no overlap (synchronous operation)
+            for (const [name, sceneElement] of this.scenes) {
+                if (sceneElement !== newSceneElement) {
+                    sceneElement.classList.remove('active');
+                }
+            }
+
+            // Force a layout recalculation to ensure removal is applied
+            void document.body.offsetHeight;
 
             // Show new scene immediately
             newSceneElement.classList.add('active');

@@ -733,10 +733,10 @@ class SceneManager {
                 this.previousScene = 'album';
             }
 
-            // Hide current scene immediately
-            if (currentSceneElement && currentSceneElement !== newSceneElement) {
-                currentSceneElement.classList.remove('active');
-            }
+            // Hide ALL scenes to ensure no overlap
+            this.scenes.forEach((sceneElement) => {
+                sceneElement.classList.remove('active');
+            });
 
             // Show new scene immediately
             newSceneElement.classList.add('active');

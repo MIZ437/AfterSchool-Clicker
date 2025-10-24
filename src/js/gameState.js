@@ -271,16 +271,55 @@ class GameState {
         }
     }
 
-    // Get click value (base + bonuses)
+    // Get click value (base + bonuses + milestone bonuses)
     getClickValue() {
         const baseValue = 1;
         const boost = this.get('gameProgress.totalClickBoost');
-        return baseValue + boost;
+
+        // Calculate milestone bonuses for all click items
+        let milestoneBonus = 0;
+        const purchases = this.get('purchases.items') || {};
+
+        // Check all items that start with ITM_CLICK
+        for (const [itemId, count] of Object.entries(purchases)) {
+            if (itemId.startsWith('ITM_CLICK') && count > 0) {
+                // Get item base value from dataManager
+                const item = window.dataManager ? window.dataManager.getClickItems().find(i => i.id === itemId) : null;
+                if (item) {
+                    const itemValue = parseInt(item.value);
+                    const totalBonusMultiplier = this.getTotalMilestoneBonus(itemId);
+                    const bonusValue = Math.round(itemValue * count * totalBonusMultiplier);
+                    milestoneBonus += bonusValue;
+                }
+            }
+        }
+
+        return baseValue + boost + milestoneBonus;
     }
 
-    // Get points per second
+    // Get points per second (base CPS + milestone bonuses)
     getPointsPerSecond() {
-        return this.get('gameProgress.totalCPS');
+        const baseCPS = this.get('gameProgress.totalCPS');
+
+        // Calculate milestone bonuses for all CPS items
+        let milestoneBonus = 0;
+        const purchases = this.get('purchases.items') || {};
+
+        // Check all items that start with ITM_CPS
+        for (const [itemId, count] of Object.entries(purchases)) {
+            if (itemId.startsWith('ITM_CPS') && count > 0) {
+                // Get item base value from dataManager
+                const item = window.dataManager ? window.dataManager.getCPSItems().find(i => i.id === itemId) : null;
+                if (item) {
+                    const itemValue = parseInt(item.value);
+                    const totalBonusMultiplier = this.getTotalMilestoneBonus(itemId);
+                    const bonusValue = Math.round(itemValue * count * totalBonusMultiplier);
+                    milestoneBonus += bonusValue;
+                }
+            }
+        }
+
+        return baseCPS + milestoneBonus;
     }
 
     // Check if item is affordable

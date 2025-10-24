@@ -408,7 +408,8 @@ body {
     color: white;
     box-shadow: 0 4px 15px rgba(0, 184, 148, 0.4);
     opacity: 0;
-    animation: fadeIn 0.5s ease forwards 11s;
+    display: none;  /* Hidden by default */
+    animation: fadeIn 0.5s ease forwards;
     animation-play-state: paused;
 }
 
@@ -448,12 +449,10 @@ body {
     from {
         opacity: 0;
         transform: scale(0.9);
-        pointer-events: none;
     }
     to {
         opacity: 1;
         transform: scale(1);
-        pointer-events: auto;
     }
 }
 

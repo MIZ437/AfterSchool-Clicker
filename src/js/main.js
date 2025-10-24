@@ -207,6 +207,8 @@ class AfterSchoolClicker {
     updateGameDisplays() {
         this.updatePointsDisplay();
         this.updateCPSDisplay();
+        this.updateClickValueDisplay();
+        this.updateAutoValueDisplay();
         this.updateStageDisplay();
     }
 
@@ -297,6 +299,22 @@ class AfterSchoolClicker {
         if (stageElement && window.gameState) {
             const stage = window.gameState.get('gameProgress.currentStage');
             stageElement.textContent = stage;
+        }
+    }
+
+    updateClickValueDisplay() {
+        const clickValueElement = document.getElementById('current-click-value');
+        if (clickValueElement && window.gameState) {
+            const clickValue = window.gameState.getClickValue();
+            clickValueElement.textContent = `+${this.formatNumber(clickValue)}ポイント`;
+        }
+    }
+
+    updateAutoValueDisplay() {
+        const autoValueElement = document.getElementById('current-auto-value');
+        if (autoValueElement && window.gameState) {
+            const autoValue = window.gameState.getPointsPerSecond();
+            autoValueElement.textContent = `毎秒${this.formatNumber(autoValue)}ポイント`;
         }
     }
 

@@ -333,7 +333,7 @@ class ShopSystem {
         const totalBonus = window.gameState ? window.gameState.getTotalMilestoneBonus(item.id) : 0;
 
         // 効果の計算
-        const baseTotal = value * owned; // 基本効果の合計
+        const baseTotal = value * owned; // 基本効果の合計（所持数 × 単価）
         const bonusValue = Math.round(baseTotal * totalBonus); // ボーナス分
         const effectTotal = baseTotal + bonusValue; // 合計効果
         const effectUnit = item.effect === 'click' ? 'pt/クリック' : 'pt/秒';
@@ -341,11 +341,11 @@ class ShopSystem {
         // 効果表示テキスト生成（コンパクト版）
         let effectDisplayText = '';
         if (owned > 0 && totalBonus > 0) {
-            // ボーナスあり: 基本+12pt + ボーナス+6pt = 合計+18pt
+            // ボーナスあり: 基本+10pt/クリック + ボーナス+5pt/クリック = 合計+15pt/クリック
             effectDisplayText = `基本+${this.formatNumber(baseTotal)}${effectUnit} + ボーナス+${this.formatNumber(bonusValue)}${effectUnit} = 合計+${this.formatNumber(effectTotal)}${effectUnit}`;
         } else if (owned > 0) {
-            // ボーナスなし: 基本+12pt = 合計+12pt
-            effectDisplayText = `合計+${this.formatNumber(baseTotal)}${effectUnit}`;
+            // ボーナスなし: +10pt/クリック
+            effectDisplayText = `+${this.formatNumber(baseTotal)}${effectUnit}`;
         } else {
             // 未所持: 単価表示
             effectDisplayText = `+${this.formatNumber(value)}${effectUnit}`;
@@ -534,12 +534,19 @@ class ShopSystem {
 
             // Update click value display if it's a click item
             if (effect === 'click') {
-                this.updateClickValueDisplay();
+                // Update footer click value display
+                if (window.main) {
+                    window.main.updateClickValueDisplay();
+                }
             }
 
             // Update PPS display if it's a CPS item
             if (effect === 'cps') {
                 this.updatePPSDisplay();
+                // Update footer auto value display
+                if (window.main) {
+                    window.main.updateAutoValueDisplay();
+                }
             }
 
             console.log(`Purchased ${quantity}x ${item.name} for ${totalCost} points (progressive pricing)`);
@@ -622,7 +629,7 @@ class ShopSystem {
         const totalBonus = window.gameState ? window.gameState.getTotalMilestoneBonus(itemId) : 0;
 
         // 効果の計算
-        const baseTotal = value * owned; // 基本効果の合計
+        const baseTotal = value * owned; // 基本効果の合計（所持数 × 単価）
         const bonusValue = Math.round(baseTotal * totalBonus); // ボーナス分
         const effectTotal = baseTotal + bonusValue; // 合計効果
         const effectUnit = item.effect === 'click' ? 'pt/クリック' : 'pt/秒';
@@ -632,11 +639,11 @@ class ShopSystem {
         if (effectElement) {
             let effectDisplayText = '';
             if (owned > 0 && totalBonus > 0) {
-                // ボーナスあり: 基本+12pt + ボーナス+6pt = 合計+18pt
+                // ボーナスあり: 基本+10pt/クリック + ボーナス+5pt/クリック = 合計+15pt/クリック
                 effectDisplayText = `基本+${this.formatNumber(baseTotal)}${effectUnit} + ボーナス+${this.formatNumber(bonusValue)}${effectUnit} = 合計+${this.formatNumber(effectTotal)}${effectUnit}`;
             } else if (owned > 0) {
-                // ボーナスなし: 基本+12pt = 合計+12pt
-                effectDisplayText = `合計+${this.formatNumber(baseTotal)}${effectUnit}`;
+                // ボーナスなし: +10pt/クリック
+                effectDisplayText = `+${this.formatNumber(baseTotal)}${effectUnit}`;
             } else {
                 // 未所持: 単価表示
                 effectDisplayText = `+${this.formatNumber(value)}${effectUnit}`;

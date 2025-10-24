@@ -105,7 +105,16 @@ class SceneManager {
         const scenarioBackToAlbumBtn = document.getElementById('scenario-back-to-album-btn');
 
         if (scenarioSkipBtn) {
-            scenarioSkipBtn.addEventListener('click', () => {
+            scenarioSkipBtn.addEventListener('click', (e) => {
+                // Prevent action if button is disabled
+                if (scenarioSkipBtn.style.pointerEvents === 'none') {
+                    console.log('[DEBUG] Skip button click blocked - pointer-events is none');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+
+                console.log('[DEBUG] Skip button clicked - transitioning to tutorial');
                 // Mark scenario as viewed even when skipped
                 if (window.gameState) {
                     window.gameState.markContentViewed('scenarios', 'scenario');
@@ -115,7 +124,16 @@ class SceneManager {
         }
 
         if (scenarioContinueBtn) {
-            scenarioContinueBtn.addEventListener('click', () => {
+            scenarioContinueBtn.addEventListener('click', (e) => {
+                // Prevent action if button is disabled
+                if (scenarioContinueBtn.style.pointerEvents === 'none') {
+                    console.log('[DEBUG] Continue button click blocked - pointer-events is none');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+
+                console.log('[DEBUG] Continue button clicked - transitioning to tutorial');
                 // Mark scenario as viewed
                 if (window.gameState) {
                     window.gameState.markContentViewed('scenarios', 'scenario');
@@ -498,9 +516,12 @@ class SceneManager {
         // Normal scene BGM mapping for other scenes
         const sceneBGMMap = {
             'title': 'title_bgm',
+            'scenario': null,                // No BGM change - continue current BGM
             'tutorial': 'tutorial_bgm',      // Will be silent (empty filename)
             'game': currentGameBGM,          // Dynamic based on current stage
-            'album': 'album_bgm'             // Will be silent (empty filename)
+            'album': 'album_bgm',            // Will be silent (empty filename)
+            'ending1': null,                 // No BGM change - continue current BGM
+            'ending2': null                  // No BGM change - continue current BGM
         };
 
         const bgmId = sceneBGMMap[sceneName];
@@ -924,41 +945,64 @@ class SceneManager {
             if (skipBtn) {
                 skipBtn.style.display = 'inline-block';
 
-                // Reset animation and disable pointer-events initially
-                skipBtn.style.pointerEvents = 'none';
-                skipBtn.style.animation = 'none';
+                // Completely disable pointer-events and override CSS animation
+                skipBtn.style.setProperty('pointer-events', 'none', 'important');
+                skipBtn.style.setProperty('animation', 'none', 'important');
+                skipBtn.style.setProperty('opacity', '1', 'important');
 
-                // Force reflow to restart animation
-                void skipBtn.offsetWidth;
-                skipBtn.style.animation = '';
+                console.log('[initializeScenarioScene] Skip button initialized - pointer-events disabled');
 
-                // Enable button after animation completes
-                const handleSkipAnimationEnd = () => {
-                    skipBtn.style.pointerEvents = 'auto';
-                    console.log('[initializeScenarioScene] Skip button enabled after animation');
-                    skipBtn.removeEventListener('animationend', handleSkipAnimationEnd);
-                };
-                skipBtn.addEventListener('animationend', handleSkipAnimationEnd);
+                // Enable button after a delay (simulating animation timing)
+                setTimeout(() => {
+                    if (skipBtn && this.currentScene === 'scenario') {
+                        skipBtn.style.setProperty('pointer-events', 'auto', 'important');
+                        console.log('[initializeScenarioScene] Skip button enabled after delay');
+                    } else {
+                        console.log('[initializeScenarioScene] Skip button NOT enabled - scene changed or button removed');
+                    }
+                }, 1500); // 1s delay + 0.5s animation from CSS
             }
 
             if (continueBtn) {
-                continueBtn.style.display = 'inline-block';
+                // Keep button hidden and disabled initially
+                continueBtn.style.display = 'none';
+                continueBtn.style.setProperty('pointer-events', 'none', 'important');
+                continueBtn.style.setProperty('opacity', '0', 'important');
 
-                // Reset animation and disable pointer-events initially
-                continueBtn.style.pointerEvents = 'none';
-                continueBtn.style.animation = 'none';
+                console.log('[initializeScenarioScene] Continue button hidden - waiting for scenario completion');
 
-                // Force reflow to restart animation
-                void continueBtn.offsetWidth;
-                continueBtn.style.animation = '';
+                // Listen for the last scenario line animation to complete
+                const lastScenarioLine = document.querySelector('#scenario-screen .scenario-line:nth-child(7)');
 
-                // Enable button after animation completes
-                const handleContinueAnimationEnd = () => {
-                    continueBtn.style.pointerEvents = 'auto';
-                    console.log('[initializeScenarioScene] Continue button enabled after animation');
-                    continueBtn.removeEventListener('animationend', handleContinueAnimationEnd);
-                };
-                continueBtn.addEventListener('animationend', handleContinueAnimationEnd);
+                if (lastScenarioLine) {
+                    const handleScenarioComplete = () => {
+                        // Only show button if still on scenario scene
+                        if (this.currentScene === 'scenario') {
+                            console.log('[initializeScenarioScene] Last scenario line animated - showing continue button');
+
+                            // Show and enable the button
+                            continueBtn.style.display = 'inline-block';
+                            continueBtn.style.setProperty('opacity', '1', 'important');
+                            continueBtn.style.setProperty('pointer-events', 'auto', 'important');
+                        }
+
+                        lastScenarioLine.removeEventListener('animationend', handleScenarioComplete);
+                    };
+
+                    lastScenarioLine.addEventListener('animationend', handleScenarioComplete, { once: true });
+                    console.log('[initializeScenarioScene] Listening for last scenario line animation completion');
+                } else {
+                    console.warn('[initializeScenarioScene] Last scenario line not found - using fallback timeout');
+                    // Fallback: show button after calculated delay if element not found
+                    setTimeout(() => {
+                        if (continueBtn && this.currentScene === 'scenario') {
+                            continueBtn.style.display = 'inline-block';
+                            continueBtn.style.setProperty('opacity', '1', 'important');
+                            continueBtn.style.setProperty('pointer-events', 'auto', 'important');
+                            console.log('[initializeScenarioScene] Continue button shown (fallback)');
+                        }
+                    }, 10000); // 9.5s delay + 0.4s animation + 0.1s buffer
+                }
             }
 
             if (backToAlbumBtn) backToAlbumBtn.style.display = 'none';

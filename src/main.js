@@ -259,7 +259,7 @@ class AfterSchoolClickerMain {
                 unlockedStages: [1],
                 totalPoints: 0,
                 currentPoints: 0,
-                totalClickBoost: 1,
+                totalClickBoost: 0,
                 totalCPS: 0
             },
             collection: {

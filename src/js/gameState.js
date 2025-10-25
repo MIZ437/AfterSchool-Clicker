@@ -157,7 +157,12 @@ class GameState {
         const currentCount = this.get(`purchases.items.${itemId}`) || 0;
         this.set(`purchases.items.${itemId}`, currentCount + 1);
 
-        // Apply item effect
+        // Apply item effect (skip first purchase of ITM_CLICK_1 as it's the base)
+        if (itemId === 'ITM_CLICK_1' && currentCount === 0) {
+            // First ITM_CLICK_1 purchase - this is the base click, don't add to boost
+            return;
+        }
+
         if (effect === 'click') {
             const currentBoost = this.get('gameProgress.totalClickBoost');
             this.set('gameProgress.totalClickBoost', currentBoost + value);
@@ -529,7 +534,7 @@ class GameState {
                 unlockedStages: [1],
                 totalPoints: 0,
                 currentPoints: 0,
-                totalClickBoost: 1,  // Base click: ITM_CLICK_1 default ownership
+                totalClickBoost: 0,  // Base click value is 1, ITM_CLICK_1 provides the base
                 totalCPS: 0
             },
             collection: {

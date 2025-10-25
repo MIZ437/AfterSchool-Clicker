@@ -259,7 +259,7 @@ class AfterSchoolClickerMain {
                 unlockedStages: [1],
                 totalPoints: 0,
                 currentPoints: 0,
-                totalClickBoost: 0,
+                totalClickBoost: 1,
                 totalCPS: 0
             },
             collection: {
@@ -272,7 +272,9 @@ class AfterSchoolClickerMain {
                 currentDisplayImage: "heroine_1_01"
             },
             purchases: {
-                items: {}
+                items: {
+                    "ITM_CLICK_1": 1
+                }
             },
             settings: {
                 bgmVolume: 0.2,

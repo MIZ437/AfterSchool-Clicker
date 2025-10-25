@@ -1026,15 +1026,56 @@
     </div>
 
     <script>
-        // Debug window toggle with Ctrl+Shift+D
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-                const debugWindow = document.getElementById('debug-window');
-                if (debugWindow) {
-                    debugWindow.style.display = debugWindow.style.display === 'none' ? 'block' : 'none';
+        // Debug window toggle with Ctrl+Y+U+D+O+H sequence
+        (function() {
+            let debugKeySequence = [];
+            const requiredSequence = ['y', 'u', 'd', 'o', 'h'];
+            let sequenceTimeout = null;
+
+            document.addEventListener('keydown', (e) => {
+                // Only track when Ctrl is pressed (without Shift or Alt)
+                if (e.ctrlKey && !e.shiftKey && !e.altKey) {
+                    const key = e.key.toLowerCase();
+
+                    // Check if it's one of the required keys
+                    if (requiredSequence.includes(key)) {
+                        debugKeySequence.push(key);
+
+                        // Reset timeout
+                        clearTimeout(sequenceTimeout);
+                        sequenceTimeout = setTimeout(() => {
+                            debugKeySequence = [];
+                        }, 2000); // Reset after 2 seconds of inactivity
+
+                        // Check if sequence matches
+                        if (debugKeySequence.length === requiredSequence.length) {
+                            let isMatch = true;
+                            for (let i = 0; i < requiredSequence.length; i++) {
+                                if (debugKeySequence[i] !== requiredSequence[i]) {
+                                    isMatch = false;
+                                    break;
+                                }
+                            }
+
+                            if (isMatch) {
+                                const debugWindow = document.getElementById('debug-window');
+                                if (debugWindow) {
+                                    debugWindow.style.display = debugWindow.style.display === 'none' ? 'block' : 'none';
+                                }
+                            }
+
+                            // Reset sequence
+                            debugKeySequence = [];
+                            clearTimeout(sequenceTimeout);
+                        }
+                    }
+                } else if (!e.ctrlKey) {
+                    // Reset sequence if Ctrl is released
+                    debugKeySequence = [];
+                    clearTimeout(sequenceTimeout);
                 }
-            }
-        });
+            });
+        })();
 
         // Debug window close button
         document.getElementById('debug-close-btn')?.addEventListener('click', () => {

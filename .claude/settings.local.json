@@ -19,7 +19,9 @@
       "Bash(del nul)",
       "Bash(tree:*)",
       "Bash(del \"assets\\images\\nul\")",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(npm run dist:*)",
+      "Read(//c/Users/ashim/Desktop/Eゲーム開発/AfterSchool Clicker(体験版)/**)"
     ],
     "deny": [],
     "ask": []

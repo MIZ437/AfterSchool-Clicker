@@ -169,7 +169,7 @@ class AfterSchoolClickerMain {
         // Load CSV data
         ipcMain.handle('load-csv', async (event, csvFile) => {
             try {
-                const csvPath = path.join(__dirname, '../assets/data', csvFile);
+                const csvPath = this.getDataPath(csvFile);
                 const results = await this.parseCSV(csvPath);
                 return { success: true, data: results };
             } catch (error) {
@@ -217,7 +217,8 @@ class AfterSchoolClickerMain {
 
         for (const file of csvFiles) {
             try {
-                const csvPath = path.join(__dirname, '../assets/data', file);
+                // Use getAssetPath to handle both development and production
+                const csvPath = this.getDataPath(file);
                 const key = file.replace('.csv', '');
                 this.gameData[key] = await this.parseCSV(csvPath);
                 console.log(`Loaded ${file}: ${this.gameData[key].length} entries`);
@@ -225,6 +226,17 @@ class AfterSchoolClickerMain {
                 console.error(`Failed to load ${file}:`, error);
                 this.gameData[file.replace('.csv', '')] = [];
             }
+        }
+    }
+
+    getDataPath(filename) {
+        // Get absolute path to CSV data file
+        if (app.isPackaged) {
+            // In production, data files are inside ASAR
+            return path.join(__dirname, '..', 'assets', 'data', filename);
+        } else {
+            // In development
+            return path.join(__dirname, '..', 'assets', 'data', filename);
         }
     }
 
@@ -273,8 +285,8 @@ class AfterSchoolClickerMain {
     getAssetPath(filename) {
         // Get absolute path to asset file
         if (app.isPackaged) {
-            // In production, assets are unpacked from ASAR
-            return path.join(process.resourcesPath, 'app.asar.unpacked', 'assets', filename);
+            // In production, assets are inside ASAR (not unpacked)
+            return path.join(__dirname, '..', 'assets', filename);
         } else {
             // In development
             return path.join(__dirname, '..', 'assets', filename);

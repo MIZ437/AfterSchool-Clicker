@@ -35,12 +35,15 @@
       "src/**/*",
       "assets/**/*"
     ],
-    "asarUnpack": [
-      "assets/**/*"
-    ],
+    "asar": true,
     "compression": "maximum",
     "win": {
-      "target": "nsis",
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
       "icon": "assets/images/ui/app_icon.png",
       "sign": null,
       "signingHashAlgorithms": ["sha256"]
@@ -53,11 +56,8 @@
       "target": "AppImage",
       "icon": "build/icon.png"
     },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+    "portable": {
+      "artifactName": "${productName} ${version}.${ext}"
     }
   }
 }

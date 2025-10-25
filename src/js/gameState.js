@@ -8,7 +8,7 @@ class GameState {
                 unlockedStages: [1],
                 totalPoints: 0,
                 currentPoints: 0,
-                totalClickBoost: 0,
+                totalClickBoost: 1,  // Base click: ITM_CLICK_1 default ownership
                 totalCPS: 0
             },
             collection: {
@@ -25,7 +25,9 @@ class GameState {
                 endings: []
             },
             purchases: {
-                items: {}
+                items: {
+                    "ITM_CLICK_1": 1  // Default ownership: 1 click = 1 point
+                }
             },
             milestones: {
                 achieved: {} // Track achieved milestones per item: {itemId: [10, 25, 50, 100]}
@@ -527,7 +529,7 @@ class GameState {
                 unlockedStages: [1],
                 totalPoints: 0,
                 currentPoints: 0,
-                totalClickBoost: 0,
+                totalClickBoost: 1,  // Base click: ITM_CLICK_1 default ownership
                 totalCPS: 0
             },
             collection: {
@@ -544,7 +546,9 @@ class GameState {
                 endings: []
             },
             purchases: {
-                items: {}
+                items: {
+                    "ITM_CLICK_1": 1  // Default ownership: 1 click = 1 point
+                }
             },
             settings: {
                 bgmVolume: 0.2,

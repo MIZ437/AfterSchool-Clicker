@@ -5,6 +5,7 @@ class SaveManager {
         this.lastSaveTime = 0;
         this.saveInProgress = false;
         this.saveStatusElement = null;
+        this.shopNeedsRefresh = false;
         this.setupSaveManager();
         this.setupAutoSave();
     }
@@ -239,6 +240,10 @@ class SaveManager {
                 if (success) {
                     console.log('Game loaded successfully');
                     this.lastSaveTime = Date.now();
+
+                    // Mark that shop needs refresh (will be done when game scene is shown)
+                    this.shopNeedsRefresh = true;
+
                     return { success: true, message: 'ゲームを読み込みました' };
                 } else {
                     throw new Error('Invalid save data format');
@@ -271,6 +276,10 @@ class SaveManager {
 
                 if (success) {
                     console.log('Game loaded from backup');
+
+                    // Mark that shop needs refresh (will be done when game scene is shown)
+                    this.shopNeedsRefresh = true;
+
                     // Save to proper location
                     await this.saveGame();
                     return { success: true, message: 'バックアップから復元しました' };

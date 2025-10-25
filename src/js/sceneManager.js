@@ -107,8 +107,8 @@ class SceneManager {
         if (scenarioSkipBtn) {
             scenarioSkipBtn.addEventListener('click', (e) => {
                 // Prevent action if button is disabled
-                if (scenarioSkipBtn.style.pointerEvents === 'none') {
-                    console.log('[DEBUG] Skip button click blocked - pointer-events is none');
+                if (scenarioSkipBtn.disabled) {
+                    console.log('[DEBUG] Skip button click blocked - button is disabled');
                     e.preventDefault();
                     e.stopPropagation();
                     return false;
@@ -126,8 +126,8 @@ class SceneManager {
         if (scenarioContinueBtn) {
             scenarioContinueBtn.addEventListener('click', (e) => {
                 // Prevent action if button is disabled
-                if (scenarioContinueBtn.style.pointerEvents === 'none') {
-                    console.log('[DEBUG] Continue button click blocked - pointer-events is none');
+                if (scenarioContinueBtn.disabled) {
+                    console.log('[DEBUG] Continue button click blocked - button is disabled');
                     e.preventDefault();
                     e.stopPropagation();
                     return false;
@@ -944,18 +944,18 @@ class SceneManager {
             // Normal game flow: show skip and continue buttons
             if (skipBtn) {
                 skipBtn.style.display = 'inline-block';
+                skipBtn.disabled = true; // Use native disabled attribute
 
-                // Completely disable pointer-events and override CSS animation
-                skipBtn.style.setProperty('pointer-events', 'none', 'important');
+                // Override CSS animation
                 skipBtn.style.setProperty('animation', 'none', 'important');
                 skipBtn.style.setProperty('opacity', '1', 'important');
 
-                console.log('[initializeScenarioScene] Skip button initialized - pointer-events disabled');
+                console.log('[initializeScenarioScene] Skip button initialized - disabled');
 
                 // Enable button after a delay (simulating animation timing)
                 setTimeout(() => {
                     if (skipBtn && this.currentScene === 'scenario') {
-                        skipBtn.style.setProperty('pointer-events', 'auto', 'important');
+                        skipBtn.disabled = false;
                         console.log('[initializeScenarioScene] Skip button enabled after delay');
                     } else {
                         console.log('[initializeScenarioScene] Skip button NOT enabled - scene changed or button removed');
@@ -966,7 +966,7 @@ class SceneManager {
             if (continueBtn) {
                 // Keep button hidden and disabled initially
                 continueBtn.style.display = 'none';
-                continueBtn.style.setProperty('pointer-events', 'none', 'important');
+                continueBtn.disabled = true; // Use native disabled attribute
                 continueBtn.style.setProperty('opacity', '0', 'important');
 
                 console.log('[initializeScenarioScene] Continue button hidden - waiting for scenario completion');
@@ -983,7 +983,7 @@ class SceneManager {
                             // Show and enable the button
                             continueBtn.style.display = 'inline-block';
                             continueBtn.style.setProperty('opacity', '1', 'important');
-                            continueBtn.style.setProperty('pointer-events', 'auto', 'important');
+                            continueBtn.disabled = false;
                         }
 
                         lastScenarioLine.removeEventListener('animationend', handleScenarioComplete);
@@ -998,7 +998,7 @@ class SceneManager {
                         if (continueBtn && this.currentScene === 'scenario') {
                             continueBtn.style.display = 'inline-block';
                             continueBtn.style.setProperty('opacity', '1', 'important');
-                            continueBtn.style.setProperty('pointer-events', 'auto', 'important');
+                            continueBtn.disabled = false;
                             console.log('[initializeScenarioScene] Continue button shown (fallback)');
                         }
                     }, 10000); // 9.5s delay + 0.4s animation + 0.1s buffer
@@ -1465,6 +1465,13 @@ class SceneManager {
 
         // Update heroine display
         this.updateHeroineDisplay();
+
+        // Check if shop needs refresh after save data load
+        if (window.saveManager && window.saveManager.shopNeedsRefresh && window.shopSystem) {
+            console.log('[initializeGameScene] Refreshing shop after save data load');
+            window.shopSystem.refresh();
+            window.saveManager.shopNeedsRefresh = false;
+        }
     }
 
     initializeAlbumScene() {

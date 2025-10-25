@@ -437,6 +437,12 @@ body {
     transform: translateY(0);
 }
 
+.scenario-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 /* Override animation for back-to-album button */
 #scenario-back-to-album-btn,
 #ending2-back-to-album-btn {

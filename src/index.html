@@ -1019,6 +1019,14 @@
                 <button id="debug-backspace-btn" style="padding: 10px; background: #ff6600; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">←</button>
             </div>
             <button id="debug-add-points-btn" style="width: 100%; padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; margin-bottom: 10px;">追加</button>
+            <label style="display: block; margin-bottom: 5px; font-size: 11px;">ステージ解放:</label>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; margin-bottom: 8px;">
+                <button class="debug-unlock-progress-btn" data-stage="1" style="padding: 8px; background: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">S1解放</button>
+                <button class="debug-unlock-progress-btn" data-stage="2" style="padding: 8px; background: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">S2解放</button>
+                <button class="debug-unlock-progress-btn" data-stage="3" style="padding: 8px; background: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">S3解放</button>
+                <button class="debug-unlock-progress-btn" data-stage="4" style="padding: 8px; background: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">S4解放</button>
+            </div>
+            <label style="display: block; margin-bottom: 5px; font-size: 11px;">画像解放:</label>
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px;">
                 <button class="debug-unlock-stage-btn" data-stage="1" style="padding: 8px; background: #9b59b6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">S1画像</button>
                 <button class="debug-unlock-stage-btn" data-stage="2" style="padding: 8px; background: #9b59b6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">S2画像</button>
@@ -1248,6 +1256,39 @@
                             window.gachaSystem.handleCollectionComplete();
                         }
                     }, 1500);
+                }
+            });
+        });
+
+        // Debug unlock stage progress buttons
+        document.querySelectorAll('.debug-unlock-progress-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const stageId = parseInt(btn.dataset.stage);
+                if (!window.gameState) {
+                    console.error('[DEBUG] window.gameState is not available!');
+                    return;
+                }
+
+                // Unlock the specified stage
+                const unlockedStages = window.gameState.get('gameProgress.unlockedStages') || [1];
+                if (!unlockedStages.includes(stageId)) {
+                    unlockedStages.push(stageId);
+                    unlockedStages.sort((a, b) => a - b);
+                    window.gameState.set('gameProgress.unlockedStages', unlockedStages);
+                }
+
+                // Update current stage
+                window.gameState.set('gameProgress.currentStage', stageId);
+
+                console.log(`[DEBUG] Unlocked Stage ${stageId}`);
+                alert(`ステージ${stageId}を解放しました！`);
+
+                // Trigger updates
+                if (window.updateStageDisplay) {
+                    window.updateStageDisplay();
+                }
+                if (window.gachaSystem) {
+                    window.gachaSystem.updateGachaDisplay();
                 }
             });
         });

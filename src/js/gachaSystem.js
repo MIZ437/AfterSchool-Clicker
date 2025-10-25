@@ -763,6 +763,12 @@ class GachaSystem {
     handleCollectionComplete() {
         console.log('[GachaSystem] All images unlocked - triggering ending');
 
+        // Close shop modal if open
+        const shopModal = document.getElementById('shop-modal');
+        if (shopModal) {
+            shopModal.style.display = 'none';
+        }
+
         // Transition to ending scene after a short delay
         setTimeout(() => {
             if (window.sceneManager) {

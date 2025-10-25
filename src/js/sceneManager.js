@@ -1235,28 +1235,17 @@ class SceneManager {
                 continueBtn.textContent = btnText;
             }
 
-            // Reset pointer-events to none and clear animation
-            continueBtn.style.pointerEvents = 'none';
-            continueBtn.style.animation = 'none';
+            // Store click handler to prevent duplicates
+            if (!this.ending1ClickHandler) {
+                this.ending1ClickHandler = () => {
+                    console.log('[initializeEnding1Scene] Continue button clicked');
+                    this.showScene('ending2');
+                };
+            }
 
-            // Force reflow to restart animation
-            void continueBtn.offsetWidth;
-            continueBtn.style.animation = '';
-
-            // Remove any existing event listeners by cloning and replacing the button
-            const newBtn = continueBtn.cloneNode(true);
-            continueBtn.parentNode.replaceChild(newBtn, continueBtn);
-
-            // Add click event listener to the new button
-            newBtn.addEventListener('click', () => {
-                this.showScene('ending2');
-            });
-
-            // Add animationend listener to the new button
-            newBtn.addEventListener('animationend', () => {
-                newBtn.style.pointerEvents = 'auto';
-                console.log('[initializeEnding1Scene] Button pointer-events enabled after animation');
-            }, { once: true });
+            // Remove any existing listeners and add new one
+            continueBtn.removeEventListener('click', this.ending1ClickHandler);
+            continueBtn.addEventListener('click', this.ending1ClickHandler);
         }
     }
 

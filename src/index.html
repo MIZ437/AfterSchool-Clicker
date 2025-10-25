@@ -991,5 +991,157 @@
             }, 1000);
         });
     </script>
+
+    <!-- Debug Floating Window -->
+    <div id="debug-window" style="position: fixed; top: 10px; right: 10px; width: 220px; background: rgba(0,0,0,0.9); color: white; padding: 15px; border-radius: 8px; z-index: 99999; font-family: monospace; font-size: 12px; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.5);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <strong style="font-size: 14px;">DEBUG</strong>
+            <button id="debug-close-btn" style="background: #ff4444; color: white; border: none; border-radius: 3px; padding: 3px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">×</button>
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 5px; font-size: 11px;">ポイント追加:</label>
+            <input type="text" id="debug-points-display" readonly value="0" style="width: 100%; padding: 8px; border: 2px solid #555; border-radius: 4px; background: #222; color: #0f0; margin-bottom: 8px; text-align: right; font-size: 16px; font-weight: bold;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 8px;">
+                <button class="debug-calc-btn" data-value="1" style="padding: 10px; background: #444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">1</button>
+                <button class="debug-calc-btn" data-value="2" style="padding: 10px; background: #444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">2</button>
+                <button class="debug-calc-btn" data-value="3" style="padding: 10px; background: #444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">3</button>
+                <button class="debug-calc-btn" data-value="4" style="padding: 10px; background: #444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">4</button>
+                <button class="debug-calc-btn" data-value="5" style="padding: 10px; background: #444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">5</button>
+                <button class="debug-calc-btn" data-value="6" style="padding: 10px; background: #444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">6</button>
+                <button class="debug-calc-btn" data-value="7" style="padding: 10px; background: #444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">7</button>
+                <button class="debug-calc-btn" data-value="8" style="padding: 10px; background: #444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">8</button>
+                <button class="debug-calc-btn" data-value="9" style="padding: 10px; background: #444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">9</button>
+                <button id="debug-clear-btn" style="padding: 10px; background: #ff6600; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">C</button>
+                <button class="debug-calc-btn" data-value="0" style="padding: 10px; background: #444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">0</button>
+                <button id="debug-backspace-btn" style="padding: 10px; background: #ff6600; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">←</button>
+            </div>
+            <button id="debug-add-points-btn" style="width: 100%; padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; margin-bottom: 10px;">追加</button>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px;">
+                <button class="debug-unlock-stage-btn" data-stage="1" style="padding: 8px; background: #9b59b6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">S1画像</button>
+                <button class="debug-unlock-stage-btn" data-stage="2" style="padding: 8px; background: #9b59b6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">S2画像</button>
+                <button class="debug-unlock-stage-btn" data-stage="3" style="padding: 8px; background: #9b59b6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">S3画像</button>
+                <button class="debug-unlock-stage-btn" data-stage="4" style="padding: 8px; background: #9b59b6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">S4画像</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Debug window toggle with Ctrl+Shift+D
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+                const debugWindow = document.getElementById('debug-window');
+                if (debugWindow) {
+                    debugWindow.style.display = debugWindow.style.display === 'none' ? 'block' : 'none';
+                }
+            }
+        });
+
+        // Debug window close button
+        document.getElementById('debug-close-btn')?.addEventListener('click', () => {
+            document.getElementById('debug-window').style.display = 'none';
+        });
+
+        // Calculator button clicks
+        document.querySelectorAll('.debug-calc-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const display = document.getElementById('debug-points-display');
+                const value = btn.dataset.value;
+                const currentValue = display.value;
+
+                if (currentValue === '0') {
+                    display.value = value;
+                } else {
+                    display.value = currentValue + value;
+                }
+            });
+        });
+
+        // Clear button
+        document.getElementById('debug-clear-btn')?.addEventListener('click', () => {
+            document.getElementById('debug-points-display').value = '0';
+        });
+
+        // Backspace button
+        document.getElementById('debug-backspace-btn')?.addEventListener('click', () => {
+            const display = document.getElementById('debug-points-display');
+            const currentValue = display.value;
+
+            if (currentValue.length > 1) {
+                display.value = currentValue.slice(0, -1);
+            } else {
+                display.value = '0';
+            }
+        });
+
+        // Debug add points button
+        document.getElementById('debug-add-points-btn')?.addEventListener('click', () => {
+            const display = document.getElementById('debug-points-display');
+            const points = parseInt(display.value);
+
+            if (!isNaN(points) && points > 0 && window.gameState) {
+                const currentPoints = window.gameState.get('gameProgress.currentPoints') || 0;
+                const newPoints = currentPoints + points;
+                window.gameState.set('gameProgress.currentPoints', newPoints);
+
+                console.log(`[DEBUG] Added ${points} points. New total: ${newPoints}`);
+                display.value = '0';
+
+                // Trigger update
+                if (window.updatePointsDisplay) {
+                    window.updatePointsDisplay();
+                }
+            } else {
+                console.warn('[DEBUG] Invalid points value');
+            }
+        });
+
+        // Debug unlock stage images buttons
+        document.querySelectorAll('.debug-unlock-stage-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const stageId = parseInt(btn.dataset.stage);
+                if (!window.gameState) {
+                    console.error('[DEBUG] window.gameState is not available!');
+                    return;
+                }
+
+                // Define all images for each stage
+                const stageImages = {
+                    1: ['heroine_1_01', 'heroine_1_02', 'heroine_1_03', 'heroine_1_04', 'heroine_1_05', 'heroine_1_06', 'heroine_1_07', 'heroine_1_08', 'heroine_1_09', 'heroine_1_10'],
+                    2: ['heroine_2_01', 'heroine_2_02', 'heroine_2_03', 'heroine_2_04', 'heroine_2_05', 'heroine_2_06', 'heroine_2_07', 'heroine_2_08', 'heroine_2_09', 'heroine_2_10', 'heroine_2_11', 'heroine_2_12', 'heroine_2_13', 'heroine_2_14', 'heroine_2_15', 'heroine_2_16', 'heroine_2_17', 'heroine_2_18', 'heroine_2_19', 'heroine_2_20', 'heroine_2_21', 'heroine_2_22', 'heroine_2_23', 'heroine_2_24', 'heroine_2_25', 'heroine_2_26', 'heroine_2_27', 'heroine_2_28', 'heroine_2_29', 'heroine_2_30'],
+                    3: ['heroine_3_01', 'heroine_3_02', 'heroine_3_03', 'heroine_3_04', 'heroine_3_05', 'heroine_3_06', 'heroine_3_07', 'heroine_3_08', 'heroine_3_09', 'heroine_3_10', 'heroine_3_11', 'heroine_3_12', 'heroine_3_13', 'heroine_3_14', 'heroine_3_15', 'heroine_3_16', 'heroine_3_17', 'heroine_3_18', 'heroine_3_19', 'heroine_3_20', 'heroine_3_21', 'heroine_3_22', 'heroine_3_23', 'heroine_3_24', 'heroine_3_25', 'heroine_3_26', 'heroine_3_27', 'heroine_3_28', 'heroine_3_29', 'heroine_3_30', 'heroine_3_31', 'heroine_3_32', 'heroine_3_33', 'heroine_3_34', 'heroine_3_35', 'heroine_3_36', 'heroine_3_37', 'heroine_3_38', 'heroine_3_39', 'heroine_3_40', 'heroine_3_41', 'heroine_3_42', 'heroine_3_43', 'heroine_3_44', 'heroine_3_45', 'heroine_3_46', 'heroine_3_47', 'heroine_3_48', 'heroine_3_49', 'heroine_3_50'],
+                    4: ['heroine_4_01', 'heroine_4_02', 'heroine_4_03', 'heroine_4_04', 'heroine_4_05', 'heroine_4_06', 'heroine_4_07', 'heroine_4_08', 'heroine_4_09', 'heroine_4_10', 'heroine_4_11', 'heroine_4_12', 'heroine_4_13', 'heroine_4_14', 'heroine_4_15', 'heroine_4_16', 'heroine_4_17', 'heroine_4_18', 'heroine_4_19', 'heroine_4_20', 'heroine_4_21', 'heroine_4_22', 'heroine_4_23', 'heroine_4_24', 'heroine_4_25', 'heroine_4_26', 'heroine_4_27', 'heroine_4_28', 'heroine_4_29', 'heroine_4_30', 'heroine_4_31', 'heroine_4_32', 'heroine_4_33', 'heroine_4_34', 'heroine_4_35', 'heroine_4_36', 'heroine_4_37', 'heroine_4_38', 'heroine_4_39', 'heroine_4_40', 'heroine_4_41', 'heroine_4_42', 'heroine_4_43', 'heroine_4_44', 'heroine_4_45', 'heroine_4_46', 'heroine_4_47', 'heroine_4_48', 'heroine_4_49', 'heroine_4_50', 'heroine_4_51', 'heroine_4_52', 'heroine_4_53', 'heroine_4_54', 'heroine_4_55', 'heroine_4_56', 'heroine_4_57', 'heroine_4_58', 'heroine_4_59', 'heroine_4_60', 'heroine_4_61', 'heroine_4_62', 'heroine_4_63', 'heroine_4_64', 'heroine_4_65', 'heroine_4_66', 'heroine_4_67', 'heroine_4_68', 'heroine_4_69', 'heroine_4_70']
+                };
+
+                // Get current collection
+                const currentCollection = window.gameState.get('collection.heroine') || { stage1: [], stage2: [], stage3: [], stage4: [] };
+
+                // Update the specific stage
+                currentCollection[`stage${stageId}`] = stageImages[stageId];
+                window.gameState.set('collection.heroine', currentCollection);
+
+                const imageCount = stageImages[stageId].length;
+                console.log(`[DEBUG] Unlocked all ${imageCount} images for Stage ${stageId}`);
+                alert(`ステージ${stageId}の全画像を獲得しました！（${imageCount}枚）`);
+
+                // Trigger updates
+                if (window.albumManager) {
+                    window.albumManager.renderAlbum();
+                }
+                if (window.gachaSystem) {
+                    window.gachaSystem.updateGachaDisplay();
+                }
+
+                // Check if all images are now collected
+                if (window.gameState.isCollectionComplete()) {
+                    console.log('[DEBUG] All images collected - triggering ending');
+                    setTimeout(() => {
+                        if (window.gachaSystem) {
+                            window.gachaSystem.handleCollectionComplete();
+                        }
+                    }, 1500);
+                }
+            });
+        });
+    </script>
 </body>
 </html>

@@ -561,6 +561,13 @@ class SceneManager {
                 await window.saveManager.loadGame();
             }
 
+            // Check if scenario has been viewed to set firstRun flag
+            const viewedScenarios = window.gameState.get('viewedContent.scenarios') || [];
+            if (viewedScenarios.includes('scenario')) {
+                this.firstRun = false;
+                console.log('[startGame] Scenario already viewed, setting firstRun to false');
+            }
+
             // Skip complete audio initialization - will be done when user clicks overlay
             console.log('[DEBUG] Skipping audio initialization - will activate on user click');
 

@@ -424,19 +424,22 @@ class SceneManager {
     }
 
     async handleSceneBGM(sceneName) {
-        // Don't change BGM if muted
-        if (this.isMuted || !window.audioManager) {
-            console.log(`[DEBUG] Skipping BGM for scene ${sceneName} - muted or no audio manager`);
-            return;
-        }
+        console.log(`[handleSceneBGM] ====== START BGM HANDLING for: ${sceneName} ======`);
 
-        // Skip BGM changes during system refresh (save deletion)
-        if (this.skipBGMDuringRefresh) {
-            console.log(`[DEBUG] Skipping BGM for scene ${sceneName} - system refresh in progress`);
-            return;
-        }
+        try {
+            // Don't change BGM if muted
+            if (this.isMuted || !window.audioManager) {
+                console.log(`[handleSceneBGM] Skipping BGM for scene ${sceneName} - muted or no audio manager`);
+                return;
+            }
 
-        console.log(`[DEBUG] Handling BGM for scene: ${sceneName}`);
+            // Skip BGM changes during system refresh (save deletion)
+            if (this.skipBGMDuringRefresh) {
+                console.log(`[handleSceneBGM] Skipping BGM for scene ${sceneName} - system refresh in progress`);
+                return;
+            }
+
+            console.log(`[handleSceneBGM] Processing BGM for scene: ${sceneName}`);
 
         // Special handling for settings scene based on previous scene
         if (sceneName === 'settings') {
@@ -545,7 +548,14 @@ class SceneManager {
             }
             // If currentBGMId === bgmId, do nothing (already handled by continue logic above)
         } else {
-            console.log(`[DEBUG] No BGM defined for scene: ${sceneName}`);
+            console.log(`[handleSceneBGM] No BGM defined for scene: ${sceneName}`);
+        }
+
+        console.log(`[handleSceneBGM] ====== BGM HANDLING COMPLETE for: ${sceneName} ======`);
+        } catch (error) {
+            console.error(`[handleSceneBGM] ❌ ERROR during BGM handling for ${sceneName}:`, error);
+            console.error(`[handleSceneBGM] Error stack:`, error.stack);
+            // Don't rethrow - BGM errors should not disrupt scene transitions
         }
     }
 
@@ -765,6 +775,13 @@ class SceneManager {
         console.log('[showScene] Requested scene transition:', this.currentScene, '→', sceneName);
         console.log('[showScene] Call stack:', new Error().stack);
 
+        // CRITICAL: Prevent invalid transitions from scenario screen
+        if (this.currentScene === 'scenario' && sceneName === 'title') {
+            console.error('[showScene] ❌❌❌ BLOCKED: Attempted invalid transition from scenario to title!');
+            console.error('[showScene] This should never happen - investigate the call stack above');
+            return;
+        }
+
         if (this.isTransitioning) {
             console.warn('[showScene] Already transitioning, blocking scene change to:', sceneName);
             return;
@@ -783,33 +800,47 @@ class SceneManager {
 
         // Instant transition to prevent flickering
         if (newSceneElement) {
-            // Record previous scene when transitioning to settings or when fromAlbum flag is set
-            if (sceneName === 'settings') {
-                this.previousScene = this.currentScene;
-            } else if (fromAlbum && (sceneName === 'scenario' || sceneName === 'ending2')) {
-                // Mark that we're coming from album for scenario/ending
-                this.previousScene = 'album';
-            }
-
-            // Hide ALL scenes first to ensure no overlap (synchronous operation)
-            for (const [name, sceneElement] of this.scenes) {
-                if (sceneElement !== newSceneElement) {
-                    sceneElement.classList.remove('active');
+            try {
+                // Record previous scene when transitioning to settings or when fromAlbum flag is set
+                if (sceneName === 'settings') {
+                    this.previousScene = this.currentScene;
+                } else if (fromAlbum && (sceneName === 'scenario' || sceneName === 'ending2')) {
+                    // Mark that we're coming from album for scenario/ending
+                    this.previousScene = 'album';
                 }
+
+                // Hide ALL scenes first to ensure no overlap (synchronous operation)
+                for (const [name, sceneElement] of this.scenes) {
+                    if (sceneElement !== newSceneElement) {
+                        sceneElement.classList.remove('active');
+                    }
+                }
+
+                // Force a layout recalculation to ensure removal is applied
+                void document.body.offsetHeight;
+
+                // Show new scene immediately
+                newSceneElement.classList.add('active');
+
+                // Scene-specific initialization (before updating currentScene for BGM logic)
+                // Wrap in try-catch to prevent errors from disrupting scene transition
+                try {
+                    await this.onSceneEnter(sceneName);
+                } catch (sceneInitError) {
+                    console.error('[showScene] ❌ ERROR during onSceneEnter for', sceneName, ':', sceneInitError);
+                    console.error('[showScene] Error stack:', sceneInitError.stack);
+                    // Continue with scene transition even if initialization fails
+                }
+
+                this.currentScene = sceneName;
+                this.isTransitioning = false;
+                console.log('[showScene] ✓ Transition complete. Current scene:', this.currentScene);
+            } catch (error) {
+                console.error('[showScene] ❌ CRITICAL ERROR during scene transition:', error);
+                console.error('[showScene] Error stack:', error.stack);
+                this.isTransitioning = false;
+                // Do NOT transition to title on error - stay on current scene
             }
-
-            // Force a layout recalculation to ensure removal is applied
-            void document.body.offsetHeight;
-
-            // Show new scene immediately
-            newSceneElement.classList.add('active');
-
-            // Scene-specific initialization (before updating currentScene for BGM logic)
-            await this.onSceneEnter(sceneName);
-
-            this.currentScene = sceneName;
-            this.isTransitioning = false;
-            console.log('[showScene] ✓ Transition complete. Current scene:', this.currentScene);
         } else {
             this.isTransitioning = false;
             console.error('[showScene] newSceneElement is null!');
@@ -817,76 +848,106 @@ class SceneManager {
     }
 
     async onSceneEnter(sceneName) {
-        // Reset ending button pointer-events when leaving ending screens
-        if (this.currentScene === 'ending1' || this.currentScene === 'ending2') {
-            // Reset all ending button pointer-events to allow CSS to control them
-            const ending1Btn = document.getElementById('ending1-continue-btn');
-            const ending2GameBtn = document.getElementById('ending2-game-btn');
-            const ending2TitleBtn = document.getElementById('ending2-title-btn');
-            const ending2BackToAlbumBtn = document.getElementById('ending2-back-to-album-btn');
+        console.log('[onSceneEnter] ====== ENTERING SCENE:', sceneName, '======');
 
-            if (ending1Btn) {
-                ending1Btn.style.pointerEvents = '';
-                console.log('[onSceneEnter] Reset ending1 button pointer-events');
-            }
-            if (ending2GameBtn) {
-                ending2GameBtn.style.pointerEvents = '';
-                console.log('[onSceneEnter] Reset ending2 game button pointer-events');
-            }
-            if (ending2TitleBtn) {
-                ending2TitleBtn.style.pointerEvents = '';
-                console.log('[onSceneEnter] Reset ending2 title button pointer-events');
-            }
-            if (ending2BackToAlbumBtn) {
-                ending2BackToAlbumBtn.style.pointerEvents = '';
-                console.log('[onSceneEnter] Reset ending2 back to album button pointer-events');
-            }
-        }
+        try {
+            // Reset ending button pointer-events when leaving ending screens
+            if (this.currentScene === 'ending1' || this.currentScene === 'ending2') {
+                // Reset all ending button pointer-events to allow CSS to control them
+                const ending1Btn = document.getElementById('ending1-continue-btn');
+                const ending2GameBtn = document.getElementById('ending2-game-btn');
+                const ending2TitleBtn = document.getElementById('ending2-title-btn');
+                const ending2BackToAlbumBtn = document.getElementById('ending2-back-to-album-btn');
 
-        // Handle BGM transitions between scenes
-        await this.handleSceneBGM(sceneName);
-
-        // Stop title image rotation when leaving title screen
-        if (sceneName !== 'title') {
-            this.stopTitleImageRotation();
-        }
-
-        // Disable click system for scenario and ending screens
-        if (window.clickSystem) {
-            if (sceneName === 'scenario' || sceneName === 'ending1' || sceneName === 'ending2') {
-                window.clickSystem.setEnabled(false);
-                console.log('[DEBUG] Click system disabled for screen:', sceneName);
-            } else if (sceneName === 'game') {
-                window.clickSystem.setEnabled(true);
-                console.log('[DEBUG] Click system enabled for game screen');
+                if (ending1Btn) {
+                    ending1Btn.style.pointerEvents = '';
+                    console.log('[onSceneEnter] Reset ending1 button pointer-events');
+                }
+                if (ending2GameBtn) {
+                    ending2GameBtn.style.pointerEvents = '';
+                    console.log('[onSceneEnter] Reset ending2 game button pointer-events');
+                }
+                if (ending2TitleBtn) {
+                    ending2TitleBtn.style.pointerEvents = '';
+                    console.log('[onSceneEnter] Reset ending2 title button pointer-events');
+                }
+                if (ending2BackToAlbumBtn) {
+                    ending2BackToAlbumBtn.style.pointerEvents = '';
+                    console.log('[onSceneEnter] Reset ending2 back to album button pointer-events');
+                }
             }
-        }
 
-        switch (sceneName) {
-            case 'title':
-                this.initializeTitleScene();
-                break;
-            case 'scenario':
-                await this.initializeScenarioScene();
-                break;
-            case 'tutorial':
-                this.initializeTutorialScene();
-                break;
-            case 'ending1':
-                await this.initializeEnding1Scene();
-                break;
-            case 'ending2':
-                await this.initializeEnding2Scene();
-                break;
-            case 'game':
-                this.initializeGameScene();
-                break;
-            case 'album':
-                this.initializeAlbumScene();
-                break;
-            case 'settings':
-                this.initializeSettingsScene();
-                break;
+            // Handle BGM transitions between scenes (wrapped in try-catch)
+            console.log('[onSceneEnter] Starting BGM handling for:', sceneName);
+            try {
+                await this.handleSceneBGM(sceneName);
+                console.log('[onSceneEnter] ✓ BGM handling complete for:', sceneName);
+            } catch (bgmError) {
+                console.error('[onSceneEnter] ❌ BGM error (non-critical):', bgmError);
+                console.error('[onSceneEnter] BGM error stack:', bgmError.stack);
+                // Continue even if BGM fails
+            }
+
+            // Stop title image rotation when leaving title screen
+            if (sceneName !== 'title') {
+                try {
+                    this.stopTitleImageRotation();
+                } catch (rotationError) {
+                    console.error('[onSceneEnter] Error stopping title rotation:', rotationError);
+                }
+            }
+
+            // Disable click system for scenario and ending screens
+            console.log('[onSceneEnter] Configuring click system for:', sceneName);
+            try {
+                if (window.clickSystem) {
+                    if (sceneName === 'scenario' || sceneName === 'ending1' || sceneName === 'ending2') {
+                        window.clickSystem.setEnabled(false);
+                        console.log('[onSceneEnter] ✓ Click system disabled for:', sceneName);
+                    } else if (sceneName === 'game') {
+                        window.clickSystem.setEnabled(true);
+                        console.log('[onSceneEnter] ✓ Click system enabled for game');
+                    }
+                }
+            } catch (clickError) {
+                console.error('[onSceneEnter] Error configuring click system:', clickError);
+            }
+
+            // Scene-specific initialization
+            console.log('[onSceneEnter] Starting scene-specific initialization for:', sceneName);
+            switch (sceneName) {
+                case 'title':
+                    this.initializeTitleScene();
+                    break;
+                case 'scenario':
+                    await this.initializeScenarioScene();
+                    break;
+                case 'tutorial':
+                    this.initializeTutorialScene();
+                    break;
+                case 'ending1':
+                    await this.initializeEnding1Scene();
+                    break;
+                case 'ending2':
+                    await this.initializeEnding2Scene();
+                    break;
+                case 'game':
+                    this.initializeGameScene();
+                    break;
+                case 'album':
+                    this.initializeAlbumScene();
+                    break;
+                case 'settings':
+                    this.initializeSettingsScene();
+                    break;
+            }
+
+            console.log('[onSceneEnter] ====== SCENE ENTER COMPLETE:', sceneName, '======');
+        } catch (error) {
+            console.error('[onSceneEnter] ❌❌❌ CRITICAL ERROR in onSceneEnter for', sceneName, ':', error);
+            console.error('[onSceneEnter] Error stack:', error.stack);
+            // Rethrow to be caught by showScene
+            throw error;
         }
     }
 

@@ -994,11 +994,14 @@
 
     <!-- Debug Floating Window -->
     <div id="debug-window" style="position: fixed; top: 10px; right: 10px; width: 220px; background: rgba(0,0,0,0.9); color: white; padding: 15px; border-radius: 8px; z-index: 99999; font-family: monospace; font-size: 12px; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.5);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div id="debug-window-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; cursor: move; user-select: none;">
             <strong style="font-size: 14px;">DEBUG</strong>
-            <button id="debug-close-btn" style="background: #ff4444; color: white; border: none; border-radius: 3px; padding: 3px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">×</button>
+            <div style="display: flex; gap: 5px;">
+                <button id="debug-minimize-btn" style="background: #4CAF50; color: white; border: none; border-radius: 3px; padding: 3px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">−</button>
+                <button id="debug-close-btn" style="background: #ff4444; color: white; border: none; border-radius: 3px; padding: 3px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">×</button>
+            </div>
         </div>
-        <div>
+        <div id="debug-window-content">
             <label style="display: block; margin-bottom: 5px; font-size: 11px;">ポイント追加:</label>
             <input type="text" id="debug-points-display" readonly value="0" style="width: 100%; padding: 8px; border: 2px solid #555; border-radius: 4px; background: #222; color: #0f0; margin-bottom: 8px; text-align: right; font-size: 16px; font-weight: bold;">
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 8px;">
@@ -1081,6 +1084,71 @@
         document.getElementById('debug-close-btn')?.addEventListener('click', () => {
             document.getElementById('debug-window').style.display = 'none';
         });
+
+        // Debug window minimize button
+        let isMinimized = false;
+        document.getElementById('debug-minimize-btn')?.addEventListener('click', () => {
+            const content = document.getElementById('debug-window-content');
+            const minimizeBtn = document.getElementById('debug-minimize-btn');
+
+            if (isMinimized) {
+                content.style.display = 'block';
+                minimizeBtn.textContent = '−';
+                isMinimized = false;
+            } else {
+                content.style.display = 'none';
+                minimizeBtn.textContent = '+';
+                isMinimized = true;
+            }
+        });
+
+        // Debug window drag and drop functionality
+        (function() {
+            const debugWindow = document.getElementById('debug-window');
+            const header = document.getElementById('debug-window-header');
+            let isDragging = false;
+            let currentX;
+            let currentY;
+            let initialX;
+            let initialY;
+            let xOffset = 0;
+            let yOffset = 0;
+
+            header.addEventListener('mousedown', dragStart);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
+
+            function dragStart(e) {
+                // Don't drag if clicking the buttons
+                if (e.target.id === 'debug-close-btn' || e.target.id === 'debug-minimize-btn') return;
+
+                initialX = e.clientX - xOffset;
+                initialY = e.clientY - yOffset;
+                isDragging = true;
+            }
+
+            function drag(e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                    xOffset = currentX;
+                    yOffset = currentY;
+
+                    setTranslate(currentX, currentY, debugWindow);
+                }
+            }
+
+            function dragEnd(e) {
+                initialX = currentX;
+                initialY = currentY;
+                isDragging = false;
+            }
+
+            function setTranslate(xPos, yPos, el) {
+                el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
+            }
+        })();
 
         // Calculator button clicks
         document.querySelectorAll('.debug-calc-btn').forEach(btn => {

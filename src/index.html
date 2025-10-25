@@ -518,6 +518,11 @@
                 window.gameState.set('gameProgress.currentStage', stageId);
             }
 
+            // Update heroine display for the new stage
+            if (window.sceneManager) {
+                window.sceneManager.updateHeroineDisplay();
+            }
+
             // sceneManagerのswitchToStageではなく、直接的にステージを切り替える
         }
 

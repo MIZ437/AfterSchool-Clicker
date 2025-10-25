@@ -9,6 +9,7 @@ class SceneManager {
         this.audioContextInitialized = false;
         this.isMuted = false;
         this.titleImageRotationTimer = null;
+        this.isHandlingGameStart = false; // Prevent duplicate game start calls
         this.setupScenes();
     }
 
@@ -734,19 +735,48 @@ class SceneManager {
     }
 
     handleGameStart() {
-        if (this.firstRun) {
-            this.showScene('scenario');
-        } else {
-            this.showScene('game');
+        // Prevent duplicate calls
+        if (this.isHandlingGameStart) {
+            console.warn('[handleGameStart] Already handling game start, ignoring duplicate call');
+            return;
+        }
+
+        this.isHandlingGameStart = true;
+        console.log('[handleGameStart] firstRun:', this.firstRun, 'currentScene:', this.currentScene);
+
+        try {
+            if (this.firstRun) {
+                console.log('[handleGameStart] Showing scenario screen (first run)');
+                this.showScene('scenario');
+            } else {
+                console.log('[handleGameStart] Showing game screen (returning player)');
+                this.showScene('game');
+            }
+        } finally {
+            // Reset flag after a delay to allow the scene transition to complete
+            setTimeout(() => {
+                this.isHandlingGameStart = false;
+                console.log('[handleGameStart] Reset isHandlingGameStart flag');
+            }, 1000);
         }
     }
 
     async showScene(sceneName, transition = 'fade', fromAlbum = false) {
-        if (this.isTransitioning || !this.scenes.has(sceneName)) {
+        console.log('[showScene] Requested scene transition:', this.currentScene, '→', sceneName);
+        console.log('[showScene] Call stack:', new Error().stack);
+
+        if (this.isTransitioning) {
+            console.warn('[showScene] Already transitioning, blocking scene change to:', sceneName);
+            return;
+        }
+
+        if (!this.scenes.has(sceneName)) {
+            console.error('[showScene] Scene not found:', sceneName);
             return;
         }
 
         this.isTransitioning = true;
+        console.log('[showScene] Starting transition to:', sceneName);
 
         const currentSceneElement = this.scenes.get(this.currentScene);
         const newSceneElement = this.scenes.get(sceneName);
@@ -779,8 +809,10 @@ class SceneManager {
 
             this.currentScene = sceneName;
             this.isTransitioning = false;
+            console.log('[showScene] ✓ Transition complete. Current scene:', this.currentScene);
         } else {
             this.isTransitioning = false;
+            console.error('[showScene] newSceneElement is null!');
         }
     }
 
@@ -913,16 +945,19 @@ class SceneManager {
     }
 
     async initializeScenarioScene() {
-        console.log('[initializeScenarioScene] Loading scenario text from CSV');
+        console.log('[initializeScenarioScene] ====== STARTING SCENARIO INITIALIZATION ======');
+        console.log('[initializeScenarioScene] currentScene:', this.currentScene);
+        console.log('[initializeScenarioScene] previousScene:', this.previousScene);
 
-        if (!window.dataManager) {
-            console.error('[initializeScenarioScene] DataManager not available');
-            return;
-        }
+        try {
+            if (!window.dataManager) {
+                console.error('[initializeScenarioScene] DataManager not available');
+                return;
+            }
 
-        // Ensure data is loaded before retrieving text
-        await window.dataManager.loadAll();
-        console.log('[initializeScenarioScene] Data loaded, text available:', window.dataManager.getText().length, 'entries');
+            // Ensure data is loaded before retrieving text
+            await window.dataManager.loadAll();
+            console.log('[initializeScenarioScene] Data loaded, text available:', window.dataManager.getText().length, 'entries');
 
         // Check if coming from album
         const isFromAlbum = this.previousScene === 'album';
@@ -1071,6 +1106,14 @@ class SceneManager {
             }
         } else {
             console.error('[initializeScenarioScene] Character img element NOT FOUND!');
+        }
+
+        console.log('[initializeScenarioScene] ====== SCENARIO INITIALIZATION COMPLETE ======');
+        } catch (error) {
+            console.error('[initializeScenarioScene] ====== ERROR DURING INITIALIZATION ======');
+            console.error('[initializeScenarioScene] Error:', error);
+            console.error('[initializeScenarioScene] Stack:', error.stack);
+            // Don't throw - allow the scene to be displayed even if initialization fails partially
         }
     }
 

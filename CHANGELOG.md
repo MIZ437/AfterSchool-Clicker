@@ -1,6 +1,67 @@
 ﻿# Changelog - 放課後クリッカー
 
 
+## 2025-10-27
+
+### Fixed
+- 🐛 **シーン遷移の競合状態バグ修正**
+  - データ削除後、タイトル→シナリオ→スキップ→説明画面の遷移で説明画面からタイトルに自動的に戻ってしまう致命的なバグを修正
+  - 5回の修正試行を経て、最終的に`startGame()`からシーン遷移ロジックを完全に削除
+  - `handleGameStart()`で`startGameCompleted`フラグを即座に設定し、遅延実行を防止
+  - `startGame()`はデータ読み込みのみを担当し、シーン遷移は行わない設計に変更
+
+- 🐛 **オーディオオーバーレイのブロッキング問題修正**
+  - タイトル画面から他画面に遷移する際、オーディオオーバーレイ(z-index: 1000)が残ってボタンクリックをブロックする問題を修正
+  - `onSceneEnter()`でタイトル画面を離れる際に`hideAudioOverlay()`を自動呼び出し
+
+- 🐛 **ITM_CLICK_1の購入コスト計算修正**
+  - デフォルト所持数1(基本クリック力)のITM_CLICK_1の購入コストが60ptから始まる問題を修正
+  - `calculateItemCost()`に`itemId`パラメータを追加し、ITM_CLICK_1の特別処理を実装
+  - 所持数1を所持数0として扱うことで、購入コストが50pt(基本コスト)から始まるように修正
+  - `shopSystem.js`内の全9箇所の`calculateItemCost()`呼び出しを更新
+
+### Improved
+- ⚡ **起動時のローディング時間最適化**
+  - ポーリング間隔を100msから25msに短縮(4倍高速化)
+  - 初期化完了後の1秒遅延を削除
+  - 合計3～4秒のローディング時間短縮を実現
+
+### Technical Details
+- `sceneManager.js`:
+  - `startGame()`: シーン遷移ロジックを削除、データ読み込みのみに専念
+  - `handleGameStart()`: `startGameCompleted = true`を即座に設定
+  - `onSceneEnter()`: タイトル画面離脱時のオーディオオーバーレイ非表示処理を追加
+- `main.js`:
+  - ポーリング間隔を100ms→25msに変更(line 84)
+  - ショップ更新の1秒遅延を削除(lines 53-57)
+- `gameState.js`:
+  - `calculateItemCost()`: `itemId`パラメータ追加、ITM_CLICK_1特別処理実装(lines 141-153)
+  - `getItemCost()`: `itemId`パラメータを`calculateItemCost()`に渡すように更新(lines 156-159)
+- `shopSystem.js`:
+  - 全9箇所の`calculateItemCost()`呼び出しに`itemId`パラメータを追加
+
+### Bug Fix History
+**シーン遷移バグ - 5回の修正試行:**
+1. 試行1: `showScene('title')`に`await`追加 → 失敗
+2. 試行2: `wasOnLoadingScreen`変数でダブルチェック → ポータブル版で失敗
+3. 試行3: 遅延前にチェックを移動、早期return追加 → 1秒遅延問題残存
+4. 試行4: `isTransitioning`チェック追加 → タイミング問題解決せず
+5. 試行5 (成功): `startGame()`から全シーン遷移削除、`handleGameStart()`で即座にフラグ設定
+
+**根本原因:**
+- `startGame()`の非同期データ読み込みとユーザーナビゲーション(タイトル→シナリオ→説明画面)の競合
+- `startGame()`完了後の`showScene('title')`呼び出しがユーザーの画面遷移を上書き
+- `currentScene`が`onSceneEnter()`完了後に更新されるため、タイミング依存の問題が発生
+
+**最終解決策:**
+- アーキテクチャの根本的変更
+- `startGame()`: データ読み込みのみ
+- シーン遷移: `main.js:572`で1回のみ実行
+- フラグ設定: ユーザーが「ゲーム開始」クリック時に即座に設定
+
+---
+
+
 ## 2025-10-18
 
 ### Fixed

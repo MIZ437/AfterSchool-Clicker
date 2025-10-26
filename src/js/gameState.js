@@ -138,17 +138,24 @@ class GameState {
     }
 
     // Calculate progressive cost for item
-    calculateItemCost(baseCost, purchaseCount, multiplier = 1.15) {
-        if (purchaseCount === 0) {
+    calculateItemCost(baseCost, purchaseCount, multiplier = 1.15, itemId = null) {
+        // Special handling for ITM_CLICK_1: first one is free (owned by default)
+        // So cost calculation should treat owned=1 as owned=0
+        let adjustedCount = purchaseCount;
+        if (itemId === 'ITM_CLICK_1' && purchaseCount > 0) {
+            adjustedCount = purchaseCount - 1;
+        }
+
+        if (adjustedCount === 0) {
             return Math.floor(baseCost);
         }
-        return Math.floor(baseCost * Math.pow(multiplier, purchaseCount));
+        return Math.floor(baseCost * Math.pow(multiplier, adjustedCount));
     }
 
     // Get current cost for an item (considering purchases made)
     getItemCost(itemId, baseCost, multiplier = 1.15) {
         const purchaseCount = this.get(`purchases.items.${itemId}`) || 0;
-        return this.calculateItemCost(baseCost, purchaseCount, multiplier);
+        return this.calculateItemCost(baseCost, purchaseCount, multiplier, itemId);
     }
 
     // Add item purchase

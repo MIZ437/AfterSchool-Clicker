@@ -313,7 +313,7 @@ class ShopSystem {
             // Calculate total cost with progressive pricing
             adjustedCost = 0;
             for (let i = 0; i < maxCount; i++) {
-                adjustedCost += window.gameState.calculateItemCost(baseCost, owned + i, itemMultiplier);
+                adjustedCost += window.gameState.calculateItemCost(baseCost, owned + i, itemMultiplier, item.id);
             }
             canAffordMultiplied = debugMode || maxCount > 0;
             multiplier = maxCount; // For display purposes
@@ -322,7 +322,7 @@ class ShopSystem {
             adjustedValue = value * multiplier;
             adjustedCost = 0;
             for (let i = 0; i < multiplier; i++) {
-                adjustedCost += window.gameState.calculateItemCost(baseCost, owned + i, itemMultiplier);
+                adjustedCost += window.gameState.calculateItemCost(baseCost, owned + i, itemMultiplier, item.id);
             }
             const currentPoints = window.gameState ? window.gameState.get('gameProgress.currentPoints') : 0;
             canAffordMultiplied = debugMode || currentPoints >= adjustedCost;
@@ -381,7 +381,7 @@ class ShopSystem {
             totalEffectText = `<span class="total-effect">(合計 +${this.formatNumber(adjustedValue)}pt)</span>`;
         } else if (multiplier === 0) {
             // MAX mode but can't afford any - show minimum cost needed
-            const nextCost = window.gameState.calculateItemCost(baseCost, owned, itemMultiplier);
+            const nextCost = window.gameState.calculateItemCost(baseCost, owned, itemMultiplier, item.id);
             buttonText = `${this.formatNumber(nextCost)}pt～`;
             totalEffectText = '';
         } else {
@@ -435,7 +435,7 @@ class ShopSystem {
 
         // Keep adding items until we can't afford the next one
         while (count < 1000) { // Safety limit
-            const nextItemCost = window.gameState.calculateItemCost(baseCost, currentOwned + count, multiplier);
+            const nextItemCost = window.gameState.calculateItemCost(baseCost, currentOwned + count, multiplier, itemId);
             if (totalCost + nextItemCost > currentPoints) {
                 break;
             }
@@ -487,7 +487,7 @@ class ShopSystem {
         let totalCost = 0;
         const owned = window.gameState.get(`purchases.items.${item.id}`) || 0;
         for (let i = 0; i < quantity; i++) {
-            const itemCost = window.gameState.calculateItemCost(baseCost, owned + i, multiplier);
+            const itemCost = window.gameState.calculateItemCost(baseCost, owned + i, multiplier, item.id);
             totalCost += itemCost;
         }
 
@@ -602,7 +602,7 @@ class ShopSystem {
             // Calculate total cost for buying maxCount items with progressive pricing
             adjustedCost = 0;
             for (let i = 0; i < maxCount; i++) {
-                adjustedCost += window.gameState.calculateItemCost(baseCost, owned + i, itemMultiplier);
+                adjustedCost += window.gameState.calculateItemCost(baseCost, owned + i, itemMultiplier, itemId);
             }
             adjustedValue = value * maxCount;
             canAfford = debugMode || maxCount > 0;
@@ -611,7 +611,7 @@ class ShopSystem {
             // Normal multiplier with progressive pricing
             adjustedCost = 0;
             for (let i = 0; i < multiplier; i++) {
-                adjustedCost += window.gameState.calculateItemCost(baseCost, owned + i, itemMultiplier);
+                adjustedCost += window.gameState.calculateItemCost(baseCost, owned + i, itemMultiplier, itemId);
             }
             adjustedValue = value * multiplier;
             // Check affordability for normal multiplier
@@ -670,7 +670,7 @@ class ShopSystem {
                 buttonText = `${this.formatNumber(multiplier)}個購入 | ${this.formatNumber(adjustedCost)}pt`;
             } else if (multiplier === 0) {
                 // MAX mode but can't afford any - show minimum cost needed
-                const nextCost = window.gameState.calculateItemCost(baseCost, owned, itemMultiplier);
+                const nextCost = window.gameState.calculateItemCost(baseCost, owned, itemMultiplier, itemId);
                 buttonText = `${this.formatNumber(nextCost)}pt～`;
             } else {
                 buttonText = `購入 | ${this.formatNumber(adjustedCost)}pt`;

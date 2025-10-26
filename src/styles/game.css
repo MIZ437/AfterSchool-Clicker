@@ -147,7 +147,7 @@
 
 .heroine-image {
     width: 100%;
-    height: 350px;
+    height: min(350px, 40vh);
     border-radius: 15px;
     display: flex;
     flex-direction: column;

@@ -7,6 +7,7 @@ const { createReadStream } = require('fs');
 class AfterSchoolClickerMain {
     constructor() {
         this.mainWindow = null;
+        this.splashWindow = null;
         this.userData = null;
         this.gameData = {
             stages: null,
@@ -43,7 +44,78 @@ class AfterSchoolClickerMain {
         this.setupIPCHandlers();
     }
 
+    createSplashWindow() {
+        this.splashWindow = new BrowserWindow({
+            width: 500,
+            height: 300,
+            frame: false,
+            transparent: false,
+            alwaysOnTop: true,
+            center: true,
+            backgroundColor: '#2c3e50',
+            skipTaskbar: false,
+            show: true,
+            webPreferences: {
+                nodeIntegration: false,
+                contextIsolation: true
+            }
+        });
+
+        // Ensure splash is focused and visible
+        this.splashWindow.setAlwaysOnTop(true, 'screen-saver');
+        this.splashWindow.focus();
+        this.splashWindow.showInactive();
+
+        const splashHTML = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body {
+                        background: #2c3e50;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100vh;
+                        color: white;
+                        font-family: 'Hiragino Kaku Gothic ProN', 'メイリオ', Meiryo, sans-serif;
+                    }
+                    .title {
+                        font-size: 28px;
+                        font-weight: bold;
+                        margin-bottom: 30px;
+                        letter-spacing: 2px;
+                    }
+                    .spinner {
+                        width: 40px;
+                        height: 40px;
+                        border: 3px solid rgba(255,255,255,0.3);
+                        border-top-color: white;
+                        border-radius: 50%;
+                        animation: spin 0.8s linear infinite;
+                    }
+                    @keyframes spin {
+                        to { transform: rotate(360deg); }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="title">放課後クリッカー</div>
+                <div class="spinner"></div>
+            </body>
+            </html>
+        `;
+
+        this.splashWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(splashHTML)}`);
+    }
+
     async createWindow() {
+        // Show splash window first
+        this.createSplashWindow();
+
         // Create the browser window
         this.mainWindow = new BrowserWindow({
             width: 1200,
@@ -56,16 +128,13 @@ class AfterSchoolClickerMain {
             },
             title: '放課後クリッカー',
             icon: path.join(__dirname, '../assets/images/ui/app_icon.png'),
-            show: false, // Will show after maximizing in ready-to-show event
+            show: false,
             center: true,
             resizable: true,
             autoHideMenuBar: true,
-            backgroundColor: '#000000', // Black to prevent flash during startup
+            backgroundColor: '#000000',
             titleBarStyle: 'default'
         });
-
-        // Maximize window before showing
-        this.mainWindow.maximize();
 
         // Load the game
         try {
@@ -78,18 +147,6 @@ class AfterSchoolClickerMain {
             console.error('Error details:', error.stack);
         }
 
-        // Show window when ready to prevent white flash
-        this.mainWindow.once('ready-to-show', () => {
-            console.log('Window ready-to-show event fired');
-            this.mainWindow.show();
-            console.log('Window show() called');
-
-            // Development mode - open devtools only in development
-            if (process.env.NODE_ENV === 'development' || process.argv.includes('--dev')) {
-                this.mainWindow.webContents.openDevTools();
-            }
-        });
-
         // Add keyboard shortcut for dev tools (F12)
         this.mainWindow.webContents.on('before-input-event', (event, input) => {
             if (input.key === 'F12') {
@@ -101,28 +158,41 @@ class AfterSchoolClickerMain {
             }
         });
 
-        // Load game data on startup
+        // Load game data
         await this.loadGameData();
+        console.log('Game data loaded');
 
-        // Ensure window is shown after data loading
-        console.log('Window visibility check:');
-        console.log('  isVisible:', this.mainWindow.isVisible());
-        console.log('  isMinimized:', this.mainWindow.isMinimized());
-        console.log('  isDestroyed:', this.mainWindow.isDestroyed());
+        // Wait for DOM to be ready
+        await new Promise(resolve => {
+            if (this.mainWindow.webContents.isLoading()) {
+                this.mainWindow.webContents.once('did-finish-load', resolve);
+            } else {
+                resolve();
+            }
+        });
 
-        if (!this.mainWindow.isVisible()) {
-            console.log('Window not visible, calling show()');
-            this.mainWindow.show();
-            console.log('Window show() called, new visibility:', this.mainWindow.isVisible());
-        } else {
-            console.log('Window is already visible');
+        // Small delay to ensure CSS is applied
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Close splash and show main window
+        if (this.splashWindow && !this.splashWindow.isDestroyed()) {
+            this.splashWindow.close();
+            this.splashWindow = null;
         }
 
-        // Force window to front
+        // Maximize and show window
+        this.mainWindow.maximize();
+        this.mainWindow.show();
         this.mainWindow.focus();
+        this.mainWindow.moveTop();
         this.mainWindow.setAlwaysOnTop(true);
         this.mainWindow.setAlwaysOnTop(false);
-        console.log('Window forced to front');
+        console.log('Main window shown, splash closed');
+
+        // Development mode - open devtools only in development
+        if (process.env.NODE_ENV === 'development' || process.argv.includes('--dev')) {
+            this.mainWindow.webContents.openDevTools();
+        }
     }
 
     setupIPCHandlers() {

@@ -594,31 +594,13 @@ class SceneManager {
             // Skip complete audio initialization - will be done when user clicks overlay
             console.log('[DEBUG] Skipping audio initialization - will activate on user click');
 
-            // Add minimal delay for smooth transition, then show title with overlay
-            await this.delay(200);
-
-            // CRITICAL: Only show title screen if still on loading screen AND not already completed
-            // This prevents late initialization from disrupting user navigation
-            if (this.currentScene === 'loading' && !this.startGameCompleted) {
-                console.log('[startGame] Showing title screen (still on loading)');
-                await this.showScene('title'); // CRITICAL: Wait for scene transition to complete
-                this.showAudioOverlay();
-                this.startGameCompleted = true; // Mark as completed
-            } else {
-                console.warn('[startGame] Skipping title screen transition - user already navigated to:', this.currentScene);
-                this.startGameCompleted = true; // Mark as completed even if skipped
-            }
+            // Mark as completed - data loading is done
+            this.startGameCompleted = true;
+            console.log('[startGame] Data loading completed. Current scene:', this.currentScene);
 
         } catch (error) {
             console.error('Failed to start game:', error);
-            // Only show title if still on loading screen AND not already completed
-            if (this.currentScene === 'loading' && !this.startGameCompleted) {
-                await this.showScene('title'); // CRITICAL: Wait for scene transition to complete
-                this.showAudioOverlay();
-                this.startGameCompleted = true;
-            } else {
-                this.startGameCompleted = true; // Mark as completed even if error
-            }
+            this.startGameCompleted = true; // Mark as completed even if error
         }
     }
 
@@ -780,6 +762,9 @@ class SceneManager {
         }
 
         this.isHandlingGameStart = true;
+        // CRITICAL: Mark startGame as completed immediately when user clicks "ゲーム開始"
+        // This prevents startGame() from showing title screen after user has already navigated
+        this.startGameCompleted = true;
         console.log('[handleGameStart] firstRun:', this.firstRun, 'currentScene:', this.currentScene);
 
         try {

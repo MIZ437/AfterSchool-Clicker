@@ -50,13 +50,11 @@ class AfterSchoolClicker {
             // Hide loading screen and show title screen
             this.completeInitialization();
 
-            // Force shop system update after everything is initialized
-            setTimeout(() => {
-                if (window.shopSystem) {
-                    console.log('Main: Force updating shop system after full initialization');
-                    window.shopSystem.updateAllItemsAffordability();
-                }
-            }, 1000);
+            // Force shop system update after everything is initialized (immediate)
+            if (window.shopSystem) {
+                console.log('Main: Force updating shop system after full initialization');
+                window.shopSystem.updateAllItemsAffordability();
+            }
 
         } catch (error) {
             console.error('Game initialization failed:', error);
@@ -81,7 +79,7 @@ class AfterSchoolClicker {
             if (this.areManagersReady()) {
                 break;
             }
-            await this.delay(100);
+            await this.delay(25); // Reduced from 100ms to 25ms for faster startup
             attempts++;
         }
 

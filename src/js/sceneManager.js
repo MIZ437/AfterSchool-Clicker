@@ -10,6 +10,7 @@ class SceneManager {
         this.isMuted = false;
         this.titleImageRotationTimer = null;
         this.isHandlingGameStart = false; // Prevent duplicate game start calls
+        this.startGameCompleted = false; // Prevent multiple title screen transitions
         this.setupScenes();
     }
 
@@ -154,9 +155,15 @@ class SceneManager {
 
         if (startMainGameBtn) {
             startMainGameBtn.addEventListener('click', () => {
+                console.log('[Tutorial Button] ====== START MAIN GAME BUTTON CLICKED ======');
+                console.log('[Tutorial Button] Setting firstRun to false');
                 this.firstRun = false;
+                console.log('[Tutorial Button] Calling showScene(game)...');
                 this.showScene('game');
+                console.log('[Tutorial Button] showScene(game) called');
             });
+        } else {
+            console.warn('[Tutorial Button] start-main-game-btn not found!');
         }
 
         // Ending screen buttons
@@ -560,8 +567,13 @@ class SceneManager {
     }
 
     async startGame() {
-        // Show loading screen initially
-        this.showScene('loading');
+        // Prevent multiple executions
+        if (this.startGameCompleted) {
+            console.warn('[startGame] Already completed, skipping');
+            return;
+        }
+
+        console.log('[startGame] Starting game initialization, current scene:', this.currentScene);
 
         try {
             // Load game data
@@ -584,13 +596,29 @@ class SceneManager {
 
             // Add minimal delay for smooth transition, then show title with overlay
             await this.delay(200);
-            this.showScene('title');
-            this.showAudioOverlay();
+
+            // CRITICAL: Only show title screen if still on loading screen AND not already completed
+            // This prevents late initialization from disrupting user navigation
+            if (this.currentScene === 'loading' && !this.startGameCompleted) {
+                console.log('[startGame] Showing title screen (still on loading)');
+                await this.showScene('title'); // CRITICAL: Wait for scene transition to complete
+                this.showAudioOverlay();
+                this.startGameCompleted = true; // Mark as completed
+            } else {
+                console.warn('[startGame] Skipping title screen transition - user already navigated to:', this.currentScene);
+                this.startGameCompleted = true; // Mark as completed even if skipped
+            }
 
         } catch (error) {
             console.error('Failed to start game:', error);
-            this.showScene('title'); // Show title even if loading fails
-            this.showAudioOverlay();
+            // Only show title if still on loading screen AND not already completed
+            if (this.currentScene === 'loading' && !this.startGameCompleted) {
+                await this.showScene('title'); // CRITICAL: Wait for scene transition to complete
+                this.showAudioOverlay();
+                this.startGameCompleted = true;
+            } else {
+                this.startGameCompleted = true; // Mark as completed even if error
+            }
         }
     }
 
@@ -776,10 +804,11 @@ class SceneManager {
         console.log('[showScene] Call stack:', new Error().stack);
 
         // CRITICAL: Prevent invalid transitions from scenario screen
+        // This prevents accidental back button presses or other unintended navigation
         if (this.currentScene === 'scenario' && sceneName === 'title') {
             console.error('[showScene] ❌❌❌ BLOCKED: Attempted invalid transition from scenario to title!');
             console.error('[showScene] This should never happen - investigate the call stack above');
-            return;
+            return; // Block the transition completely
         }
 
         if (this.isTransitioning) {
@@ -897,6 +926,13 @@ class SceneManager {
                 }
             }
 
+            // CRITICAL: Hide audio overlay when leaving title screen
+            // This prevents the overlay from blocking clicks on other screens (especially tutorial screen)
+            if (this.currentScene === 'title' && sceneName !== 'title') {
+                console.log('[onSceneEnter] Leaving title screen, hiding audio overlay');
+                this.hideAudioOverlay();
+            }
+
             // Disable click system for scenario and ending screens
             console.log('[onSceneEnter] Configuring click system for:', sceneName);
             try {
@@ -993,27 +1029,31 @@ class SceneManager {
     }
 
     initializeTitleScene() {
-        console.log('[DEBUG] Title scene initialization (audio already pre-loaded)');
+        console.log('[initializeTitleScene] ====== STARTING TITLE SCENE INITIALIZATION ======');
 
         // CRITICAL: Close shop modal if it's open when returning to title
         // This prevents shop modal from staying visible on title screen
         if (window.closeShopModal) {
             try {
+                console.log('[initializeTitleScene] Attempting to close shop modal...');
                 window.closeShopModal();
-                console.log('[initializeTitleScene] Shop modal closed');
+                console.log('[initializeTitleScene] ✓ Shop modal closed');
             } catch (error) {
-                console.warn('[initializeTitleScene] Failed to close shop modal:', error);
+                console.error('[initializeTitleScene] ❌ Failed to close shop modal:', error);
             }
+        } else {
+            console.log('[initializeTitleScene] closeShopModal not available');
         }
 
         // Audio system should already be fully initialized before title screen
         if (window.audioManager) {
-            console.log('[DEBUG] Audio status - Loaded sounds:', window.audioManager.sounds.size);
-            console.log('[DEBUG] Audio status - Available sounds:', Array.from(window.audioManager.sounds.keys()));
+            console.log('[initializeTitleScene] Audio status - Loaded sounds:', window.audioManager.sounds.size);
         }
 
         // Start title character image rotation
+        console.log('[initializeTitleScene] Starting title image rotation...');
         this.startTitleImageRotation();
+        console.log('[initializeTitleScene] ====== TITLE SCENE INITIALIZATION COMPLETE ======');
     }
 
     async initializeScenarioScene() {
@@ -1547,56 +1587,73 @@ class SceneManager {
     }
 
     async initializeGameScene() {
-        console.log('[initializeGameScene] Initializing game scene');
+        console.log('[initializeGameScene] ====== STARTING GAME SCENE INITIALIZATION ======');
 
-        // Ensure current display image matches current stage
-        const currentStage = window.gameState.get('gameProgress.currentStage');
-        const currentDisplayImage = window.gameState.get('collection.currentDisplayImage');
-        const firstHeroineId = `heroine_${currentStage}_01`;
-        const stageCollection = window.gameState.get(`collection.heroine.stage${currentStage}`) || [];
+        try {
+            // Ensure current display image matches current stage
+            const currentStage = window.gameState.get('gameProgress.currentStage');
+            const currentDisplayImage = window.gameState.get('collection.currentDisplayImage');
+            const firstHeroineId = `heroine_${currentStage}_01`;
+            const stageCollection = window.gameState.get(`collection.heroine.stage${currentStage}`) || [];
 
-        console.log('[initializeGameScene] currentStage:', currentStage);
-        console.log('[initializeGameScene] currentDisplayImage:', currentDisplayImage);
-        console.log('[initializeGameScene] stageCollection:', stageCollection);
+            console.log('[initializeGameScene] currentStage:', currentStage);
+            console.log('[initializeGameScene] currentDisplayImage:', currentDisplayImage);
+            console.log('[initializeGameScene] stageCollection:', stageCollection);
 
-        // If current display image doesn't match current stage, update it
-        if (currentDisplayImage && !currentDisplayImage.startsWith(`heroine_${currentStage}_`)) {
-            if (stageCollection.includes(firstHeroineId)) {
-                console.log('[initializeGameScene] Updating currentDisplayImage to match stage:', firstHeroineId);
-                window.gameState.set('collection.currentDisplayImage', firstHeroineId);
-            }
-        }
-
-        // Update all game displays
-        this.updateGameUI();
-        this.updateStageUI();
-
-        // Start idle point generation
-        this.startIdleGeneration();
-
-        // Update heroine display
-        this.updateHeroineDisplay();
-
-        // CRITICAL: Ensure shop system is initialized before showing game scene
-        if (window.shopSystem) {
-            try {
-                console.log('[initializeGameScene] Ensuring shop system is initialized...');
-                await window.shopSystem.initialize();
-                console.log('[initializeGameScene] Shop system initialized successfully');
-
-                // Check if shop needs refresh after save data load
-                if (window.saveManager && window.saveManager.shopNeedsRefresh) {
-                    console.log('[initializeGameScene] Refreshing shop after save data load');
-                    window.shopSystem.refresh();
-                    window.saveManager.shopNeedsRefresh = false;
+            // If current display image doesn't match current stage, update it
+            if (currentDisplayImage && !currentDisplayImage.startsWith(`heroine_${currentStage}_`)) {
+                if (stageCollection.includes(firstHeroineId)) {
+                    console.log('[initializeGameScene] Updating currentDisplayImage to match stage:', firstHeroineId);
+                    window.gameState.set('collection.currentDisplayImage', firstHeroineId);
                 }
-            } catch (shopInitError) {
-                console.error('[initializeGameScene] Shop system initialization failed:', shopInitError);
-                console.error('[initializeGameScene] Shop may not function correctly');
-                // Don't throw - allow game scene to show even if shop fails
             }
-        } else {
-            console.warn('[initializeGameScene] Shop system not available');
+
+            // Update all game displays
+            console.log('[initializeGameScene] Calling updateGameUI...');
+            this.updateGameUI();
+            console.log('[initializeGameScene] ✓ updateGameUI complete');
+
+            console.log('[initializeGameScene] Calling updateStageUI...');
+            this.updateStageUI();
+            console.log('[initializeGameScene] ✓ updateStageUI complete');
+
+            // Start idle point generation
+            console.log('[initializeGameScene] Calling startIdleGeneration...');
+            this.startIdleGeneration();
+            console.log('[initializeGameScene] ✓ startIdleGeneration complete');
+
+            // Update heroine display
+            console.log('[initializeGameScene] Calling updateHeroineDisplay...');
+            this.updateHeroineDisplay();
+            console.log('[initializeGameScene] ✓ updateHeroineDisplay complete');
+
+            // CRITICAL: Ensure shop system is initialized before showing game scene
+            if (window.shopSystem) {
+                try {
+                    console.log('[initializeGameScene] Ensuring shop system is initialized...');
+                    await window.shopSystem.initialize();
+                    console.log('[initializeGameScene] ✓ Shop system initialized successfully');
+
+                    // Check if shop needs refresh after save data load
+                    if (window.saveManager && window.saveManager.shopNeedsRefresh) {
+                        console.log('[initializeGameScene] Refreshing shop after save data load');
+                        window.shopSystem.refresh();
+                        window.saveManager.shopNeedsRefresh = false;
+                    }
+                } catch (shopInitError) {
+                    console.error('[initializeGameScene] ❌ Shop system initialization failed:', shopInitError);
+                    console.error('[initializeGameScene] Shop may not function correctly');
+                    // Don't throw - allow game scene to show even if shop fails
+                }
+            } else {
+                console.warn('[initializeGameScene] Shop system not available');
+            }
+
+            console.log('[initializeGameScene] ====== GAME SCENE INITIALIZATION COMPLETE ======');
+        } catch (error) {
+            console.error('[initializeGameScene] ❌❌❌ CRITICAL ERROR during game scene initialization:', error);
+            console.error('[initializeGameScene] Error stack:', error.stack);
+            throw error; // Re-throw to be caught by onSceneEnter
         }
     }
 

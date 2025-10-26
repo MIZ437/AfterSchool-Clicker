@@ -775,56 +775,93 @@
 
         // ショップモーダル関連
         function openShopModal(type) {
-            const modal = document.getElementById('shop-modal');
-            const modalTitle = document.getElementById('shop-modal-title');
-            const clickItems = document.getElementById('click-items');
-            const cpsItems = document.getElementById('cps-items');
-            const gachaItems = document.getElementById('gacha-items');
-            const purchaseMultiplier = document.querySelector('.purchase-multiplier');
-            const pointsValue = document.getElementById('shop-modal-points-value');
-            const shopTabs = document.querySelectorAll('.shop-modal-tab');
+            try {
+                console.log('[openShopModal] Opening shop modal, type:', type);
 
-            // タブの状態を設定
-            shopTabs.forEach(tab => {
-                const tabType = tab.dataset.shopType;
-                if (tabType === type) {
-                    tab.classList.add('active');
-                } else {
-                    tab.classList.remove('active');
+                const modal = document.getElementById('shop-modal');
+                const modalTitle = document.getElementById('shop-modal-title');
+                const clickItems = document.getElementById('click-items');
+                const cpsItems = document.getElementById('cps-items');
+                const gachaItems = document.getElementById('gacha-items');
+                const purchaseMultiplier = document.querySelector('.purchase-multiplier');
+                const pointsValue = document.getElementById('shop-modal-points-value');
+                const shopTabs = document.querySelectorAll('.shop-modal-tab');
+
+                // 要素が見つからない場合のチェック
+                if (!modal || !clickItems || !cpsItems || !gachaItems) {
+                    console.error('[openShopModal] Required elements not found!', {
+                        modal: !!modal,
+                        clickItems: !!clickItems,
+                        cpsItems: !!cpsItems,
+                        gachaItems: !!gachaItems
+                    });
+                    return;
                 }
-            });
 
-            // アイテムの表示を切り替え
-            if (type === 'click') {
-                clickItems.style.display = 'block';
-                cpsItems.style.display = 'none';
-                gachaItems.style.display = 'none';
-                purchaseMultiplier.style.display = 'flex';
-            } else if (type === 'cps') {
-                clickItems.style.display = 'none';
-                cpsItems.style.display = 'block';
-                gachaItems.style.display = 'none';
-                purchaseMultiplier.style.display = 'flex';
-            } else if (type === 'gacha') {
-                clickItems.style.display = 'none';
-                cpsItems.style.display = 'none';
-                gachaItems.style.display = 'block';
-                purchaseMultiplier.style.display = 'none'; // ガチャ時は購入倍率非表示
-
-                // ガチャ表示を更新
-                if (window.gachaSystem) {
-                    window.gachaSystem.updateGachaDisplay();
+                // GameStateが利用可能か確認
+                if (!window.gameState) {
+                    console.warn('[openShopModal] GameState not available yet');
+                    // GameStateが利用できるまで待つ
+                    setTimeout(() => {
+                        console.log('[openShopModal] Retrying after GameState initialization...');
+                        openShopModal(type);
+                    }, 500);
+                    return;
                 }
-            }
 
-            // ポイント表示を更新
-            if (pointsValue && window.gameState) {
-                const points = window.gameState.get('gameProgress.currentPoints');
-                pointsValue.textContent = Math.floor(points).toLocaleString();
-            }
+                // タブの状態を設定
+                shopTabs.forEach(tab => {
+                    const tabType = tab.dataset.shopType;
+                    if (tabType === type) {
+                        tab.classList.add('active');
+                    } else {
+                        tab.classList.remove('active');
+                    }
+                });
 
-            // モーダルを表示
-            modal.classList.remove('hidden');
+                // アイテムの表示を切り替え
+                if (type === 'click') {
+                    clickItems.style.display = 'block';
+                    cpsItems.style.display = 'none';
+                    gachaItems.style.display = 'none';
+                    if (purchaseMultiplier) purchaseMultiplier.style.display = 'flex';
+                } else if (type === 'cps') {
+                    clickItems.style.display = 'none';
+                    cpsItems.style.display = 'block';
+                    gachaItems.style.display = 'none';
+                    if (purchaseMultiplier) purchaseMultiplier.style.display = 'flex';
+                } else if (type === 'gacha') {
+                    clickItems.style.display = 'none';
+                    cpsItems.style.display = 'none';
+                    gachaItems.style.display = 'block';
+                    if (purchaseMultiplier) purchaseMultiplier.style.display = 'none'; // ガチャ時は購入倍率非表示
+
+                    // ガチャ表示を更新
+                    if (window.gachaSystem) {
+                        window.gachaSystem.updateGachaDisplay();
+                    }
+                }
+
+                // ポイント表示を更新
+                if (pointsValue && window.gameState) {
+                    try {
+                        const points = window.gameState.get('gameProgress.currentPoints');
+                        pointsValue.textContent = Math.floor(points).toLocaleString();
+                    } catch (pointsError) {
+                        console.error('[openShopModal] Error updating points display:', pointsError);
+                    }
+                }
+
+                // モーダルを表示
+                modal.classList.remove('hidden');
+                console.log('[openShopModal] Shop modal opened successfully');
+
+            } catch (error) {
+                console.error('[openShopModal] Error opening shop modal:', error);
+                console.error('[openShopModal] Error stack:', error.stack);
+                // エラーが発生してもクラッシュしないように
+                alert('ショップの表示中にエラーが発生しました。もう一度お試しください。');
+            }
 
             // shopSystemにアイテムをレンダリングさせる
             if (type !== 'gacha' && window.shopSystem) {

@@ -782,6 +782,14 @@ class SceneManager {
             return;
         }
 
+        // CRITICAL: Prevent invalid transitions from game screen to title
+        // (unless explicitly called from quit button or settings)
+        if (this.currentScene === 'game' && sceneName === 'title') {
+            console.warn('[showScene] ⚠️ WARNING: game → title transition requested');
+            console.warn('[showScene] Call stack for investigation:', new Error().stack);
+            // Allow the transition but log it for debugging
+        }
+
         if (this.isTransitioning) {
             console.warn('[showScene] Already transitioning, blocking scene change to:', sceneName);
             return;
@@ -932,7 +940,7 @@ class SceneManager {
                     await this.initializeEnding2Scene();
                     break;
                 case 'game':
-                    this.initializeGameScene();
+                    await this.initializeGameScene();
                     break;
                 case 'album':
                     this.initializeAlbumScene();
@@ -1535,7 +1543,7 @@ class SceneManager {
         }
     }
 
-    initializeGameScene() {
+    async initializeGameScene() {
         console.log('[initializeGameScene] Initializing game scene');
 
         // Ensure current display image matches current stage
@@ -1566,11 +1574,26 @@ class SceneManager {
         // Update heroine display
         this.updateHeroineDisplay();
 
-        // Check if shop needs refresh after save data load
-        if (window.saveManager && window.saveManager.shopNeedsRefresh && window.shopSystem) {
-            console.log('[initializeGameScene] Refreshing shop after save data load');
-            window.shopSystem.refresh();
-            window.saveManager.shopNeedsRefresh = false;
+        // CRITICAL: Ensure shop system is initialized before showing game scene
+        if (window.shopSystem) {
+            try {
+                console.log('[initializeGameScene] Ensuring shop system is initialized...');
+                await window.shopSystem.initialize();
+                console.log('[initializeGameScene] Shop system initialized successfully');
+
+                // Check if shop needs refresh after save data load
+                if (window.saveManager && window.saveManager.shopNeedsRefresh) {
+                    console.log('[initializeGameScene] Refreshing shop after save data load');
+                    window.shopSystem.refresh();
+                    window.saveManager.shopNeedsRefresh = false;
+                }
+            } catch (shopInitError) {
+                console.error('[initializeGameScene] Shop system initialization failed:', shopInitError);
+                console.error('[initializeGameScene] Shop may not function correctly');
+                // Don't throw - allow game scene to show even if shop fails
+            }
+        } else {
+            console.warn('[initializeGameScene] Shop system not available');
         }
     }
 

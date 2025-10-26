@@ -782,14 +782,6 @@ class SceneManager {
             return;
         }
 
-        // CRITICAL: Prevent invalid transitions from game screen to title
-        // (unless explicitly called from quit button or settings)
-        if (this.currentScene === 'game' && sceneName === 'title') {
-            console.warn('[showScene] ⚠️ WARNING: game → title transition requested');
-            console.warn('[showScene] Call stack for investigation:', new Error().stack);
-            // Allow the transition but log it for debugging
-        }
-
         if (this.isTransitioning) {
             console.warn('[showScene] Already transitioning, blocking scene change to:', sceneName);
             return;
@@ -1000,8 +992,19 @@ class SceneManager {
         }
     }
 
-    async initializeTitleScene() {
+    initializeTitleScene() {
         console.log('[DEBUG] Title scene initialization (audio already pre-loaded)');
+
+        // CRITICAL: Close shop modal if it's open when returning to title
+        // This prevents shop modal from staying visible on title screen
+        if (window.closeShopModal) {
+            try {
+                window.closeShopModal();
+                console.log('[initializeTitleScene] Shop modal closed');
+            } catch (error) {
+                console.warn('[initializeTitleScene] Failed to close shop modal:', error);
+            }
+        }
 
         // Audio system should already be fully initialized before title screen
         if (window.audioManager) {
@@ -1604,77 +1607,102 @@ class SceneManager {
     }
 
     initializeSettingsScene() {
-        // Load current settings
-        const settings = window.gameState.get('settings');
-        const bgmSlider = document.getElementById('bgm-volume');
-        const seSlider = document.getElementById('se-volume');
+        try {
+            console.log('[initializeSettingsScene] Initializing settings scene');
 
-        // Check if audio is muted
-        const isMuted = this.isMuted || (window.audioManager && window.audioManager.isMuted);
-
-        if (bgmSlider && settings) {
-            if (isMuted) {
-                // Show 0% when muted, but keep original value in slider for restoration
-                bgmSlider.value = 0;
-                document.getElementById('bgm-value').textContent = '0% (ミュート)';
-            } else {
-                bgmSlider.value = settings.bgmVolume * 100;
-                document.getElementById('bgm-value').textContent = Math.round(settings.bgmVolume * 100) + '%';
-            }
-        }
-
-        if (seSlider && settings) {
-            if (isMuted) {
-                // Show 0% when muted, but keep original value in slider for restoration
-                seSlider.value = 0;
-                document.getElementById('se-value').textContent = '0% (ミュート)';
-            } else {
-                seSlider.value = settings.seVolume * 100;
-                document.getElementById('se-value').textContent = Math.round(settings.seVolume * 100) + '%';
-            }
-        }
-
-        // Setup debug toggle to show/hide floating debug panel
-        const debugToggle = document.getElementById('debug-toggle');
-        const debugStatus = document.getElementById('debug-status');
-
-        if (debugToggle && debugStatus) {
-            // Set initial state
-            const isDebugMode = window.gameState ? window.gameState.isDebugMode() : false;
-            debugToggle.checked = isDebugMode;
-            debugStatus.textContent = isDebugMode ? 'ON' : 'OFF';
-
-            // Show debug panel if debug mode is on
-            if (isDebugMode && window.debugPanelManager) {
-                window.debugPanelManager.showPanel();
+            // Check if gameState is available
+            if (!window.gameState) {
+                console.error('[initializeSettingsScene] GameState not available');
+                return;
             }
 
-            // Add change event listener
-            debugToggle.addEventListener('change', (e) => {
-                const enabled = e.target.checked;
-                debugStatus.textContent = enabled ? 'ON' : 'OFF';
+            // Load current settings
+            const settings = window.gameState.get('settings');
+            const bgmSlider = document.getElementById('bgm-volume');
+            const seSlider = document.getElementById('se-volume');
 
-                if (enabled) {
-                    // Enable debug mode and show panel
-                    if (window.gameState) {
-                        window.gameState.enableDebugMode();
-                    }
-                    if (window.debugPanelManager) {
-                        window.debugPanelManager.showPanel();
-                    }
+            console.log('[initializeSettingsScene] Settings:', settings);
+            console.log('[initializeSettingsScene] BGM slider:', !!bgmSlider);
+            console.log('[initializeSettingsScene] SE slider:', !!seSlider);
+
+            // Check if audio is muted
+            const isMuted = this.isMuted || (window.audioManager && window.audioManager.isMuted);
+
+            if (bgmSlider && settings) {
+                if (isMuted) {
+                    // Show 0% when muted, but keep original value in slider for restoration
+                    bgmSlider.value = 0;
+                    const bgmValueEl = document.getElementById('bgm-value');
+                    if (bgmValueEl) bgmValueEl.textContent = '0% (ミュート)';
                 } else {
-                    // Disable debug mode and hide panel
-                    if (window.gameState) {
-                        window.gameState.disableDebugMode();
-                    }
-                    if (window.debugPanelManager) {
-                        window.debugPanelManager.hidePanel();
-                    }
+                    bgmSlider.value = settings.bgmVolume * 100;
+                    const bgmValueEl = document.getElementById('bgm-value');
+                    if (bgmValueEl) bgmValueEl.textContent = Math.round(settings.bgmVolume * 100) + '%';
                 }
-            });
+            }
+
+            if (seSlider && settings) {
+                if (isMuted) {
+                    // Show 0% when muted, but keep original value in slider for restoration
+                    seSlider.value = 0;
+                    const seValueEl = document.getElementById('se-value');
+                    if (seValueEl) seValueEl.textContent = '0% (ミュート)';
+                } else {
+                    seSlider.value = settings.seVolume * 100;
+                    const seValueEl = document.getElementById('se-value');
+                    if (seValueEl) seValueEl.textContent = Math.round(settings.seVolume * 100) + '%';
+                }
+            }
+        } catch (error) {
+            console.error('[initializeSettingsScene] Error in settings initialization (volume sliders):', error);
+            // Continue to debug toggle setup even if volume sliders fail
         }
 
-        console.log('[DEBUG] Settings initialized - isMuted:', isMuted, 'settings:', settings);
+        try {
+            // Setup debug toggle to show/hide floating debug panel
+            const debugToggle = document.getElementById('debug-toggle');
+            const debugStatus = document.getElementById('debug-status');
+
+            if (debugToggle && debugStatus) {
+                // Set initial state
+                const isDebugMode = window.gameState ? window.gameState.isDebugMode() : false;
+                debugToggle.checked = isDebugMode;
+                debugStatus.textContent = isDebugMode ? 'ON' : 'OFF';
+
+                // Show debug panel if debug mode is on
+                if (isDebugMode && window.debugPanelManager) {
+                    window.debugPanelManager.showPanel();
+                }
+
+                // Add change event listener
+                debugToggle.addEventListener('change', (e) => {
+                    const enabled = e.target.checked;
+                    debugStatus.textContent = enabled ? 'ON' : 'OFF';
+
+                    if (enabled) {
+                        // Enable debug mode and show panel
+                        if (window.gameState) {
+                            window.gameState.enableDebugMode();
+                        }
+                        if (window.debugPanelManager) {
+                            window.debugPanelManager.showPanel();
+                        }
+                    } else {
+                        // Disable debug mode and hide panel
+                        if (window.gameState) {
+                            window.gameState.disableDebugMode();
+                        }
+                        if (window.debugPanelManager) {
+                            window.debugPanelManager.hidePanel();
+                        }
+                    }
+                });
+            }
+
+            console.log('[initializeSettingsScene] Settings initialized successfully');
+        } catch (error) {
+            console.error('[initializeSettingsScene] Error in debug toggle setup:', error);
+        }
     }
 
     updateGameUI() {
@@ -1923,42 +1951,17 @@ class SceneManager {
                 const result = await window.saveManager.deleteSave();
 
                 if (result.success) {
-                    console.log('SceneManager: Save deletion successful, starting system refresh...');
+                    console.log('SceneManager: Save deletion successful, reloading page...');
 
-                    // Stop all BGM during system refresh
-                    if (window.audioManager) {
-                        window.audioManager.stopBGM();
-                    }
+                    // Save audio settings before reload
+                    sessionStorage.setItem('savedBGMVolume', savedBGMVolume);
+                    sessionStorage.setItem('savedSEVolume', savedSEVolume);
 
-                    // Set flag to skip BGM during system refresh
-                    this.skipBGMDuringRefresh = true;
+                    // Show completion message
+                    alert('セーブデータを削除しました。\nゲームを再起動します。');
 
-                    // Force complete system refresh without reload
-                    await this.completeSystemRefresh();
-
-                    // Restore audio settings after system refresh
-                    if (window.audioManager) {
-                        window.audioManager.setBGMVolume(savedBGMVolume);
-                        window.audioManager.setSEVolume(savedSEVolume);
-                        console.log('SceneManager: Restored audio settings - BGM:', savedBGMVolume, 'SE:', savedSEVolume);
-                    }
-
-                    // Reset firstRun flag to show scenario on next game start
-                    this.firstRun = true;
-                    console.log('SceneManager: Reset firstRun flag to true for scenario replay');
-
-                    // After deletion, return to title screen but keep BGM muted
-                    this.showScene('title');
-                    this.previousScene = null; // Clear previous scene tracking
-
-                    // Show completion dialog first
-                    alert('セーブデータを削除しました。');
-
-                    // Clear skip flag and start title BGM after dialog is closed
-                    this.skipBGMDuringRefresh = false;
-                    if (window.audioManager && !this.isMuted) {
-                        window.audioManager.playBGM('title_bgm');
-                    }
+                    // Reload the page to reset all state
+                    window.location.reload();
                 } else {
                     throw new Error(result.message || 'セーブデータの削除に失敗しました');
                 }

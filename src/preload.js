@@ -26,7 +26,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
 
     // Asset path resolver
-    getAssetPath: (filename) => ipcRenderer.invoke('get-asset-path', filename)
+    getAssetPath: (filename) => ipcRenderer.invoke('get-asset-path', filename),
+
+    // Zoom control
+    setZoomFactor: (factor) => ipcRenderer.invoke('set-zoom-factor', factor)
 });
 
 // Additional security: Remove any global Node.js variables that might have leaked

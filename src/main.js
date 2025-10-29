@@ -301,6 +301,21 @@ class AfterSchoolClickerMain {
                 return { success: false, error: error.message };
             }
         });
+
+        // Set zoom factor
+        ipcMain.handle('set-zoom-factor', async (event, factor) => {
+            try {
+                if (this.mainWindow && this.mainWindow.webContents) {
+                    this.mainWindow.webContents.setZoomFactor(factor);
+                    console.log(`[Zoom] Set zoom factor to ${factor} (${Math.round(factor * 100)}%)`);
+                    return { success: true, factor };
+                }
+                return { success: false, error: 'Main window not available' };
+            } catch (error) {
+                console.error('Set zoom factor failed:', error);
+                return { success: false, error: error.message };
+            }
+        });
     }
 
     async loadGameData() {

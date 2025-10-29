@@ -31,8 +31,8 @@ class AfterSchoolClicker {
         try {
             console.log('Initializing 放課後クリッカー...');
 
-            // Calculate and set dynamic zoom based on available screen size
-            await this.setupDynamicZoom();
+            // Calculate dynamic zoom for game screen (but don't apply it yet)
+            this.calculateDynamicZoom();
 
             // Initialize core systems
             await this.initializeManagers();
@@ -196,7 +196,7 @@ class AfterSchoolClicker {
         }
     }
 
-    async setupDynamicZoom() {
+    calculateDynamicZoom() {
         try {
             // Get available window dimensions
             const availableHeight = window.innerHeight;
@@ -205,23 +205,15 @@ class AfterSchoolClicker {
             // Calculate zoom factor (never zoom in, only zoom out if needed)
             const zoomFactor = Math.min(1.0, availableHeight / requiredHeight);
 
-            // Apply zoom if less than 100%
-            if (zoomFactor < 1.0) {
-                console.log(`[Zoom] Window height: ${availableHeight}px, Required: ${requiredHeight}px`);
-                console.log(`[Zoom] Applying zoom factor: ${zoomFactor.toFixed(3)} (${Math.round(zoomFactor * 100)}%)`);
+            // Store zoom factor for later use by scene manager
+            window.gameZoomFactor = zoomFactor;
 
-                const result = await window.electronAPI.setZoomFactor(zoomFactor);
-                if (result.success) {
-                    console.log('[Zoom] Dynamic zoom applied successfully');
-                } else {
-                    console.error('[Zoom] Failed to apply zoom:', result.error);
-                }
-            } else {
-                console.log('[Zoom] No zoom adjustment needed (sufficient screen space)');
-            }
+            console.log(`[Zoom] Calculated zoom factor: ${zoomFactor.toFixed(3)} (${Math.round(zoomFactor * 100)}%)`);
+            console.log(`[Zoom] Window height: ${availableHeight}px, Required: ${requiredHeight}px`);
         } catch (error) {
-            console.error('[Zoom] Failed to setup dynamic zoom:', error);
-            // Don't throw - continue initialization even if zoom fails
+            console.error('[Zoom] Failed to calculate dynamic zoom:', error);
+            // Default to 100% zoom on error
+            window.gameZoomFactor = 1.0;
         }
     }
 

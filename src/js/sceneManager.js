@@ -836,6 +836,14 @@ class SceneManager {
                 // Show new scene immediately
                 newSceneElement.classList.add('active');
 
+                // Apply scene-specific zoom
+                try {
+                    await this.applySceneZoom(sceneName);
+                } catch (zoomError) {
+                    console.error('[showScene] ❌ ERROR during zoom application for', sceneName, ':', zoomError);
+                    // Continue with scene transition even if zoom fails
+                }
+
                 // Scene-specific initialization (before updating currentScene for BGM logic)
                 // Wrap in try-catch to prevent errors from disrupting scene transition
                 try {
@@ -858,6 +866,43 @@ class SceneManager {
         } else {
             this.isTransitioning = false;
             console.error('[showScene] newSceneElement is null!');
+        }
+    }
+
+    async applySceneZoom(sceneName) {
+        console.log(`[applySceneZoom] Applying zoom for scene: ${sceneName}`);
+
+        try {
+            // Define zoom factor based on scene type
+            let zoomFactor;
+
+            // Scenes that should display at 100% (full size): title, scenario, tutorial, endings
+            const fullSizeScenes = ['title', 'scenario', 'tutorial', 'ending1', 'ending2'];
+
+            if (fullSizeScenes.includes(sceneName)) {
+                // Display at 100% for better visibility
+                zoomFactor = 1.0;
+                console.log(`[applySceneZoom] Using 100% zoom for ${sceneName}`);
+            } else {
+                // Game, album, settings use dynamic zoom to fit all UI elements
+                zoomFactor = window.gameZoomFactor || 1.0;
+                console.log(`[applySceneZoom] Using game zoom factor ${zoomFactor.toFixed(3)} for ${sceneName}`);
+            }
+
+            // Apply zoom via Electron IPC
+            if (window.electronAPI && window.electronAPI.setZoomFactor) {
+                const result = await window.electronAPI.setZoomFactor(zoomFactor);
+                if (result.success) {
+                    console.log(`[applySceneZoom] ✓ Zoom applied: ${Math.round(zoomFactor * 100)}%`);
+                } else {
+                    console.error(`[applySceneZoom] ❌ Failed to apply zoom:`, result.error);
+                }
+            } else {
+                console.warn('[applySceneZoom] Electron API not available - zoom not applied');
+            }
+        } catch (error) {
+            console.error('[applySceneZoom] ❌ Error during zoom application:', error);
+            // Don't throw - continue with scene transition
         }
     }
 

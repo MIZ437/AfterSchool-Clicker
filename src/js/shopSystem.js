@@ -70,8 +70,17 @@ class ShopSystem {
             console.log('ShopSystem: DataManager found after waiting');
         }
 
-        console.log('ShopSystem: DataManager found, loading data...');
-        await window.dataManager.loadAll();
+        console.log('ShopSystem: DataManager found, checking if data is loaded...');
+        // Check if data is loaded, use fallback if not
+        if (!window.dataManager.loaded) {
+            console.warn('ShopSystem: WARNING - Data not loaded yet, using fallback items');
+            this.loadFallbackItems();
+            this.renderShop();
+            this.setupEventListeners();
+            return;
+        }
+        console.log('ShopSystem: ✓ Data is loaded, proceeding with shop setup');
+
         await this.loadItems();
         this.renderShop();
         this.setupEventListeners();
@@ -117,10 +126,8 @@ class ShopSystem {
 
         // Load items from data manager
         try {
-            // Ensure data is loaded
-            if (window.dataManager.loadAll) {
-                await window.dataManager.loadAll();
-            }
+            // Data should already be loaded by now
+            console.log('ShopSystem.loadItems: DataManager loaded status:', window.dataManager.loaded);
 
             this.items.click = window.dataManager.getClickItems() || [];
             this.items.cps = window.dataManager.getCPSItems() || [];
@@ -139,15 +146,23 @@ class ShopSystem {
     }
 
     loadFallbackItems() {
-        // Fallback shop items
+        // Fallback shop items - mirror items.csv structure
+        console.warn('Using fallback shop items');
         this.items.click = [
-            { id: 'CLICK_1', name: 'クリック強化', effect: 'click', value: '1', cost: '50', desc: '1クリック: +1ポイント' },
-            { id: 'CLICK_2', name: 'ダブルクリック', effect: 'click', value: '2', cost: '200', desc: '1クリック: +2ポイント' }
+            { id: 'ITM_CLICK_1', name: '初心者の愛撫', cost: '50', effect: 'click', value: '1', desc: 'クリックごとに+1ポイント', multiplier: '1.20' },
+            { id: 'ITM_CLICK_2', name: '慣れた愛撫', cost: '5000', effect: 'click', value: '30', desc: 'クリックごとに+30ポイント', multiplier: '1.20' },
+            { id: 'ITM_CLICK_3', name: '熟練の愛撫', cost: '50000', effect: 'click', value: '400', desc: 'クリックごとに+400ポイント', multiplier: '1.18' },
+            { id: 'ITM_CLICK_4', name: '達人の愛撫', cost: '600000', effect: 'click', value: '5000', desc: 'クリックごとに+5000ポイント', multiplier: '1.18' },
+            { id: 'ITM_CLICK_5', name: '神業の愛撫', cost: '7000000', effect: 'click', value: '50000', desc: 'クリックごとに+50000ポイント', multiplier: '1.18' }
         ];
         this.items.cps = [
-            { id: 'CPS_1', name: '自動クリック', effect: 'cps', value: '1', cost: '100', desc: '毎秒 +1ポイント' }
+            { id: 'ITM_CPS_1', name: 'ローター', cost: '1000', effect: 'cps', value: '1', desc: '毎秒+1ポイント', multiplier: '1.25' },
+            { id: 'ITM_CPS_2', name: 'ディルド', cost: '10000', effect: 'cps', value: '30', desc: '毎秒+30ポイント', multiplier: '1.25' },
+            { id: 'ITM_CPS_3', name: '2点攻めマッサージャー', cost: '100000', effect: 'cps', value: '400', desc: '毎秒+400ポイント', multiplier: '1.23' },
+            { id: 'ITM_CPS_4', name: '全自動吸引器', cost: '1200000', effect: 'cps', value: '5000', desc: '毎秒+5000ポイント', multiplier: '1.23' },
+            { id: 'ITM_CPS_5', name: '神秘の媚薬', cost: '14000000', effect: 'cps', value: '50000', desc: '毎秒+50000ポイント', multiplier: '1.23' }
         ];
-        console.log('Using fallback shop items:', this.items);
+        console.log('Fallback items loaded:', this.items);
     }
 
     renderShop() {

@@ -25,17 +25,25 @@ class DataManager {
 
     async _loadAllData() {
         try {
-            console.log('Loading game data...');
+            console.log('[DataManager] Loading game data...');
 
             // Get cached data from main process if available
             const cachedResult = await window.electronAPI.getGameData();
+            console.log('[DataManager] Cached data result:', cachedResult);
 
             if (cachedResult.success && cachedResult.data) {
                 this.data = cachedResult.data;
                 this.loaded = true;
-                console.log('Loaded cached game data');
+                console.log('[DataManager] ✓ Loaded cached game data from main process');
+                console.log('[DataManager] - stages:', this.data.stages?.length);
+                console.log('[DataManager] - items:', this.data.items?.length);
+                console.log('[DataManager] - images:', this.data.images?.length);
+                console.log('[DataManager] - audio:', this.data.audio?.length);
+                console.log('[DataManager] - text:', this.data.text?.length);
                 return true;
             }
+
+            console.log('[DataManager] No cached data available, loading from CSV files...');
 
             // If no cached data, load from CSV files
             const csvFiles = ['stages', 'items', 'images', 'audio', 'text'];

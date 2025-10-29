@@ -71,7 +71,10 @@ class AfterSchoolClicker {
     }
 
     async initializeManagers() {
-        // Wait for all managers to be available
+        console.log('[Main] ========== INITIALIZATION START ==========');
+
+        // Wait for all manager classes to be available
+        console.log('[Main] Step 1: Waiting for manager classes...');
         const maxAttempts = 50;
         let attempts = 0;
 
@@ -79,13 +82,13 @@ class AfterSchoolClicker {
             if (this.areManagersReady()) {
                 break;
             }
-            await this.delay(25); // Reduced from 100ms to 25ms for faster startup
+            await this.delay(25);
             attempts++;
         }
 
         if (!this.areManagersReady()) {
-            console.warn('Some managers failed to initialize within timeout, continuing anyway...');
-            console.log('Manager availability:', {
+            console.warn('[Main] Some managers failed to initialize within timeout, continuing anyway...');
+            console.log('[Main] Manager availability:', {
                 gameState: !!window.gameState,
                 dataManager: !!window.dataManager,
                 saveManager: !!window.saveManager,
@@ -99,38 +102,55 @@ class AfterSchoolClicker {
             });
         }
 
-        // Initialize data first
+        // Step 2: Load ALL CSV data FIRST
+        console.log('[Main] Step 2: Loading ALL CSV data...');
         if (window.dataManager) {
             await window.dataManager.loadAll();
+            console.log('[Main] ✓ CSV data loaded');
+            console.log('[Main] Data check:', {
+                stages: window.dataManager.data?.stages?.length,
+                items: window.dataManager.data?.items?.length,
+                images: window.dataManager.data?.images?.length,
+                audio: window.dataManager.data?.audio?.length,
+                text: window.dataManager.data?.text?.length
+            });
+        } else {
+            console.error('[Main] ✗ DataManager not found!');
         }
 
-        // Initialize ShopSystem AFTER data is loaded
+        // Step 3: Initialize ShopSystem AFTER data is fully loaded
+        console.log('[Main] Step 3: Initializing ShopSystem...');
         if (typeof ShopSystem !== 'undefined') {
-            console.log('Initializing ShopSystem after data load...');
             window.shopSystem = new ShopSystem();
             await window.shopSystem.initialize();
-            console.log('ShopSystem initialization complete');
+            console.log('[Main] ✓ ShopSystem initialized');
         } else {
-            console.error('ShopSystem class not found!');
+            console.error('[Main] ✗ ShopSystem class not found!');
         }
 
-        // Load save data
+        // Step 4: Load save data
+        console.log('[Main] Step 4: Loading save data...');
         if (window.saveManager) {
             await window.saveManager.loadGame();
+            console.log('[Main] ✓ Save data loaded');
         }
 
-        // Initialize audio
-        console.log('Checking audioManager:', !!window.audioManager);
+        // Step 5: Initialize audio
+        console.log('[Main] Step 5: Initializing audio...');
         if (window.audioManager) {
-            console.log('AudioManager found, calling preloadAudio');
             await window.audioManager.preloadAudio();
             window.audioManager.loadSettings();
+            console.log('[Main] ✓ Audio initialized');
         } else {
-            console.error('AudioManager not found!');
+            console.error('[Main] ✗ AudioManager not found!');
         }
 
-        // Setup cross-manager connections
+        // Step 6: Setup cross-manager connections
+        console.log('[Main] Step 6: Setting up manager connections...');
         this.setupManagerConnections();
+        console.log('[Main] ✓ Connections established');
+
+        console.log('[Main] ========== INITIALIZATION COMPLETE ==========');
     }
 
     areManagersReady() {

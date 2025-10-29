@@ -118,8 +118,8 @@ class AfterSchoolClickerMain {
 
         // Create the browser window
         this.mainWindow = new BrowserWindow({
-            width: 1200,
-            height: 800,
+            width: 1600,
+            height: 900,
             webPreferences: {
                 nodeIntegration: false,
                 contextIsolation: true,
@@ -130,7 +130,8 @@ class AfterSchoolClickerMain {
             icon: path.join(__dirname, '../assets/images/ui/app_icon.png'),
             show: false,
             center: true,
-            resizable: true,
+            resizable: false,
+            maximizable: false,
             autoHideMenuBar: true,
             backgroundColor: '#000000',
             titleBarStyle: 'default'
@@ -158,9 +159,17 @@ class AfterSchoolClickerMain {
             }
         });
 
-        // Load game data
-        await this.loadGameData();
-        console.log('Game data loaded');
+        // Load game data (with timeout to prevent hanging)
+        try {
+            await Promise.race([
+                this.loadGameData(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('CSV load timeout')), 5000))
+            ]);
+            console.log('Game data loaded successfully');
+        } catch (error) {
+            console.error('Failed to load game data:', error);
+            console.log('Continuing with empty game data...');
+        }
 
         // Wait for DOM to be ready
         await new Promise(resolve => {
@@ -180,8 +189,7 @@ class AfterSchoolClickerMain {
             this.splashWindow = null;
         }
 
-        // Maximize and show window
-        this.mainWindow.maximize();
+        // Show window
         this.mainWindow.show();
         this.mainWindow.focus();
         this.mainWindow.moveTop();
@@ -250,6 +258,19 @@ class AfterSchoolClickerMain {
 
         // Get game data (cached CSV data)
         ipcMain.handle('get-game-data', async () => {
+            console.log('[IPC] get-game-data called');
+            console.log('[IPC] gameData availability:', {
+                stages: this.gameData.stages?.length || 0,
+                items: this.gameData.items?.length || 0,
+                images: this.gameData.images?.length || 0,
+                audio: this.gameData.audio?.length || 0,
+                text: this.gameData.text?.length || 0
+            });
+
+            if (!this.gameData.items || this.gameData.items.length === 0) {
+                console.error('[IPC] WARNING: No items data available!');
+            }
+
             return { success: true, data: this.gameData };
         });
 
@@ -285,18 +306,32 @@ class AfterSchoolClickerMain {
     async loadGameData() {
         const csvFiles = ['stages.csv', 'items.csv', 'images.csv', 'audio.csv', 'text.csv'];
 
-        for (const file of csvFiles) {
+        console.log('[LoadGameData] Starting to load CSV files...');
+        console.log('[LoadGameData] isPackaged:', app.isPackaged);
+
+        const loadPromises = csvFiles.map(async (file) => {
             try {
-                // Use getAssetPath to handle both development and production
                 const csvPath = this.getDataPath(file);
+                console.log(`[LoadGameData] Loading ${file} from:`, csvPath);
                 const key = file.replace('.csv', '');
-                this.gameData[key] = await this.parseCSV(csvPath);
-                console.log(`Loaded ${file}: ${this.gameData[key].length} entries`);
+
+                // Add timeout for each CSV file
+                const data = await Promise.race([
+                    this.parseCSV(csvPath),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout loading ${file}`)), 3000))
+                ]);
+
+                this.gameData[key] = data;
+                console.log(`[LoadGameData] ✓ Loaded ${file}: ${this.gameData[key].length} entries`);
             } catch (error) {
-                console.error(`Failed to load ${file}:`, error);
-                this.gameData[file.replace('.csv', '')] = [];
+                console.error(`[LoadGameData] ✗ Failed to load ${file}:`, error.message);
+                const key = file.replace('.csv', '');
+                this.gameData[key] = [];
             }
-        }
+        });
+
+        await Promise.all(loadPromises);
+        console.log('[LoadGameData] All CSV files processed. Total game data:', Object.keys(this.gameData).length);
     }
 
     getDataPath(filename) {

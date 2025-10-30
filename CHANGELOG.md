@@ -1,6 +1,46 @@
 ﻿# Changelog - 放課後クリッカー
 
 
+## 2025-10-30
+
+### Added
+- ✨ **シーン別ズーム制御機能実装**
+  - タイトル、シナリオ、説明、エンディング画面: **100%ズーム** (画面いっぱいに大きく表示)
+  - ゲーム、アルバム、設定画面: **動的ズーム** (UI要素が見切れないように自動縮小)
+  - シーン切り替え時に自動的に最適なズーム率を適用
+  - 別PCでのテスト結果を受けて、ストーリー画面の視認性を最大化しつつ、ゲーム画面の機能性を維持
+
+### Improved
+- 🎨 **クロスプラットフォーム表示の最適化**
+  - 動的ズーム計算を初期化時に実行し、`window.gameZoomFactor`にキャッシュ
+  - タイトル画面、ストーリー画面が画面サイズに合わせて最大化
+  - タスクバー・タイトルバーの有無に関わらず、全てのPCで適切に表示
+  - ゲーム画面のボタン（アルバム、設定）が切れることなく表示
+
+### Technical Details
+- `src/js/main.js`:
+  - `setupDynamicZoom()` → `calculateDynamicZoom()`にリファクタリング
+  - ズーム値の計算のみを行い、適用はシーンマネージャーに委譲
+  - `window.gameZoomFactor`にグローバルズーム値を保存
+- `src/js/sceneManager.js`:
+  - `applySceneZoom(sceneName)`メソッドを新規追加
+  - `showScene()`内でシーン切り替え時に自動的にズームを適用
+  - `fullSizeScenes`配列で100%表示シーンを管理
+- `src/preload.js`:
+  - `setZoomFactor()`APIをrendererプロセスに公開
+- `src/main.js` (main process):
+  - `set-zoom-factor`IPCハンドラーを実装
+  - Electronの`webContents.setZoomFactor()`を使用してズーム制御
+
+### User Impact
+- 別PCでの表示問題が完全に解決
+- タイトル画面とストーリー画面が大きく見やすく表示
+- ゲーム画面のUIが全て表示されてプレイに支障なし
+- スクロールバーなしで全コンテンツが表示可能
+
+---
+
+
 ## 2025-10-27
 
 ### Fixed
